@@ -555,3 +555,43 @@ do
     T.eq(Darkness.ContentReason(coin(nil)), nil,
         "and an owner with no name decides nothing")
 end
+
+T.suite("the raising returns after the game has written the page")
+
+-- The subscription to GOSSIP_SHOW raised the labels in the same frame as the
+-- event. Whose handler runs first, ours or the game's, is decided by the order
+-- of registration -- so the raising could happen before the page was written,
+-- and for the author it did: a guard's fifteen lines, the first readable and
+-- fourteen brown.
+--
+-- What is checked here is the seam rather than the clock: the deferral is
+-- asked for, and what it asks for is a raising.
+do
+    local savedTimer = _G.C_Timer
+    local pending = {}
+    _G.C_Timer = {
+        After = function(_, fn)
+            if type(fn) == "function" then pending[#pending + 1] = fn end
+        end,
+    }
+
+    local savedLift = Darkness.LiftPages
+    local raised = 0
+    Darkness.LiftPages = function() raised = raised + 1 return 0 end
+
+    Darkness.LiftPagesLater()
+    T.ok(#pending >= 1, "a return is scheduled: " .. #pending)
+    T.eq(raised, 0, "and nothing is raised before it comes due")
+
+    for i = 1, #pending do pending[i]() end
+    T.eq(raised, #pending, "every return raises the pages")
+
+    -- A client with no clock must not fall over: the raising in the same frame
+    -- has already happened by then, and this is the extra one.
+    _G.C_Timer = nil
+    local ok = pcall(Darkness.LiftPagesLater)
+    T.ok(ok, "with no C_Timer the return is simply not scheduled")
+
+    Darkness.LiftPages = savedLift
+    _G.C_Timer = savedTimer
+end

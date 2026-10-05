@@ -4088,6 +4088,50 @@ function Darkness.LiftPages()
     return count
 end
 
+--- How long after a conversation's event the labels are raised again.
+--
+-- Zero is the next frame, and it is the one that matters. The rest is reserve.
+local LIFT_LATER = { 0, 0.5 }
+
+--- Raise the labels again once the game has finished writing them.
+--
+-- Why the repeat. The comment above PAGE_EVENTS says the raising "is obliged to
+-- happen AFTER" the game fills the page — and the subscription did it in the
+-- same frame as the event, which is to say possibly before. Whose handler for
+-- GOSSIP_SHOW runs first, ours or the game's, is decided by the order of
+-- registration, and it is not ours to decide.
+--
+-- What that looked like. A conversation with a guard: fifteen lines, the first
+-- readable and fourteen brown. The first was the button that already existed
+-- from an earlier conversation and had been raised then; the other fourteen the
+-- game created and coloured after our pass, and nothing returned to them. The
+-- author sent that window, and before it a trainer's with one option, dark in
+-- the same way and for the same reason.
+--
+-- The doubling he reported on those same lines is this one defect, not a
+-- second: the raising takes a letter's shadow off in the same breath as it
+-- raises it (Darkness.Unshadow), so a line the raising never reached keeps
+-- both its dark colour and the shadow that smears it.
+--
+-- Why a repeat rather than a later single pass: the page is often filled
+-- within the event itself, and a raising that waited would show the player a
+-- frame of brown text. Doing both costs little — a raising walks labels only,
+-- the native colours are remembered (TEXT_BASE), and a label already raised is
+-- written the same colour again.
+--
+-- This is the same trap, and the same answer, as LATER for the picture walk:
+-- the game fills a window after announcing it.
+function Darkness.LiftPagesLater()
+    local timer = _G.C_Timer
+    if type(timer) ~= "table" or type(timer.After) ~= "function" then return end
+
+    for i = 1, #LIFT_LATER do
+        pcall(timer.After, LIFT_LATER[i], function()
+            pcall(Darkness.LiftPages)
+        end)
+    end
+end
+
 --- Restore the native colour to everything currently in the plan.
 --
 -- Why this exists. The ordinary "restore it as it was" is done by the plan
@@ -5278,6 +5322,7 @@ function Darkness.Watch()
         for _, event in ipairs(PAGE_EVENTS) do
             ns.Events.Subscribe(event, Darkness.name, function()
                 Darkness.LiftPages()
+                Darkness.LiftPagesLater()
             end)
         end
 
