@@ -4121,6 +4121,55 @@ local LIFT_LATER = { 0, 0.5 }
 --
 -- This is the same trap, and the same answer, as LATER for the picture walk:
 -- the game fills a window after announcing it.
+-- Whether a walk of the last window is already waiting for the next frame.
+local refillPending = false
+
+--- Walk the last opened window afresh, once, however many events ask for it.
+--
+-- Why not on the event itself. The subscription to REFILL_EVENTS used to call
+-- the walk straight from the handler, and a walk is a FULL one - it does not
+-- ask whether the window has changed, or it would not find the rows created
+-- deeper. One event, one full walk.
+--
+-- That is affordable while the events arrive one at a time. They do not. The
+-- author raised a profession by one point and the whole window blinked and
+-- lagged: a skill-up fires SKILL_LINES_CHANGED and TRADE_SKILL_UPDATE, the
+-- game refills the list, and the list refilling fires them again. Each of them
+-- repainted a window of hundreds of textures, and the repaints are what he saw
+-- as blinking.
+--
+-- Collapsing a burst into one pass on the next frame costs nothing and is what
+-- this file already does for ADDON_LOADED, where a batch of events arrives in
+-- a row at login - the note there says the deferral "merges them into one
+-- reconnaissance instead of a dozen". The same reasoning, the same answer.
+--
+-- The next frame rather than a delay: by then the game has finished refilling,
+-- and the player is not shown a window that stays unpainted for half a second.
+--
+-- With no clock the walk happens at once, as it did before: a client without
+-- C_Timer is not a reason to stop repainting refilled windows.
+function Darkness.RefillSoon()
+    local window = Darkness.lastWindow
+    if type(window) ~= "table" then return end
+
+    local timer = _G.C_Timer
+    if type(timer) ~= "table" or type(timer.After) ~= "function" then
+        pcall(Darkness.ApplyToWindow, window, true)
+        return
+    end
+
+    if refillPending then return end
+    refillPending = true
+
+    pcall(timer.After, 0, function()
+        refillPending = false
+        local latest = Darkness.lastWindow
+        if type(latest) == "table" then
+            pcall(Darkness.ApplyToWindow, latest, true)
+        end
+    end)
+end
+
 function Darkness.LiftPagesLater()
     local timer = _G.C_Timer
     if type(timer) ~= "table" or type(timer.After) ~= "function" then return end
@@ -5330,12 +5379,7 @@ function Darkness.Watch()
         -- one walked is the one the player opened last: the others are either
         -- closed or will be walked when shown.
         for _, event in ipairs(REFILL_EVENTS) do
-            ns.Events.Subscribe(event, Darkness.name, function()
-                local window = Darkness.lastWindow
-                if type(window) == "table" then
-                    pcall(Darkness.ApplyToWindow, window, true)
-                end
-            end)
+            ns.Events.Subscribe(event, Darkness.name, Darkness.RefillSoon)
         end
 
         ns.Events.Subscribe("ADDON_LOADED", Darkness.name, function()

@@ -595,3 +595,52 @@ do
     Darkness.LiftPages = savedLift
     _G.C_Timer = savedTimer
 end
+
+T.suite("a burst of refill events costs one walk, not one each")
+
+-- The author raised a profession by one point: the whole window blinked and
+-- lagged. A skill-up fires SKILL_LINES_CHANGED and TRADE_SKILL_UPDATE, the game
+-- refills the list, the refill fires them again -- and every one of them used to
+-- repaint a window of hundreds of textures from the handler itself.
+do
+    local savedTimer = _G.C_Timer
+    local pending = {}
+    _G.C_Timer = {
+        After = function(_, fn)
+            if type(fn) == "function" then pending[#pending + 1] = fn end
+        end,
+    }
+
+    local savedApply = Darkness.ApplyToWindow
+    local savedWindow = Darkness.lastWindow
+    local walks = 0
+    Darkness.ApplyToWindow = function() walks = walks + 1 end
+    Darkness.lastWindow = { GetObjectType = function() return "Frame" end }
+
+    for _ = 1, 6 do Darkness.RefillSoon() end
+    T.eq(walks, 0, "nothing is walked from the handler itself")
+    T.eq(#pending, 1, "six events ask for one walk, not six")
+
+    pending[1]()
+    T.eq(walks, 1, "and when it comes due the window is walked once")
+
+    -- The gate opens again afterwards: the next burst must not be swallowed.
+    Darkness.RefillSoon()
+    T.eq(#pending, 2, "a later burst is scheduled in its turn")
+
+    -- With no window there is nothing to walk and nothing to schedule.
+    Darkness.lastWindow = nil
+    Darkness.RefillSoon()
+    T.eq(#pending, 2, "no window, no walk")
+
+    -- A client with no clock keeps the old behaviour rather than losing the
+    -- repaint altogether.
+    _G.C_Timer = nil
+    Darkness.lastWindow = { GetObjectType = function() return "Frame" end }
+    Darkness.RefillSoon()
+    T.eq(walks, 2, "with no clock the walk happens at once, as before")
+
+    Darkness.ApplyToWindow = savedApply
+    Darkness.lastWindow = savedWindow
+    _G.C_Timer = savedTimer
+end
