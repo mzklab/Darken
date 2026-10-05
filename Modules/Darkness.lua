@@ -850,6 +850,32 @@ local CONTENT_FIELDS = {
 -- no picture — it must not be guessed at by a piece of a name.
 local CONTENT_NAMES = { "portrait", "icon" }
 
+-- The pieces of an OWNER's name by which a picture is recognised as contents.
+--
+-- Why a second list about names, and why about somebody else's name. The money
+-- rule below is written as a rule about the path to a file — "moneyframe",
+-- "ui-goldicon" — and in this client it never fires: GetTexture answers with a
+-- number even for a texture that was assigned by a path, and the probe shows
+-- that in every window at once ("file 134939", "file 130718", not one path
+-- among them). A picture named by a number reaches the rule for numbers, its
+-- number is not in the short list there, and the answer comes out "framing".
+-- So the coins went black, and "fifty eight" stopped saying fifty eight of
+-- what.
+--
+-- Three numbers could be added to CONTENT_FILES instead. They would fix three
+-- coins in one build, and the next build renumbers them. The frame that holds
+-- a coin carries the same name in every build, while the coin itself has
+-- neither a name nor a field on its owner — it is a button's normal texture.
+-- The owner is the only stable mark it has.
+--
+-- The list is deliberately short and about one thing. It is not a place for
+-- "everything that looked wrong": a piece of somebody else's name is a blunt
+-- instrument, and the character sheet has already been lost once to exactly
+-- that kind of guessing (the note above this one).
+local CONTENT_OWNERS = {
+    "moneyframe", "goldbutton", "silverbutton", "copperbutton",
+}
+
 -- The pieces of file paths by which a picture is recognised as contents.
 --
 -- The icons folder — a spell or an item: by an icon the player recognises an
@@ -1019,6 +1045,25 @@ local function stringFrom(object, method)
     local ok, value = pcall(object[method], object)
     if not ok then return nil end
     return ns.Skin.Textual(value)
+end
+
+--- Ask an object for another object, and answer nothing if it cannot.
+--
+-- The same shape as stringFrom and for the same reason: every question put to
+-- a frame of the game's may fail, and a failed question is "no answer" rather
+-- than an error travelling up through the walk. No secret-value guard here —
+-- the answer is an object, and nothing is read out of it on this line.
+--
+-- @param object table
+-- @param method string
+-- @return table|nil
+local function objectFrom(object, method)
+    if type(object) ~= "table" or type(object[method]) ~= "function" then
+        return nil
+    end
+    local ok, value = pcall(object[method], object)
+    if not ok or type(value) ~= "table" then return nil end
+    return value
 end
 
 --- An object's picture: a path to a file or its numeric identifier.
@@ -1270,6 +1315,15 @@ function Darkness.ContentReason(region)
 
     local name = stringFrom(region, "GetName")
     if name and containsAny(name:lower(), CONTENT_NAMES) then return "name" end
+
+    -- The owner's name. A coin has none of its own and sits in no field: it is
+    -- the normal texture of a button, and the only thing that says what it is
+    -- is the frame holding it. Asked here, before the atlas and the number,
+    -- because both of those answer "framing" for it.
+    local owner = stringFrom(objectFrom(region, "GetParent"), "GetName")
+    if owner and containsAny(owner:lower(), CONTENT_OWNERS) then
+        return "owner"
+    end
 
     local atlas = stringFrom(region, "GetAtlas")
     if atlas then

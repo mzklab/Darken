@@ -509,3 +509,49 @@ do
     _G.UIParent = savedRoot
     _G.MainMenuBarLeftEndCap = savedCap
 end
+
+T.suite("a coin is recognised by the frame that holds it")
+
+-- Gold, silver and copper are three different circles, and the player tells
+-- them apart by colour: darkened they become identically black, and "fifty
+-- eight" stops saying fifty eight of what. The author sent the trainer's
+-- window with the prices in it.
+--
+-- The rule for money existed before this suite and never fired. It was written
+-- as a rule about the PATH to the file -- "moneyframe", "ui-goldicon" -- and in
+-- this client GetTexture answers with a number even for a texture that was
+-- assigned by a path. Every one of the author's probes says so: "file 134939",
+-- "file 130718", not one path among them. So the coin reached the rule for
+-- numbers, its number is not in the short list there, and the answer was
+-- "framing".
+--
+-- Adding three numbers to that list would fix these three coins in this one
+-- build. The frame that holds the coin is named the same in every build, and
+-- that is what is asked here instead.
+do
+    local function coin(ownerName)
+        local parent = { GetName = function() return ownerName end }
+        return {
+            GetObjectType = function() return "Texture" end,
+            GetDrawLayer = function() return "ARTWORK" end,
+            GetTexture = function() return 133784 end,
+            GetAtlas = function() return nil end,
+            GetName = function() return nil end,
+            GetParent = function() return parent end,
+        }
+    end
+
+    T.eq(Darkness.ContentReason(coin("ClassTrainerMoneyFrameGoldButton")), "owner",
+        "the gold coin of the trainer's window is contents")
+    T.eq(Darkness.ContentReason(coin("MerchantMoneyFrameSilverButton")), "owner",
+        "the silver one of the merchant's")
+    T.eq(Darkness.ContentReason(coin("SmallMoneyFrame1CopperButton")), "owner",
+        "and the copper one of a small money frame")
+
+    -- The frame around them is not a coin, and nothing here says it is: the
+    -- rule asks the owner's name rather than the depth or the neighbourhood.
+    T.eq(Darkness.ContentReason(coin("CharacterFrameTab1")), nil,
+        "a picture in any other frame is framing, as before")
+    T.eq(Darkness.ContentReason(coin(nil)), nil,
+        "and an owner with no name decides nothing")
+end
