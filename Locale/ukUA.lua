@@ -538,10 +538,10 @@ ns.RegisterLocale("ukUA", {
         .. "фрейм: /dark probe <імʼя фрейма>",
     ["there is no frame named '%s'"] = "фрейма з імʼям «%s» немає",
     ["dimming probe of %s:"] = "розвідка затемнення, %s:",
-    ["log out - the whole list will land in DarkenDB.lua, under "
-        .. "global.darkprobe"] =
-        "вийдіть з гри - увесь список ляже в DarkenDB.lua, у "
-        .. "global.darkprobe",
+    ["log out - the whole list will land in Darken.lua "
+        .. "(SavedVariables), under DarkenDB.global.darkprobe"] =
+        "вийдіть з гри - увесь список ляже в Darken.lua "
+        .. "(SavedVariables), у DarkenDB.global.darkprobe",
 
     ["The color this area is painted with. It is a multiply, like dimming "
         .. "is: white changes nothing, a darker color darkens, and a "
@@ -999,8 +999,8 @@ ns.RegisterLocale("ukUA", {
         .. "there really were"] =
         "%d образців уперлося в стелю в %d імен: їхні списки - перші %d за "
             .. "абеткою, а скільки імен було насправді, каже scan.cut",
-    ["log out - the result will land in DarkenDB.lua"] =
-        "вийдіть з гри — результат ляже в DarkenDB.lua",
+    ["log out - the result will land in Darken.lua (SavedVariables)"] =
+        "вийдіть з гри — результат ляже в Darken.lua (SavedVariables)",
     ["found %d for the pattern '%s':"] = "знайдено %d за зразком «%s»:",
     ["... and %d more - narrow the pattern"] =
         "... і ще %d — уточніть зразок",
@@ -1072,10 +1072,10 @@ ns.RegisterLocale("ukUA", {
         .. "the object is right, the last step is not"] =
         "%d шляхів дійшли до середини: «%s» тут є, а «%s» немає — об'єкт "
         .. "вгадано правильно, останній крок ні",
-    ["log out and send DarkenDB.lua - the full report is in "
-        .. "DarkenDB.global.report"] =
-        "вийдіть з гри і надішліть DarkenDB.lua — повний звіт лежить "
-        .. "у DarkenDB.global.report",
+    ["log out and send Darken.lua (SavedVariables) - the full report "
+        .. "is in DarkenDB.global.report"] =
+        "вийдіть з гри і надішліть Darken.lua (SavedVariables) — повний "
+        .. "звіт лежить у DarkenDB.global.report",
 
     -- Підписи підсистем у звіті про клієнт. Решту взято з уже перекладених
     -- підписів вікна налаштувань: те саме має називатися однаково.

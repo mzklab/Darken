@@ -747,7 +747,7 @@ end
 --                    nothing.
 --   GetServerTime()— the server's time. A real number, but its time zone is
 --                    its own, and it differs by hours from the clock on the
---                    machine where DarkenDB.lua lies.
+--                    machine where Darken.lua lies.
 --   date()         — the wall clock of that very machine.
 --
 -- The last was taken. The only things a reader can compare the stamp against
@@ -981,8 +981,8 @@ function Report.Lines(report, limit, previous)
     end
 
     out[#out + 1] = ns.Localize(
-        "log out and send DarkenDB.lua - the full report is in "
-            .. "DarkenDB.global.report")
+        "log out and send Darken.lua (SavedVariables) - the full report "
+            .. "is in DarkenDB.global.report")
 
     return out
 end

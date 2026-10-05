@@ -576,8 +576,8 @@ function Addon:HandleCommand(input)
                 records = records,
             }
             self:Print(ns.Localize(
-                "log out - the whole list will land in DarkenDB.lua, under "
-                    .. "global.darkprobe"))
+                "log out - the whole list will land in Darken.lua "
+                    .. "(SavedVariables), under DarkenDB.global.darkprobe"))
         end
         return
     end
@@ -595,7 +595,7 @@ function Addon:HandleCommand(input)
         -- "all" collects the whole directory and puts it in the global
         -- section. Chat will not do for that: there are hundreds of names,
         -- and copying them by hand is work we would have created for the
-        -- player ourselves. After logout the result is in DarkenDB.lua and is
+        -- player ourselves. After logout the result is in Darken.lua and is
         -- read from disk.
         if rest:lower() == "all" then
             local total = self:CollectFrameNames(true)
@@ -626,7 +626,7 @@ function Addon:HandleCommand(input)
             end
 
             self:Print(ns.Localize(
-                "log out - the result will land in DarkenDB.lua"))
+                "log out - the result will land in Darken.lua (SavedVariables)"))
             return
         end
         local found = ns.Scan.Find(rest, _G, 60)

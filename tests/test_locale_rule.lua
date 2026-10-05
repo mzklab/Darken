@@ -330,7 +330,7 @@ do
         "usage: /darken scan <part of a frame name>",
         "the settings database is not ready yet",
         "collected %d names over %d patterns",
-        "log out - the result will land in DarkenDB.lua",
+        "log out - the result will land in Darken.lua (SavedVariables)",
         "found %d for the pattern '%s':",
         "... and %d more - narrow the pattern",
         "this module was switched off",

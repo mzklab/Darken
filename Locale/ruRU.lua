@@ -532,10 +532,10 @@ ns.RegisterLocale("ruRU", {
         .. "фрейм: /dark probe <имя фрейма>",
     ["there is no frame named '%s'"] = "фрейма с именем «%s» нет",
     ["dimming probe of %s:"] = "разведка затемнения, %s:",
-    ["log out - the whole list will land in DarkenDB.lua, under "
-        .. "global.darkprobe"] =
-        "выйдите из игры - весь список ляжет в DarkenDB.lua, в "
-        .. "global.darkprobe",
+    ["log out - the whole list will land in Darken.lua "
+        .. "(SavedVariables), under DarkenDB.global.darkprobe"] =
+        "выйдите из игры - весь список ляжет в Darken.lua "
+        .. "(SavedVariables), в DarkenDB.global.darkprobe",
 
     ["The color this area is painted with. It is a multiply, like dimming "
         .. "is: white changes nothing, a darker color darkens, and a "
@@ -988,8 +988,8 @@ ns.RegisterLocale("ruRU", {
         .. "there really were"] =
         "%d образцов упёрлось в потолок в %d имён: их списки - первые %d по "
             .. "алфавиту, а сколько имён было на самом деле, говорит scan.cut",
-    ["log out - the result will land in DarkenDB.lua"] =
-        "выйдите из игры — результат ляжет в DarkenDB.lua",
+    ["log out - the result will land in Darken.lua (SavedVariables)"] =
+        "выйдите из игры — результат ляжет в Darken.lua (SavedVariables)",
     ["found %d for the pattern '%s':"] = "найдено %d по образцу «%s»:",
     ["... and %d more - narrow the pattern"] =
         "... и ещё %d — уточните образец",
@@ -1060,10 +1060,10 @@ ns.RegisterLocale("ruRU", {
         .. "the object is right, the last step is not"] =
         "%d путей дошли до середины: «%s» здесь есть, а «%s» нет — объект "
         .. "угадан верно, последний шаг нет",
-    ["log out and send DarkenDB.lua - the full report is in "
-        .. "DarkenDB.global.report"] =
-        "выйдите из игры и пришлите DarkenDB.lua — полный отчёт лежит "
-        .. "в DarkenDB.global.report",
+    ["log out and send Darken.lua (SavedVariables) - the full report "
+        .. "is in DarkenDB.global.report"] =
+        "выйдите из игры и пришлите Darken.lua (SavedVariables) — полный "
+        .. "отчёт лежит в DarkenDB.global.report",
 
     -- Подписи подсистем в отчёте о клиенте. Остальные взяты из уже
     -- переведённых подписей окна настроек: одно и то же обязано называться
