@@ -1,0 +1,295 @@
+DARKEN LICENCE
+Version 1.1, 2026
+
+Darken - a dark interface for World of Warcraft Classic
+Copyright (c) 2026 mzk. All rights reserved.
+
+This is a proprietary licence. Darken is free to download and free to
+use, but it is not open source: the rights granted below are the only
+rights granted, and everything not granted is reserved.
+
+By installing, copying or using the Software you accept these terms. If
+you do not accept them, do not install or use the Software.
+
+================================================================================
+1. DEFINITIONS
+================================================================================
+
+1.1  "Software" means the addon named Darken: its source code, its
+     generated textures and branding images, its data tables, its
+     documentation and every other file distributed as part of it by
+     the Author, in whole or in part, in any version. It does not mean
+     the third-party libraries named in section 6, which are the work
+     of their own authors and carry their own licences.
+
+1.2  "Author" means mzk, the copyright holder of the Software.
+
+1.3  "You" means the natural person or legal entity exercising the
+     rights granted by this Licence.
+
+1.4  "Official Release" means a copy of the Software published by the
+     Author at https://github.com/mzklab/Darken or at the Author's
+     project page on CurseForge, and no other source.
+
+1.5  "Distribute" means to make available to any other person by any
+     means, including uploading, hosting, mirroring, linking to a copy
+     you host, bundling, packaging, sharing a file, or including the
+     Software in a compilation or user-interface package.
+
+1.6  "Derived Work" means any work based on the Software or on any part
+     of it, including a fork, a rename, a port, a translation of the
+     source, a re-implementation that copies the Software's code, and
+     any work into which part of the Software has been incorporated.
+
+================================================================================
+2. GRANT OF LICENCE
+================================================================================
+
+Subject to the restrictions in section 4 and to your compliance with
+this Licence, the Author grants you a non-exclusive, worldwide,
+royalty-free, non-transferable and non-sublicensable licence to:
+
+2.1  USE. Install and run the Software, for any purpose, on any number
+     of computers and game accounts, free of charge.
+
+2.2  MODIFY FOR YOURSELF. Modify your own copy of the Software in any
+     way, for your own use only. WoW addons ship as readable Lua, every
+     user already has the full source on disk, and forbidding people to
+     edit their own files would be both pointless and hostile. A copy
+     you modified remains subject to section 4.
+
+2.3  STUDY. Read the source, study how it works, and apply what you
+     learned in your own code written by you. Ideas, techniques and
+     approaches are not claimed by this Licence; the expression of them
+     in the Software's code is.
+
+2.4  QUOTE. Quote any part of the Software in a bug report, a forum
+     post, a review, a tutorial or any other discussion of the
+     Software, provided the quotation is no longer than the discussion
+     reasonably requires and the Software is identified as its source.
+
+2.5  WRITE A MODULE. Write an addon of your own against the module
+     contract the Software declares - the global object created by
+     Core/Api.lua, which ships with every copy - and distribute that
+     addon under terms of your own. A module is your work, not a
+     Derived Work: it calls the contract rather than incorporating the
+     Software's code. Quoting the contract's own examples is covered by
+     section 2.4.
+
+     This grant stands on the contract as the Software declares it, not
+     on any document describing it. The Author's written contract is
+     published separately and may be asked for at the address in
+     section 13; its absence from a copy of the Software takes nothing
+     away from this permission.
+
+================================================================================
+3. OFFICIAL DISTRIBUTION
+================================================================================
+
+3.1  The Software is distributed by the Author through the Official
+     Release channels only. Those channels are free of charge, and the
+     Author does not authorise any paid distribution of the Software by
+     anyone.
+
+3.2  The Author may change or add distribution channels at any time.
+     The current list is the one published at the project page named in
+     section 1.4.
+
+================================================================================
+4. RESTRICTIONS
+================================================================================
+
+Except as expressly permitted in section 2, you may not:
+
+4.1  NO REDISTRIBUTION. Distribute the Software, any part of it, or any
+     modified copy of it, to anyone - not as a file, not as a repack,
+     not inside a user-interface bundle, not on another site, not
+     behind a paywall and not behind an ad wall.
+
+     The reason is not money. A copy that lives elsewhere is a copy
+     that stops being updated, and the bug reports for it still arrive
+     here.
+
+4.2  NO DERIVED PUBLICATION. Publish, release or otherwise make
+     available any Derived Work.
+
+4.3  NO ASSET REUSE. Use the Software's status bar textures, its
+     branding images, the name "Darken" or its mark in any other work.
+     These are not covered by any permission in section 2.
+
+4.4  NO SUBLICENSING OR TRANSFER. Sublicense, rent, lease, sell, assign
+     or otherwise transfer the Software or your rights under this
+     Licence.
+
+4.5  NO REMOVAL OF NOTICES. Remove, obscure or alter any copyright
+     notice, licence text, author credit or version information in the
+     Software, including the fields of its TOC files.
+
+4.6  NO MISREPRESENTATION. Present the Software, or any copy of it, as
+     your own work, or present a modified copy as the Official Release.
+
+4.7  NO CHARGING. Sell the Software, charge any fee for it, or put it
+     or any part of it behind payment, a subscription, an ad wall, a
+     donation requirement or any other condition of access.
+
+================================================================================
+5. RESERVATION OF RIGHTS
+================================================================================
+
+5.1  All rights not expressly granted in section 2 are reserved by the
+     Author. No right is granted by implication, estoppel or otherwise.
+
+5.2  The Software is licensed, not sold. The Author retains ownership
+     of all copies and of all intellectual property rights in the
+     Software.
+
+================================================================================
+6. THIRD-PARTY LIBRARIES
+================================================================================
+
+6.1  The Software uses libraries written by other people. They are
+     shipped under Libs/ as unmodified copies, they are not part of the
+     Software as defined in section 1.1, and nothing in this Licence
+     applies to them: each is redistributed under its own terms, which
+     this Licence neither replaces nor restricts.
+
+6.2  Those libraries are:
+
+     - Ace3 (AceAddon-3.0, AceEvent-3.0, AceConsole-3.0, AceDB-3.0,
+       AceDBOptions-3.0, AceGUI-3.0, AceConfig-3.0,
+       CallbackHandler-1.0) - the Ace3 licence, a BSD-style permissive
+       licence. https://github.com/WoWUIDev/Ace3
+
+     - LibSharedMedia-3.0 by Elkano - LGPL v2.1.
+       https://www.curseforge.com/wow/addons/libsharedmedia-3-0
+
+     - LibStub - placed in the public domain by its authors.
+
+6.3  Each library keeps whatever copyright and licence notices its own
+     files carry, and section 4.5 protects those notices as it protects
+     the Author's.
+
+6.4  LibSharedMedia-3.0 is shipped as plain, unmodified Lua source, so
+     anyone holding a copy of the Software can replace or modify that
+     library, as the LGPL requires. The restrictions in section 4 do
+     not apply to it.
+
+6.5  Libs/ is not kept in the Author's repository; tools/fetch-libs.ps1
+     fetches it, and tools/package.ps1 includes it in the release
+     archive.
+
+6.6  LibDataBroker displays are read from whatever addons publish them.
+     No such addon is bundled with the Software, and none is required
+     by it.
+
+6.7  Everything else the Software ships is the Author's own work. Its
+     status bar textures and branding images are generated by the
+     Python tools under tools/ from code in this repository.
+
+================================================================================
+7. PERMISSION ON REQUEST
+================================================================================
+
+7.1  If you want to do something these terms forbid - translate the
+     Software, bundle it for a community, build on it, mirror it for a
+     region where the Official Release is unreachable - open an issue
+     at https://github.com/mzklab/Darken/issues and ask.
+
+7.2  The answer is often yes. The purpose of these terms is to know who
+     is shipping what, not to say no.
+
+7.3  Any permission granted under this section is valid only if given
+     in writing by the Author, and only for the scope it names.
+     Silence is not permission.
+
+================================================================================
+8. TERM AND TERMINATION
+================================================================================
+
+8.1  This Licence applies for as long as you comply with it.
+
+8.2  It terminates automatically, without notice, if you breach any
+     term of section 4.
+
+8.3  On termination you must stop using the Software and delete all
+     copies in your possession. Sections 5, 9, 10, 11 and 12 survive
+     termination.
+
+8.4  Termination of your licence does not affect anyone else's.
+
+================================================================================
+9. NO WARRANTY
+================================================================================
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND
+NON-INFRINGEMENT. THE AUTHOR DOES NOT WARRANT THAT THE SOFTWARE WILL BE
+FREE OF DEFECTS, THAT IT WILL WORK WITH ANY PARTICULAR CLIENT VERSION
+OR WITH ANY OTHER ADDON, OR THAT ITS OPERATION WILL BE UNINTERRUPTED.
+THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS
+WITH YOU.
+
+================================================================================
+10. LIMITATION OF LIABILITY
+================================================================================
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF GAME
+PROGRESS, ACCOUNT ACTION TAKEN BY THE GAME'S PUBLISHER, OR ANY
+INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL DAMAGES.
+
+Some jurisdictions do not allow the exclusion of certain warranties or
+the limitation of certain liabilities. In those jurisdictions the
+exclusions and limitations above apply to the greatest extent
+permitted by law.
+
+================================================================================
+11. GENERAL
+================================================================================
+
+11.1 SEVERABILITY. If any provision of this Licence is held
+     unenforceable, that provision shall be enforced to the greatest
+     extent permissible and the remaining provisions shall remain in
+     full force.
+
+11.2 NO WAIVER. A failure by the Author to enforce any provision is not
+     a waiver of that provision or of any other.
+
+11.3 ENTIRE AGREEMENT. This Licence is the entire agreement between you
+     and the Author concerning the Software, and supersedes any earlier
+     statement about it, including any earlier licence file shipped
+     with a pre-release copy.
+
+11.4 VERSIONS. The Author may publish new versions of this Licence.
+     Each copy of the Software is governed by the version distributed
+     with it.
+
+================================================================================
+12. NOT AFFILIATED WITH BLIZZARD
+================================================================================
+
+12.1 World of Warcraft and Blizzard Entertainment are trademarks or
+     registered trademarks of Blizzard Entertainment, Inc. in the
+     United States and other countries.
+
+12.2 The Software is an unofficial addon. It is not affiliated with,
+     endorsed by, sponsored by or approved by Blizzard Entertainment,
+     Inc., and the Author is not associated with Blizzard
+     Entertainment, Inc.
+
+12.3 The Software is intended to be used in accordance with Blizzard
+     Entertainment's Terms of Use and its User Interface Add-On
+     Development Policy. Nothing in this Licence grants you any right
+     in the game client or in any Blizzard Entertainment property.
+
+================================================================================
+13. CONTACT
+================================================================================
+
+Author: mzk
+Project: https://github.com/mzklab/Darken
+Issues:  https://github.com/mzklab/Darken/issues

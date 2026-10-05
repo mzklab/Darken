@@ -1,0 +1,32 @@
+# Windows and editor housekeeping files
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+
+# Temporary build files
+*.bak
+*.tmp
+
+# The libraries are fetched by a script; we do not keep them in the repository.
+# The exception is Libs.xml itself: it is ours, and without it the addon does
+# not load.
+Libs/*
+!Libs/Libs.xml
+
+# The archive of the source textures is kept as a reserve, but git is no place
+# for it
+MediaBarsX.zip
+
+# The task scheduler's lock file is session rubbish. We ignore that file
+# rather than the whole directory: a project setting worth keeping in the
+# repository may end up in there.
+.claude/scheduled_tasks.lock
+
+# Built archives: tools/package.ps1 makes them afresh out of the sources.
+dist/
+docs/
+
+# The test run output: tests/run.lua writes it afresh on every run.
+run.log

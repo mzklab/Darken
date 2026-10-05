@@ -1,0 +1,111 @@
+## Interface: 20504, 20506
+## Title: Darken
+## Notes: Makes the whole interface dark - every window, at a strength you choose - and lets you swap the textures and colors of health and power bars.
+## Notes-ruRU: Делает весь интерфейс тёмным - каждое окно, на выбранную вами силу - и позволяет менять текстуры и цвета полосок здоровья и ресурса.
+## Author: mzk
+## Version: 1.0.0
+## SavedVariables: DarkenDB
+## IconTexture: Interface\AddOns\Darken\Media\branding\darken-icon-64
+
+Libs\Libs.xml
+
+Core\Feature.lua
+Core\Compat.lua
+Core\Tally.lua
+Core\Casefold.lua
+Core\Format.lua
+Core\Skin.lua
+Skin\Draw.lua
+Widgets\Base.lua
+Widgets\Controls.lua
+Widgets\Dropdown.lua
+Widgets\EditBox.lua
+Widgets\Scroll.lua
+Widgets\Demo.lua
+Options\Schema.lua
+Options\Window.lua
+Options\List.lua
+Options\Bliz.lua
+Core\Registry.lua
+Core\Defaults.lua
+Core\Presets.lua
+Options\Pages.lua
+Options\Profiles.lua
+Core\Scan.lua
+Core\Command.lua
+Core\Locale.lua
+Locale\ruRU.lua
+Locale\ukUA.lua
+Core\Frames.lua
+Core\Events.lua
+Core\Combat.lua
+Core\Api.lua
+Core\Media.lua
+Core\AuraFilter.lua
+Core\Report.lua
+Modules\Darkness.lua
+Modules\Fonts.lua
+Modules\UnitFrames.lua
+Modules\NamePlates.lua
+Modules\Texts.lua
+Modules\Bags.lua
+Modules\Icons.lua
+Modules\Launcher.lua
+# The parts of the addon. Each of them used to be a separate addon with a
+# row of its own in the list on the character selection screen; there were
+# eleven rows, and the player saw eleven addons where there is one. They
+# are ordinary files now, and what shows them is the rows of the settings
+# menu.
+
+Features\Auras\Locale\ruRU.lua
+Features\Auras\Locale\ukUA.lua
+Features\Auras\Layout.lua
+Features\Auras\Filter.lua
+Features\Auras\Sort.lua
+Features\Auras\Grid.lua
+Features\Auras\Mouse.lua
+Features\Auras\Rules.lua
+Features\Auras\Icon.lua
+Features\Auras\Units.lua
+Features\Auras\Auras.lua
+Features\Away\Locale\ruRU.lua
+Features\Away\Locale\ukUA.lua
+Features\Away\Missed.lua
+Features\Away\Rules.lua
+Features\Away\Screen.lua
+Features\Away\Away.lua
+Features\Durability\Rules.lua
+Features\Durability\Block.lua
+Features\Durability\Locale\ruRU.lua
+Features\Durability\Locale\ukUA.lua
+Features\Durability\Durability.lua
+Features\InfoPanel\Locale\ruRU.lua
+Features\InfoPanel\Locale\ukUA.lua
+Features\InfoPanel\Format.lua
+Features\InfoPanel\Broker.lua
+Features\InfoPanel\Layout.lua
+Features\InfoPanel\Cells.lua
+Features\InfoPanel\Sources.lua
+Features\InfoPanel\Panel.lua
+Features\InfoPanel\InfoPanel.lua
+Features\ItemLevel\Locale\ruRU.lua
+Features\ItemLevel\Locale\ukUA.lua
+Features\ItemLevel\Level.lua
+Features\ItemLevel\Pending.lua
+Features\ItemLevel\Display.lua
+Features\ItemLevel\ItemLevel.lua
+Features\NamePlates\Locale\ruRU.lua
+Features\NamePlates\Locale\ukUA.lua
+Features\NamePlates\Colors.lua
+Features\NamePlates\Geometry.lua
+Features\NamePlates\Names.lua
+Features\NamePlates\Filter.lua
+Features\NamePlates\Cast.lua
+Features\NamePlates\Rules.lua
+Features\NamePlates\Arrange.lua
+Features\NamePlates\Engine.lua
+Features\NamePlates\Plate.lua
+Features\NamePlates\NamePlates.lua
+
+Config\Visibility.lua
+Core\Init.lua
