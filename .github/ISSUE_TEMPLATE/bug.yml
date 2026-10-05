@@ -1,0 +1,91 @@
+name: Something is broken
+description: Darken does not behave the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. If one window stayed bright, the fourth field below
+        answers it faster than anything else: open that window, type
+        `/dark probe`, and paste what lands in chat.
+
+        The saved file asked for further down holds your profile and the
+        names of your characters (the game keys profiles by character and
+        realm). If you would rather not send those, delete the
+        `profileKeys` block before attaching it - nothing else in the
+        report needs it.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you were doing and what you saw instead.
+      placeholder: |
+        Opened the auction house - the frame stayed bright while
+        everything else went dark.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to repeat it
+      description: Step by step. If it does not happen every time, say so.
+      placeholder: |
+        1. /dark
+        2. Interface Darkness -> Strength 80
+        3. Open the auction house
+    validations:
+      required: false
+
+  - type: textarea
+    id: probe
+    attributes:
+      label: The verdict for that window
+      description: >
+        Open the window that is wrong and type `/dark probe` - or point
+        the cursor at the one piece that is wrong and type
+        `/dark probe mouse`. Paste the lines it writes in chat.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: report
+    attributes:
+      label: The in-game report
+      description: >
+        In game: `/dark report`, then log out - that is what writes the
+        file. Attach
+        `WTF/Account/<account>/SavedVariables/Darken.lua`, or paste the
+        lines `/dark report` put in chat.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: client
+    attributes:
+      label: Which client
+      description: Classic Era, Hardcore, Classic 1.60, TBC Classic, MoP Classic.
+      placeholder: Classic Era
+    validations:
+      required: false
+
+  - type: textarea
+    id: shot
+    attributes:
+      label: Screenshot
+      description: Drag an image in here. One screenshot is worth ten paragraphs.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before you send it
+      options:
+        - label: I checked there is no such issue already
+          required: false
+        - label: I tried it with my other addons switched off
+          required: false

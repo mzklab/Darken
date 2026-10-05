@@ -14,6 +14,7 @@ library pack to install: everything it needs ships with it.
 | Install | drop the `Darken` folder into `Interface/AddOns` |
 | Open the settings | type `/dark` in game, or click the minimap button |
 | Found a bug | `/dark report` in game, then [open an issue](../../issues/new/choose) |
+| Want to help | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Terms of use | [LICENSE](LICENSE) |
 
 ## Installing
@@ -184,7 +185,9 @@ screenshot does:
 
 Those three only read: nothing on screen changes. A handful of lines
 land in chat and the full detail goes into the saved variables, so
-logging out and sending `DarkenDB.lua` is the whole of a bug report.
+logging out and sending the saved file is the whole of a bug report.
+It is `WTF/Account/<account>/SavedVariables/Darken.lua` - named after
+the addon, not after the `DarkenDB` variable inside it.
 
 Two more exist to check how the settings window is drawn, which can
 only be judged by eye:
@@ -196,7 +199,8 @@ only be judged by eye:
 
 ## Reporting a bug
 
-Run `/dark report`, log out, and attach `DarkenDB.lua` to an
+Run `/dark report`, log out, and attach
+`WTF/Account/<account>/SavedVariables/Darken.lua` to an
 [issue](../../issues/new/choose). If one particular window stayed
 bright, run `/dark probe` with that window open first - it names a
 verdict per texture, and that is usually the answer by itself.

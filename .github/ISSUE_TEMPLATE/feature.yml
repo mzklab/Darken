@@ -1,0 +1,40 @@
+name: Something is missing
+description: A feature request
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        What helps most is not "add X" but what you were trying to do and
+        how it ended. Several things in Darken exist because somebody
+        described the problem rather than the fix - the per-area strengths
+        and the grey on a tapped mob both started that way.
+
+  - type: textarea
+    id: want
+    attributes:
+      label: What you were trying to do
+      description: >
+        The problem rather than the solution. We will work the solution
+        out together.
+      placeholder: |
+        I want the chat left alone while everything else goes dark - the
+        timestamps turn unreadable at eighty.
+    validations:
+      required: true
+
+  - type: textarea
+    id: now
+    attributes:
+      label: How you manage now
+      description: If you do not, say so.
+    validations:
+      required: false
+
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: Where you have seen it
+      description: Another addon that does this. Optional.
+    validations:
+      required: false
