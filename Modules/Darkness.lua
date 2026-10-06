@@ -119,6 +119,13 @@ counters.hidden = counters.hidden or 0
 counters.hooked_darkness = counters.hooked_darkness or 0
 counters.fired_darkness  = counters.fired_darkness  or 0
 
+-- How often the game repainted a picture after us and the watcher heard it.
+--
+-- It had no count, and the absence cost an evening: "Hooks That Ran" was read
+-- as this watcher's firings when it counts openings of windows, and on that
+-- reading the watcher was cleared of a defect it may well own.
+counters.repainted = counters.repainted or 0
+
 -- The names of the game's functions whose subscription has already been
 -- counted.
 local counted = {}
@@ -3466,6 +3473,11 @@ end
 -- rather than ours. So everything we do in answer to somebody else's repainting
 -- goes through a protected call.
 local function watchHandler(texture)
+    -- Counted here rather than inside gameRecolored: what is asked is whether
+    -- the watcher HEARS at all, and gameRecolored turns away early on guards
+    -- of its own. A count taken past them would answer a different question
+    -- than the one it exists for.
+    counters.repainted = counters.repainted + 1
     pcall(gameRecolored, texture)
 end
 

@@ -1106,6 +1106,7 @@ ns.RegisterLocale("ukUA", {
     -- підписи підсистем вище.
     ["Objects Dimmed"]             = "Об'єктів затемнено",
     ["Objects Left As Content"]    = "Залишено як вміст",
+    ["Repaints Heard"]             = "Перефарбувань почуто",
     ["Bars Retextured"]            = "Смужок перетекстуровано",
     ["Nameplates Attached"]        = "Неймплейтів узято",
     ["Nameplates Taken By The Engine"] = "Неймплейтів узято рушієм",

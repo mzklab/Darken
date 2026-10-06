@@ -147,6 +147,19 @@ local COUNTERS = {
             .. "with the setting on means not one button name of this "
             .. "client was found, which is a broken guess and not a choice",
     },
+    -- The watcher of other people's repaintings had no count at all, and its
+    -- absence cost an evening: "Hooks That Ran (Dimming)" was read as its
+    -- firings when it counts openings of windows, and on that reading the
+    -- watcher was declared innocent. A subsystem nobody counts cannot be
+    -- cleared or convicted.
+    {
+        key = "repainted", label = "Repaints Heard", kind = Tally.NORMAL,
+        subsystem = "Interface Darkness",
+        means = "times the game repainted a picture after us and the watcher "
+            .. "heard it - a zero while the screen is plainly being redrawn "
+            .. "means the watcher is deaf on this client, and everything the "
+            .. "game repaints keeps its own colours no matter what we wrote",
+    },
     {
         key = "retextured", label = "Bars Retextured", kind = Tally.NORMAL,
         means = "status bars given one of the addon's own textures",

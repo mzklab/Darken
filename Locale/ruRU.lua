@@ -1095,6 +1095,7 @@ ns.RegisterLocale("ruRU", {
     -- подсистем выше.
     ["Objects Dimmed"]             = "Объектов затемнено",
     ["Objects Left As Content"]    = "Оставлено как содержимое",
+    ["Repaints Heard"]             = "Перекрасок услышано",
     ["Bars Retextured"]            = "Полосок перетекстурено",
     ["Nameplates Attached"]        = "Неймплейтов взято",
     ["Nameplates Taken By The Engine"] = "Неймплейтов взято движком",
