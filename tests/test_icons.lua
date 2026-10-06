@@ -221,3 +221,44 @@ do
     _G.Minimap = savedMinimap
     ns.Compat = savedCompat
 end
+
+T.suite("an icon is found on the clients that keep it in a global")
+
+-- Everything on the Icons page rests on finding the icon of a button: the
+-- outline is drawn around it and the trimming is done to it. Today's templates
+-- hand it over in a field (parentKey="icon"); the older XML writes
+-- "$parentIcon", which makes the global and leaves the button with no field.
+-- On such a client both settings did nothing at all, whatever was ticked, and
+-- the pass still reported buttons touched because that count is shared with
+-- work that did succeed.
+do
+    local Icons = ns.Icons
+
+    local function texture()
+        return { SetTexCoord = function() end, GetTexCoord = function() end }
+    end
+
+    -- A button of today: the icon is right there in a field.
+    local mine = texture()
+    T.eq(Icons.IconOf({ icon = mine }), mine, "a field is read first")
+
+    -- A button of the older line: no field, a global named after it.
+    local theirs = texture()
+    _G.DarkenTestButton7Icon = theirs
+    local old = {
+        GetName = function() return "DarkenTestButton7" end,
+    }
+    T.eq(Icons.IconOf(old), theirs, "and a global named after the button after that")
+
+    -- Neither: nothing, rather than something belonging to somebody else.
+    T.eq(Icons.IconOf({ GetName = function() return "DarkenTestNoSuch" end }), nil,
+        "no field and no global means no icon")
+    T.eq(Icons.IconOf({}), nil, "a button that cannot even say its name is skipped")
+    T.eq(Icons.IconOf(nil), nil, "and nothing at all is not an error")
+
+    -- A name the client refuses to give is not an error either.
+    T.eq(Icons.IconOf({ GetName = function() error("secret") end }), nil,
+        "a name that cannot be read is skipped")
+
+    _G.DarkenTestButton7Icon = nil
+end

@@ -51,6 +51,14 @@ ns.Counters = counters
 -- work happened.
 counters.framed = counters.framed or 0
 
+-- Trimmed edges and rounded minimap buttons, each counted on its own.
+--
+-- All three used to add to "framed", and the single number was then read as
+-- proof of whichever of the three was being argued about. It proved none of
+-- them.
+counters.cropped = counters.cropped or 0
+counters.rounded = counters.rounded or 0
+
 -- An icon's border: button -> the set of sides (see ns.Skin.Outline).
 --
 -- Side memory rather than a field on the button: a button is a game object,
@@ -123,6 +131,9 @@ local CROP = 0.08
 -- the dimming subsystem (Modules/Darkness.lua, CONTENT_FIELDS).
 local ICON_FIELDS = { "icon", "Icon", "IconTexture", "iconTexture" }
 
+-- What the older templates append to a button's name to name its icon.
+local ICON_SUFFIX = "Icon"
+
 -- The compatibility layer's groups whose buttons are framed.
 --
 -- A list of groups rather than a list of names: the buttons' names live in the
@@ -183,6 +194,37 @@ function Icons.IconOf(button)
         if type(icon) == "table" and type(icon.SetTexCoord) == "function" then
             return icon
         end
+    end
+
+    -- The older clients keep the icon nowhere but in a global.
+    --
+    -- A field on the button is how today's templates hand it over
+    -- (parentKey="icon"). The older XML writes the texture as "$parentIcon",
+    -- which makes the global ActionButton1Icon and leaves the button itself
+    -- with no field at all - and the loop above then answers nothing.
+    --
+    -- Everything on this page rested on that answer: the outline is drawn
+    -- around the icon and the trimming is done to the icon, so on such a
+    -- client BOTH settings did nothing whatever was ticked. The author said
+    -- so three times - "none of the settings work" - while the pass reported
+    -- buttons touched, because the count is shared with work that did
+    -- succeed.
+    --
+    -- The suffix is composed rather than written out: a name of the game's
+    -- belongs in the compatibility layer, and the button's own name comes
+    -- from there already. What is added here is the one word the template
+    -- appends.
+    if type(button.GetName) ~= "function" then return nil end
+
+    local ok, said = pcall(button.GetName, button)
+    if not ok then return nil end
+
+    said = ns.Skin.Textual(said)
+    if said == nil or said == "" then return nil end
+
+    local icon = _G[said .. ICON_SUFFIX]
+    if type(icon) == "table" and type(icon.SetTexCoord) == "function" then
+        return icon
     end
 
     return nil
@@ -454,7 +496,7 @@ function Icons.RoundMinimap(round)
         if dark.AddonWindow(ns.Skin.Textual(said), names) then
             if Icons.Round(button, round) then
                 touched = touched + 1
-                counters.framed = counters.framed + 1
+                counters.rounded = counters.rounded + 1
             end
         end
     end
@@ -494,10 +536,9 @@ function Icons.Paint(border, crop, shadow, round)
                 local button = objects[j]
                 local painted = frame(button, border)
                 local cropped = Icons.Crop(Icons.IconOf(button), crop)
-                if painted or cropped then
-                    touched = touched + 1
-                    counters.framed = counters.framed + 1
-                end
+                if painted then counters.framed = counters.framed + 1 end
+                if cropped then counters.cropped = counters.cropped + 1 end
+                if painted or cropped then touched = touched + 1 end
             end
         end
     end

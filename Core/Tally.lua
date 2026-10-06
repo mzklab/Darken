@@ -140,6 +140,23 @@ local COUNTERS = {
         means = "regions the dimming pass looked at and left alone because "
             .. "they are content, not chrome",
     },
+    -- Three operations shared one count, and the sharing cost three wrong
+    -- diagnoses in a row: a number made of minimap buttons was read as proof
+    -- that action buttons had been outlined. A count answers a question only
+    -- if one thing increments it.
+    {
+        key = "cropped", label = "Icon Edges Trimmed", kind = Tally.NORMAL,
+        subsystem = "Icon Borders",
+        means = "icons whose own dull edge was trimmed away - zero with the "
+            .. "setting on means the icon of a button was not found on this "
+            .. "client, and then the outline is missing for the same reason",
+    },
+    {
+        key = "rounded", label = "Minimap Buttons Rounded", kind = Tally.NORMAL,
+        subsystem = "Icon Borders",
+        means = "buttons other addons put around the minimap that were cut "
+            .. "into circles",
+    },
     {
         key = "framed", label = "Icons Framed", kind = Tally.NORMAL,
         subsystem = "Icon Borders",

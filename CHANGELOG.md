@@ -9,6 +9,19 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.0.3
+
+**The icon settings can work at all now.** Everything on that page rests
+on finding a button's icon, and it was looked for only in a field on the
+button. The older templates keep it nowhere but in a global named after
+the button, and on such a client the outline and the trimming both did
+nothing whatever was ticked. The icon is now looked for in both places.
+
+**The report tells the three icon jobs apart.** Outlining, trimming and
+rounding the minimap buttons all added to one number, so that number
+proved nothing about any of them - and was read three times as proof of
+the wrong one. Each has its own count now.
+
 ## 1.0.2
 
 **The minimap can be square.** The setting promising it had been in the
