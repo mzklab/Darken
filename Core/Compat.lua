@@ -575,6 +575,21 @@ local CHROME = {
         "GameTimeFrame",
     },
 
+    -- The ring around the minimap, on its own.
+    --
+    -- It is part of the group above and is darkened with it; it is named
+    -- separately because one setting needs to HIDE it rather than paint it.
+    -- A square minimap keeps the ring drawn across its corners, which reads
+    -- as a broken addon rather than as a square map.
+    --
+    -- Here rather than in the module for the reason this whole file exists:
+    -- a name of the game's lives in one place, and a second copy of it in a
+    -- module would go stale without anyone noticing.
+    ["minimap-ring"] = {
+        "MinimapBorder",
+        "MinimapBorderTop",
+    },
+
     -- The world map's canvas: the terrain and the icons on it.
     --
     -- The group is needed not in order to reach into it but for exactly the

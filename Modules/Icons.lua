@@ -156,6 +156,10 @@ Icons.defaults = {
     crop   = false,
     shadow = false,
     minimap = false,
+
+    -- The shape of the minimap. False is the game's own, which on every
+    -- client served here is round: a fresh install changes nothing.
+    square = false,
 }
 
 --- The subsystem's settings from the profile.
@@ -359,6 +363,63 @@ function Icons.Round(button, round)
     return true
 end
 
+--- The masks a minimap is cut with.
+--
+-- A square needs a mask opaque everywhere, and the game ships one: a solid
+-- white 8x8. A circle needs one that fades at the rim, and the portrait mask
+-- is it - round, present in every client line served here, and the very file
+-- the game cuts the minimap with itself.
+--
+-- These are paths to the game's own art rather than frame names, so they are
+-- not the compatibility layer's business: that layer answers "what is this
+-- frame called here", and a texture path is the same everywhere.
+-- everywhere.
+local MASKS = {
+    square = "Interface\\BUTTONS\\WHITE8X8",
+    round  = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask",
+}
+
+--- Cut the minimap square or round.
+--
+-- Why "the game's own" is reconstructed rather than remembered. Every other
+-- setting here remembers what it found and writes exactly that back. A mask
+-- cannot be read: the API has SetMaskTexture and no getter, so there is
+-- nothing to remember at the first touch. What the native choice does instead
+-- is set the shape the game itself cuts on these clients - round, ring shown.
+-- The same picture by a different road, written down so that nobody later
+-- reads it as carelessness.
+--
+-- The ring is hidden for a square map because it is drawn as a circle: left
+-- up, it lies across the corners and reads as a broken addon rather than as a
+-- square map. Its names come from the compatibility layer.
+--
+-- The zoom buttons, the mail and tracking icons and the zone text are not
+-- touched. The game anchors them to the map and they follow it; moving them
+-- would be a second opinion about where they belong.
+--
+-- @param square boolean whether to cut it square
+-- @return boolean whether the shape was set
+function Icons.Shape(square)
+    local minimap = _G.Minimap
+    if type(minimap) ~= "table" then return false end
+    if type(minimap.SetMaskTexture) ~= "function" then return false end
+
+    local mask = square and MASKS.square or MASKS.round
+    if not pcall(minimap.SetMaskTexture, minimap, mask) then return false end
+
+    local ok, _, objects = pcall(ns.Compat.Resolve, "minimap-ring")
+    if ok and type(objects) == "table" then
+        for i = 1, #objects do
+            local ring = objects[i]
+            if type(ring) == "table" and type(ring.SetShown) == "function" then
+                pcall(ring.SetShown, ring, not square)
+            end
+        end
+    end
+
+    return true
+end
+
 --- Round other addons' minimap buttons.
 --
 -- Whose buttons these are is asked by the same rule the dimming tells another
@@ -458,15 +519,18 @@ function Icons:ApplySettings()
     local crop   = settings.crop == true
     local shadow = settings.shadow == true
     local round  = settings.minimap == true
+    local square = settings.square == true
 
     if ns.Combat and ns.Combat.InCombat and ns.Combat.InCombat() then
         ns.Combat.Enqueue(ns.Combat.QueueFor(Icons.name), "icons", function()
             Icons.Paint(border, crop, shadow, round)
+            Icons.Shape(square)
         end)
         return
     end
 
     Icons.Paint(border, crop, shadow, round)
+    Icons.Shape(square)
 end
 
 --- Enabling the subsystem.
@@ -635,6 +699,16 @@ if type(ns.Schema) == "table" then
     -- player ticks it, the minimap stays round, and what they conclude is that
     -- the addon is broken. The shape of the minimap is a separate thing and
     -- will get a setting of its own, with its own key.
+    Schema.Add(PAGE, {
+        kind = "toggle",
+        label = "Square Minimap",
+        path = { "square" },
+        apply = "icons",
+        hint = "Cuts the minimap square instead of round. The ring around it "
+            .. "is drawn as a circle and would lie across the corners, so it "
+            .. "is taken away with the same tick. Off by default.",
+    })
+
     Schema.Add(PAGE, {
         kind = "toggle",
         label = "Round the Minimap Buttons",

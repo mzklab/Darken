@@ -592,6 +592,13 @@ ns.RegisterLocale("ruRU", {
         .. "где игра его не рисует, — так же, как линия выше даёт край "
         .. "кнопке. По умолчанию выключено.",
     ["Round the Minimap Buttons"] = "Скруглить кнопки на миникарте",
+    ["Square Minimap"] = "Квадратная миникарта",
+    ["Cuts the minimap square instead of round. The ring around it "
+        .. "is drawn as a circle and would lie across the corners, so it "
+        .. "is taken away with the same tick. Off by default."] =
+        "Обрезает миникарту квадратом вместо круга. Кольцо вокруг неё "
+            .. "нарисовано кругом и легло бы поперёк углов, поэтому "
+            .. "снимается той же галочкой. По умолчанию выключено.",
     ["Cuts the square buttons other addons put around the minimap into "
         .. "circles and gives each the same line the icons above get. Only "
         .. "other addons' buttons: the game's own are round already, and "

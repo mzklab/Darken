@@ -179,3 +179,45 @@ do
     -- And so is a button with no icon.
     T.eq(Icons.Round({}, true), false, "with no icon either")
 end
+
+T.suite("the minimap is cut to the shape that was asked for")
+
+-- The window has carried a "Square Minimap" tick for a long time and nothing
+-- behind it: the key it wrote drove the rounding of other addons' buttons, and
+-- the shape of the map was touched by nothing at all. The author asked for it
+-- four times.
+do
+    local Icons = ns.Icons
+
+    local savedMinimap = _G.Minimap
+    local savedCompat = ns.Compat
+
+    local ring = { shown = true }
+    function ring:SetShown(on) self.shown = on end
+
+    local map = { mask = nil }
+    function map:SetMaskTexture(path) self.mask = path end
+
+    _G.Minimap = map
+    ns.Compat = { Resolve = function() return { "MinimapBorder" }, { ring } end }
+
+    T.eq(Icons.Shape(true), true, "a square was asked for and set")
+    T.ok(map.mask:find("WHITE8X8", 1, true) ~= nil,
+        "the mask is opaque everywhere: " .. tostring(map.mask))
+    T.eq(ring.shown, false, "and the round ring is taken away with it")
+
+    T.eq(Icons.Shape(false), true, "the game's own shape was asked for")
+    T.ok(map.mask:find("TempPortraitAlphaMask", 1, true) ~= nil,
+        "the mask fades at the rim again: " .. tostring(map.mask))
+    T.eq(ring.shown, true, "and the ring comes back")
+
+    -- A client that cannot cut a mask says so rather than falling over: the
+    -- rest of the icon pass must not be lost with it.
+    _G.Minimap = { }
+    T.eq(Icons.Shape(true), false, "no SetMaskTexture, no shape, no error")
+    _G.Minimap = nil
+    T.eq(Icons.Shape(true), false, "and no minimap at all is not an error either")
+
+    _G.Minimap = savedMinimap
+    ns.Compat = savedCompat
+end

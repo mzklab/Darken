@@ -597,6 +597,13 @@ ns.RegisterLocale("ukUA", {
         .. "гра його не малює, — так само, як лінія вище дає край кнопці. "
         .. "Типово вимкнено.",
     ["Round the Minimap Buttons"] = "Заокруглити кнопки на мінікарті",
+    ["Square Minimap"] = "Квадратна мінімапа",
+    ["Cuts the minimap square instead of round. The ring around it "
+        .. "is drawn as a circle and would lie across the corners, so it "
+        .. "is taken away with the same tick. Off by default."] =
+        "Обрізає мінімапу квадратом замість кола. Кільце навколо неї "
+            .. "намальоване колом і лягло б упоперек кутів, тому "
+            .. "знімається тією ж позначкою. Типово вимкнено.",
     ["Cuts the square buttons other addons put around the minimap into "
         .. "circles and gives each the same line the icons above get. Only "
         .. "other addons' buttons: the game's own are round already, and "

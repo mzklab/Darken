@@ -116,6 +116,11 @@ local CONSEQUENCE = {
     ["nameplate-recolor"] = { label = "Nameplates", kind = Report.HOOKS },
 
     minimap    = { label = "Minimap",            kind = Report.SERIES },
+    -- The ring alone, and alternatives because the art is named
+    -- differently from one client line to the next. Missing it costs
+    -- one setting (a square minimap keeps its round ring) and nothing
+    -- else: the map is still cut to shape.
+    ["minimap-ring"] = { label = "Minimap", kind = Report.ALTERNATIVES },
     -- The world map's canvas. It is looked up in order NOT to touch it, so
     -- an empty group is no trouble here: in a build where no name was found
     -- the map simply stays in the general pass.
