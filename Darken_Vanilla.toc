@@ -3,7 +3,7 @@
 ## Notes: Makes the whole interface dark - every window, at a strength you choose - and lets you swap the textures and colors of health and power bars.
 ## Notes-ruRU: Делает весь интерфейс тёмным - каждое окно, на выбранную вами силу - и позволяет менять текстуры и цвета полосок здоровья и ресурса.
 ## Author: mzk
-## Version: 1.0.0
+## Version: 1.0.1
 ## SavedVariables: DarkenDB
 ## IconTexture: Interface\AddOns\Darken\Media\branding\darken-icon-64
 

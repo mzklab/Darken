@@ -158,8 +158,8 @@ have is not shown at all.
 
 ## Current state
 
-Version 1.0.0, the first release. What changed from one version to the
-next is in [CHANGELOG.md](CHANGELOG.md).
+Version 1.0.1. What changed from one version to the next is in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Commands
 
