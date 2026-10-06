@@ -246,7 +246,27 @@ local function frame(button, border)
 
     if type(button.CreateTexture) ~= "function" then return false end
 
-    local ok = pcall(ns.Skin.Outline, button, FRAME, button, BORDER_COLOR)
+    -- Around the ICON, not around the button.
+    --
+    -- It used to be the button, and the line was invisible - not missing,
+    -- invisible. The colour is "line", near black, and the button's outer edge
+    -- is surrounded by the bar's own dark art; a near-black hairline on that,
+    -- at a UI scale below one, is a thing nobody can see. The author said
+    -- three times that the setting does nothing, and he was right about what
+    -- he saw.
+    --
+    -- Against the icon the same line reads as what it was asked for: the
+    -- picture is bright, the line is dark, and the icon stops bleeding into
+    -- the button around it. The minimap buttons in this same file have always
+    -- been outlined this way (Icons.Round) - the action bars were the odd one
+    -- out.
+    --
+    -- The button is still what holds the textures: an icon is not a frame and
+    -- cannot own one. Only the anchor moves.
+    local icon = Icons.IconOf(button)
+    if icon == nil then return false end
+
+    local ok = pcall(ns.Skin.Outline, button, FRAME, icon, BORDER_COLOR)
     if not ok then return false end
 
     display(FRAME[button], true)
