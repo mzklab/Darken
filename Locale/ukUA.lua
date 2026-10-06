@@ -1301,8 +1301,6 @@ ns.RegisterLocale("ukUA", {
     ["Copy Settings From"] = "Скопіювати налаштування з",
     ["Crop Icon Borders"] = "Обрізати окрайку піктограм",
     ["Current Profile"] = "Поточний профіль",
-    ["Cut the minimap square instead of round."] =
-        "Зробити мінімапу квадратною замість круглої.",
     ["Delete Profile"] = "Видалити профіль",
     ["Do not touch the game's own font objects at all. Everything the addon draws itself still follows the settings here."] =
         "Не чіпати шрифтові об'єкти самої гри взагалі. Усе, що аддон малює " ..
@@ -1386,7 +1384,6 @@ ns.RegisterLocale("ukUA", {
         "Піктограми заклять і предметів по всьому інтерфейсу. Кожне з цих " ..
         "налаштувань вимкнене на свіжому встановленні: за піктограмою " ..
         "гравець упізнає закляття, і змінювати її — вибір, а не умовчання.",
-    ["Square Minimap"] = "Квадратна мінімапа",
     ["Start a profile with that name, at the addon's defaults, and switch this character to it."] =
         "Завести профіль із таким ім'ям, на умовчаннях аддона, і перевести " ..
         "в нього цього персонажа.",

@@ -605,12 +605,26 @@ if type(ns.Schema) == "table" then
             .. "the darkened interface behind them.",
     })
 
+    -- The label used to read "Square Minimap", and the hint under it promised
+    -- to "cut the minimap square instead of round". Neither was true: this key
+    -- has only ever driven Icons.RoundMinimap, which rounds the buttons OTHER
+    -- addons put around the minimap. The old options table beside this one has
+    -- carried the honest name all along, and the window got the wrong one.
+    --
+    -- A setting that names the wrong thing is worse than a missing one: the
+    -- player ticks it, the minimap stays round, and what they conclude is that
+    -- the addon is broken. The shape of the minimap is a separate thing and
+    -- will get a setting of its own, with its own key.
     Schema.Add(PAGE, {
         kind = "toggle",
-        label = "Square Minimap",
+        label = "Round the Minimap Buttons",
         path = { "minimap" },
         apply = "icons",
-        hint = "Cut the minimap square instead of round.",
+        hint = "Cuts the square buttons other addons put around the minimap "
+            .. "into circles and gives each the same line the icons above "
+            .. "get. Only other addons' buttons: the game's own are round "
+            .. "already, and the few that are not are drawn that way on "
+            .. "purpose. Off by default.",
     })
 end
 

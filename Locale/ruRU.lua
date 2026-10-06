@@ -1290,8 +1290,6 @@ ns.RegisterLocale("ruRU", {
     ["Copy Settings From"] = "Скопировать настройки из",
     ["Crop Icon Borders"] = "Обрезать кромку значков",
     ["Current Profile"] = "Текущий профиль",
-    ["Cut the minimap square instead of round."] =
-        "Сделать миникарту квадратной вместо круглой.",
     ["Delete Profile"] = "Удалить профиль",
     ["Do not touch the game's own font objects at all. Everything the addon draws itself still follows the settings here."] =
         "Не трогать шрифтовые объекты самой игры вовсе. Всё, что аддон " ..
@@ -1374,7 +1372,6 @@ ns.RegisterLocale("ruRU", {
         "Значки заклинаний и предметов по всему интерфейсу. Каждая из этих " ..
         "настроек выключена на свежей установке: по значку игрок узнаёт " ..
         "заклинание, и менять его — выбор, а не умолчание.",
-    ["Square Minimap"] = "Квадратная миникарта",
     ["Start a profile with that name, at the addon's defaults, and switch this character to it."] =
         "Завести профиль с таким именем, на умолчаниях аддона, и перевести " ..
         "в него этого персонажа.",
