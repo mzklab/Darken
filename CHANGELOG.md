@@ -9,6 +9,29 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.0.2
+
+**The minimap can be square.** The setting promising it had been in the
+window for a long time with nothing behind it - it wrote the key that
+rounds the buttons other addons put around the minimap, and the shape of
+the map was touched by nothing at all. It is a setting of its own now,
+on the Icons page, and the round ring is taken away with the same tick
+so it does not lie across the corners.
+
+**The outline around icons became visible.** It was drawn around the
+button instead of around the icon: a near-black hairline against the
+bar's own dark art, at a UI scale below one. It was there and nobody
+could see it. Against the icon the same line is what it was meant to be.
+
+**The settings window stopped lying about the minimap.** The tick read
+"Square Minimap" and did something else entirely; it now says what it
+does - "Round the Minimap Buttons".
+
+**The report counts one more thing.** How often the game repainted
+something after us and the watcher meant to notice it did. A zero there,
+while the screen is plainly being redrawn, names the cause of several
+things that stay bright - which until now could only be guessed at.
+
 ## 1.0.1
 
 Four things the player could see, all of them reported from a live game.
