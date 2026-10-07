@@ -152,6 +152,14 @@ local COUNTERS = {
             .. "client, and then the outline is missing for the same reason",
     },
     {
+        key = "tinted", label = "Icons Dimmed", kind = Tally.NORMAL,
+        subsystem = "Icon Borders",
+        means = "spell icons given the dimming's own shade - zero while the "
+            .. "setting is on means the pass never reached them, and zero "
+            .. "while it is off means nothing at all, which is why the "
+            .. "setting is worth checking before the code is",
+    },
+    {
         key = "rounded", label = "Minimap Buttons Rounded", kind = Tally.NORMAL,
         subsystem = "Icon Borders",
         means = "buttons other addons put around the minimap that were cut "

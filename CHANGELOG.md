@@ -9,6 +9,14 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.3.2
+
+**The report counts dimmed icons.** Five attempts at "the icons are not
+dimmed" went by without anybody establishing whether the setting was on,
+because nothing counted it. Now something does, and a zero beside a
+ticked box means something quite different from a zero beside an
+unticked one.
+
 ## 1.3.1
 
 **"Dim the Icons Too" now actually dims them.** It was written to yield

@@ -59,6 +59,10 @@ counters.framed = counters.framed or 0
 counters.cropped = counters.cropped or 0
 counters.rounded = counters.rounded or 0
 
+-- Icons given the dimming's shade. Counted because its absence is how
+-- five attempts went by without anyone noticing the setting was off.
+counters.tinted = counters.tinted or 0
+
 -- An icon's border: button -> the set of sides (see ns.Skin.Outline).
 --
 -- Side memory rather than a field on the button: a button is a game object,
@@ -879,7 +883,9 @@ function Icons.Paint(border, crop, shadow, round, dim)
                 local icon = Icons.IconOf(button)
                 local painted = frame(button, border)
                 local cropped = Icons.Crop(icon, crop)
-                Icons.Tint(icon, dim)
+                if Icons.Tint(icon, dim) and dim < 1 then
+                    counters.tinted = counters.tinted + 1
+                end
                 if painted then counters.framed = counters.framed + 1 end
                 if cropped then counters.cropped = counters.cropped + 1 end
                 if painted or cropped then touched = touched + 1 end
