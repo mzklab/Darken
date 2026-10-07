@@ -262,3 +262,55 @@ do
 
     _G.DarkenTestButton7Icon = nil
 end
+
+T.suite("the game's bright button frame is answered in the same breath")
+
+-- The white edge around a filled slot is the button's own NormalTexture. The
+-- dimming does write a dark colour into it - the probe says "dims: 22" on one
+-- button - and it still looks white, because the game writes inside its own
+-- handler and we answered a frame later through a timer. The fifty-seven
+-- thousand repaints the watcher counted in one session are that fight.
+do
+    local Icons = ns.Icons
+
+    local hooks = {}
+    local savedHook = _G.hooksecurefunc
+    _G.hooksecurefunc = function(object, method, fn)
+        hooks[#hooks + 1] = { object = object, method = method, fn = fn }
+    end
+
+    local art = { alpha = 1 }
+    function art:SetAlpha(a) self.alpha = a end
+
+    local button = {
+        GetNormalTexture = function() return art end,
+        SetNormalTexture = function() end,
+    }
+
+    T.eq(Icons.BlankArt(button, true), true, "the frame was answered")
+    T.eq(art.alpha, 0, "and taken off")
+    T.eq(#hooks, 1, "the game's own setter is hooked once")
+    T.eq(hooks[1].method, "SetNormalTexture", "and it is the setter")
+
+    -- The game hands the button a new picture. The hook runs inside that call.
+    art.alpha = 1
+    hooks[1].fn(button)
+    T.eq(art.alpha, 0, "a frame set by the game is taken off in the same call")
+
+    T.eq(Icons.BlankArt(button, true), true, "asked twice")
+    T.eq(#hooks, 1, "no second hook on the same button")
+
+    -- A hook placed with hooksecurefunc cannot be removed, so it has to be
+    -- able to do nothing instead.
+    T.eq(Icons.BlankArt(button, false), true, "switched off")
+    T.eq(art.alpha, 1, "the game's frame comes back")
+    art.alpha = 1
+    hooks[1].fn(button)
+    T.eq(art.alpha, 1, "and the standing hook now leaves it alone")
+
+    -- A button of a client that has no such texture is not an error.
+    T.eq(Icons.BlankArt({}, true), false, "no normal texture, nothing done")
+    T.eq(Icons.BlankArt(nil, true), false, "and no button at all is not an error")
+
+    _G.hooksecurefunc = savedHook
+end

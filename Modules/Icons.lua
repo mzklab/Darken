@@ -282,11 +282,89 @@ end
 -- @param button table
 -- @param border boolean whether to draw it
 -- @return boolean whether it was drawn
+-- Buttons whose bright frame we have already hooked.
+local BLANKED = ns.Skin.Memory()
+
+-- Whether the bright frame is being taken off right now. Read by the hooks,
+-- which outlive any one pass and must not act on yesterday's setting.
+local hidingArt = false
+
+--- Take the game's bright frame off a button, or give it back.
+--
+-- Why a hook rather than a repaint.
+--
+-- The white edge the author kept reporting is the button's own NormalTexture -
+-- the bevelled frame the game draws around a filled slot. The dimming pass
+-- does reach it and does write a dark colour into it; the report says so
+-- plainly ("dims: 22" on one button). It still looks white, because the game
+-- writes to it inside its own update handler, synchronously, and we answer on
+-- the next frame through a timer. We are always exactly one frame behind, and
+-- the fifty-seven thousand repaints the watcher counted in a session are that
+-- fight, counted.
+--
+-- A fight over one texture is not winnable by being faster: the engine writes
+-- first by construction. So we stop answering and take the thing out of the
+-- argument - the frame is hidden, and the button's edge becomes our own line
+-- (Outline Icons) instead. Hooking SetNormalTexture means we act in the same
+-- call the game does, not a frame later, so there is no moment at which the
+-- white edge is on screen.
+--
+-- hooksecurefunc is used rather than a replacement: it runs after the game's
+-- own method, cannot be removed, and carries no taint onto a protected button.
+-- Hence the flag rather than an unhook - a hook placed once has to be able to
+-- do nothing later.
+--
+-- The alpha is what is changed rather than the texture itself: a texture that
+-- was cleared does not come back, while a setting switched off has to return
+-- the game's own look without a reload.
+--
+-- Exported, unlike the drawing around it, so that the hook can be exercised
+-- without faking the whole skinning layer: what is worth testing here is that
+-- the game's own call is answered in the same breath and that a hook which
+-- cannot be removed can still be told to stand down.
+function Icons.BlankArt(button, hide)
+    if type(button) ~= "table" then return false end
+    if type(button.GetNormalTexture) ~= "function" then return false end
+
+    local ok, art = pcall(button.GetNormalTexture, button)
+    if not ok or type(art) ~= "table" then return false end
+    if type(art.SetAlpha) ~= "function" then return false end
+
+    -- The flag is set here rather than by the caller.
+    --
+    -- It used to be written in Icons.Paint, and a test caught what that costs:
+    -- hiding a frame through this function without going through Paint left
+    -- the hook mute, so the game's next repaint put the white edge back and
+    -- nothing explained why. One writer, in the place that knows.
+    hidingArt = hide and true or false
+
+    pcall(art.SetAlpha, art, hide and 0 or 1)
+
+    if hide and not BLANKED[button]
+        and type(_G.hooksecurefunc) == "function"
+        and type(button.SetNormalTexture) == "function" then
+
+        local fine = pcall(_G.hooksecurefunc, button, "SetNormalTexture",
+            function(self)
+                if not hidingArt then return end
+                local got, fresh = pcall(self.GetNormalTexture, self)
+                if got and type(fresh) == "table"
+                    and type(fresh.SetAlpha) == "function" then
+                    pcall(fresh.SetAlpha, fresh, 0)
+                end
+            end)
+        if fine then BLANKED[button] = true end
+    end
+
+    return true
+end
+
 local function frame(button, border)
     if type(button) ~= "table" then return false end
 
     if not border then
         display(FRAME[button], false)
+        Icons.BlankArt(button, false)
         return false
     end
 
@@ -316,6 +394,10 @@ local function frame(button, border)
     if not ok then return false end
 
     display(FRAME[button], true)
+
+    -- Our line replaces the game's frame rather than lying on top of it: two
+    -- edges around one icon is not a style, it is a mistake.
+    Icons.BlankArt(button, true)
     return true
 end
 
@@ -493,7 +575,124 @@ function Icons.Shape(square)
         end
     end
 
+    Icons.Arrange(minimap, square)
+
     return true
+end
+
+--- Where a button stood before we moved it: button -> its list of points.
+local PLACED = ns.Skin.Memory()
+
+-- How far outside the map the column stands, and how much air between
+-- buttons. Two numbers rather than guesses in the arithmetic below.
+local EDGE_GAP = 4
+local BUTTON_GAP = 2
+
+--- Stand the minimap buttons along the square's edge, or put them back.
+--
+-- Why we move somebody else's buttons at all, having a rule against it.
+--
+-- The rule is "we neither repair nor break what belongs to others", and it is
+-- about not disturbing a neighbour for no reason. This is not that case. Those
+-- buttons sit on a circle because the map was a circle, and the thing that
+-- stopped being a circle is the map, by our doing. Having taken the ground out
+-- from under them we own where they land: a square map with its buttons still
+-- strung along an invisible circle is our mess, not theirs.
+--
+-- The author put it in one line: if we redraw the map square, the placing of
+-- those icons is ours too.
+--
+-- What is moved. Only buttons recognised as another addon's (the same question
+-- Darkness.AddonWindow answers for the dimming). The game's own - the mail
+-- icon, the crafting order, the compass - are left where they are: they
+-- reposition themselves and would only be fought with.
+--
+-- Where they land. A column down the right edge, in the order the game hands
+-- the children over, which is the order they were created in. Not around the
+-- perimeter: a square's corners are exactly where a round button looks
+-- misplaced, and a column is readable at a glance and predictable when one
+-- more addon is installed tomorrow.
+--
+-- Going back. The points each button had are remembered whole at the first
+-- move and replayed on the way back - not "the position we think it should
+-- have", but what it actually said. A button that was never moved is never
+-- touched, so an addon that places its own button after us keeps it.
+--
+-- @param minimap table the map frame
+-- @param square boolean whether the map is square now
+-- @return number how many buttons were moved
+function Icons.Arrange(minimap, square)
+    if type(minimap) ~= "table" then return 0 end
+    if type(minimap.GetChildren) ~= "function" then return 0 end
+
+    local dark = ns.Darkness
+    if type(dark) ~= "table" or type(dark.AddonWindow) ~= "function" then
+        return 0
+    end
+
+    local ok, children = pcall(function() return { minimap:GetChildren() } end)
+    if not ok then return 0 end
+
+    local names = dark.AddonNames()
+    local moved, down = 0, 0
+
+    for i = 1, #children do
+        local button = children[i]
+        local said = type(button) == "table"
+            and type(button.GetName) == "function" and button:GetName() or nil
+
+        if dark.AddonWindow(ns.Skin.Textual(said), names)
+            and type(button.ClearAllPoints) == "function"
+            and type(button.SetPoint) == "function" then
+
+            if square then
+                -- Remembered whole, and only once: a second remembering would
+                -- record the place WE put it.
+                if PLACED[button] == nil then
+                    local points = {}
+                    if type(button.GetNumPoints) == "function"
+                        and type(button.GetPoint) == "function" then
+                        local fine, many = pcall(button.GetNumPoints, button)
+                        if fine and type(many) == "number" then
+                            for at = 1, many do
+                                local got, a, b, c, d, e =
+                                    pcall(button.GetPoint, button, at)
+                                if got then
+                                    points[#points + 1] = { a, b, c, d, e }
+                                end
+                            end
+                        end
+                    end
+                    PLACED[button] = points
+                end
+
+                local tall = 0
+                if type(button.GetHeight) == "function" then
+                    local fine, high = pcall(button.GetHeight, button)
+                    if fine then tall = ns.Skin.Numeric(high) or 0 end
+                end
+
+                pcall(button.ClearAllPoints, button)
+                pcall(button.SetPoint, button, "TOPLEFT", minimap, "TOPRIGHT",
+                    EDGE_GAP, -down)
+                down = down + tall + BUTTON_GAP
+                moved = moved + 1
+
+            elseif PLACED[button] ~= nil then
+                local points = PLACED[button]
+                PLACED[button] = nil
+
+                pcall(button.ClearAllPoints, button)
+                for at = 1, #points do
+                    local p = points[at]
+                    pcall(button.SetPoint, button, p[1], p[2], p[3], p[4], p[5])
+                end
+                moved = moved + 1
+            end
+        end
+    end
+
+    return moved
 end
 
 --- Round other addons' minimap buttons.

@@ -9,6 +9,24 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.1.0
+
+**The white edge around action buttons is gone.** It was the button's
+own bevelled frame, and the addon had been losing a race for it: the
+game writes that colour inside its own update, we answered on the next
+frame, and we were always one frame late - the fifty-seven thousand
+repaints the report counts in a session were that race. A race over one
+texture is not winnable by being quicker, so the frame is taken out of
+it: with "Outline Icons" on, the game's frame is hidden the instant the
+game sets it, and the edge of a button becomes the addon's own line.
+Turn the setting off and the game's frame comes straight back.
+
+**The buttons around a square minimap stand along its edge.** They sat
+on a circle because the map was a circle, and the map stopped being one
+by our doing - so where they land is ours to answer for. Only other
+addons' buttons are moved, each remembers the place it actually had, and
+turning the square off puts every one of them back.
+
 ## 1.0.5
 
 **A square minimap gets an edge.** Hiding the round ring and stopping
