@@ -453,8 +453,17 @@ function Icons.Shape(square)
     if ok and type(objects) == "table" then
         for i = 1, #objects do
             local ring = objects[i]
-            if type(ring) == "table" and type(ring.SetShown) == "function" then
-                pcall(ring.SetShown, ring, not square)
+            if type(ring) == "table" then
+                -- SetShown where there is one, Show/Hide where there is not:
+                -- on the older lines the ring is a plain texture rather than a
+                -- frame, and a texture of that vintage knows only the pair.
+                if type(ring.SetShown) == "function" then
+                    pcall(ring.SetShown, ring, not square)
+                elseif square and type(ring.Hide) == "function" then
+                    pcall(ring.Hide, ring)
+                elseif not square and type(ring.Show) == "function" then
+                    pcall(ring.Show, ring)
+                end
             end
         end
     end

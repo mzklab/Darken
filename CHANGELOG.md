@@ -9,6 +9,19 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.0.4
+
+**The round ring around a square minimap is gone.** The map was already
+cut square; the ring stayed because the names it was looked up by do not
+exist on this client line. The report said so plainly - "group
+minimap-ring resolved to nothing" - and the client's own list named what
+is really there: the compass art. Both names are now tried, and the ones
+used before are kept behind them for the lines that have them.
+
+**The minimap-button rounding is gone from the window.** Unticking it
+set an empty mask, which on this client means "no mask" rather than "the
+mask you had", so a button it had rounded came back square by our doing.
+
 ## 1.0.3
 
 **The icon settings can work at all now.** Everything on that page rests

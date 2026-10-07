@@ -586,6 +586,14 @@ local CHROME = {
     -- a name of the game's lives in one place, and a second copy of it in a
     -- module would go stale without anyone noticing.
     ["minimap-ring"] = {
+        -- The ring is drawn by different art from one client line to the
+        -- next, and the names are not guessable: on the 1.60 line it is the
+        -- compass, and the report said so in one line - "group minimap-ring
+        -- resolved to nothing (2 names tried)" - while /dark scan minimap
+        -- listed what is really there. The two it used to name are kept
+        -- behind them for the lines that do have them.
+        "MinimapCompassTexture",
+        "MinimapCompassTextureUnderlay",
         "MinimapBorder",
         "MinimapBorderTop",
     },
