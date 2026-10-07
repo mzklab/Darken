@@ -9,6 +9,17 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.3.1
+
+**"Dim the Icons Too" now actually dims them.** It was written to yield
+to the game, on the grounds that the game colours an icon to tell you
+something - red out of range, grey when unusable. True, but it misses
+that a usable spell is coloured plain white on every update of the
+button, and white is not a message, it is the lack of one. The shade was
+wiped within a frame of being applied, on exactly the icons the setting
+exists for. Now white is the one state the shade overwrites; red and
+grey keep, so out of range and unusable read exactly as the game meant.
+
 ## 1.3.0
 
 **The texture lists show the textures.** Choosing between "Darken

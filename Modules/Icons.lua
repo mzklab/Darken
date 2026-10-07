@@ -330,6 +330,16 @@ local hidingArt = false
 --- Icons we have tinted: icon -> true.
 local TINTED = ns.Skin.Memory()
 
+--- The shade each icon should hold: icon -> number, or nothing when it is
+--- not ours to shade. Read by the hook below.
+local SHADE = ns.Skin.Memory()
+
+--- Icons whose colour setter we have already hooked.
+local HOOKED = ns.Skin.Memory()
+
+--- Whether the write in progress is ours, so the hook stands aside for it.
+local writingTint = false
+
 --- Dim a spell's icon with the rest of the interface, or let it be.
 --
 -- Why this is a setting and not the default.
@@ -346,13 +356,28 @@ local TINTED = ns.Skin.Memory()
 -- for. It is off by default, because the rule above is the addon's considered
 -- position and a fresh install should not quietly contradict it.
 --
--- What this does NOT fight. The game colours an icon itself to say something:
--- red when out of range, grey when unusable, dark when on another resource.
--- Those are answers to questions the player asked, and we let them win - we
--- write our shade when the pass runs, the game overwrites it when it has
--- something to say, and it is right to. That is a different case from the
--- button's bright frame, which says nothing and was worth taking out of the
--- race.
+-- What this fights, and what it does not.
+--
+-- The first cut of this lost on purpose and lost everywhere, which is not
+-- what was intended. The reasoning written here was that the game colours an
+-- icon to say something - red out of range, grey when unusable - and that
+-- those answers must win. That part stands. What it missed is that for an
+-- ordinary usable spell the game writes plain white, and writes it on every
+-- update of the button: that is not an answer, it is the absence of one. So
+-- our shade was wiped within a frame of being applied, on exactly the icons
+-- the setting exists for, and the author reported it as the setting not
+-- working at all. He was right.
+--
+-- The rule is therefore narrower than "the game wins" and narrower than "we
+-- win": we overwrite WHITE, and nothing else. White is the state that says
+-- "nothing to report", and it is the state our shade belongs in. The moment
+-- the game has something to report - any colour that is not white - it keeps
+-- it, and the player sees out of range and unusable exactly as the game meant
+-- them.
+--
+-- The hook is on the icon rather than on the button, because it is the icon's
+-- own colour being written, and it is placed once per icon. A write of ours
+-- would come back through it, so it stands aside while we write.
 --
 -- @param icon table|nil the icon texture
 -- @param factor number|nil 1 for untouched, below 1 for darker
@@ -362,6 +387,32 @@ function Icons.Tint(icon, factor)
     if type(icon.SetVertexColor) ~= "function" then return false end
 
     local shade = tonumber(factor)
+
+    -- Remembered for the hook, which outlives this call and has to know what
+    -- the setting says now rather than what it said when it was placed.
+    SHADE[icon] = (shade ~= nil and shade < 1) and shade or nil
+
+    if SHADE[icon] ~= nil and not HOOKED[icon]
+        and type(_G.hooksecurefunc) == "function" then
+        if pcall(_G.hooksecurefunc, icon, "SetVertexColor",
+            function(self, r, g, b)
+                if writingTint then return end
+                local mine = SHADE[self]
+                if mine == nil then return end
+
+                -- Only the colourless state is ours. Anything else the game
+                -- wrote is a thing it is telling the player.
+                if r ~= 1 or g ~= 1 or b ~= 1 then return end
+
+                writingTint = true
+                pcall(self.SetVertexColor, self, mine, mine, mine)
+                writingTint = false
+            end)
+        then
+            HOOKED[icon] = true
+        end
+    end
+
     if shade == nil or shade >= 1 then
         -- Only what WE tinted is put back. An icon some other addon shades
         -- for a reason of its own is none of our business, and an
@@ -373,7 +424,11 @@ function Icons.Tint(icon, factor)
 
     if shade < 0 then shade = 0 end
     TINTED[icon] = true
-    return pcall(icon.SetVertexColor, icon, shade, shade, shade)
+
+    writingTint = true
+    local ok = pcall(icon.SetVertexColor, icon, shade, shade, shade)
+    writingTint = false
+    return ok
 end
 
 function Icons.BlankArt(button, hide)
