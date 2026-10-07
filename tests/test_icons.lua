@@ -314,3 +314,37 @@ do
 
     _G.hooksecurefunc = savedHook
 end
+
+T.suite("a spell's picture is dimmed only when asked")
+
+-- The dimming pass spares icons on purpose - an icon is how a spell is
+-- recognised, which is the same rule that spares gold, silver and copper. The
+-- author wants the opposite on his action bars and names Masque, which dims
+-- the whole button. Both are defensible, so it is a setting rather than a
+-- change of the rule.
+do
+    local Icons = ns.Icons
+
+    local icon = { r = 1, g = 1, b = 1 }
+    function icon:SetVertexColor(r, g, b) self.r, self.g, self.b = r, g, b end
+
+    T.eq(Icons.Tint(icon, 1), false, "one means untouched, and nothing is written")
+    T.eq(icon.r, 1, "the picture keeps the colour it had")
+
+    T.eq(Icons.Tint(icon, 0.4), true, "a shade below one is written")
+    T.eq(icon.r, 0.4, "and it is the shade asked for")
+    T.eq(icon.g, 0.4, "on every channel")
+
+    T.eq(Icons.Tint(icon, 1), true, "back to one")
+    T.eq(icon.r, 1, "and the picture is white again")
+
+    -- An icon somebody else shaded is not ours to reset: only what we tinted
+    -- is put back.
+    local foreign = { r = 0.5 }
+    function foreign:SetVertexColor(r) self.r = r end
+    T.eq(Icons.Tint(foreign, 1), false, "an icon we never tinted is left alone")
+    T.eq(foreign.r, 0.5, "with the shade its own addon gave it")
+
+    T.eq(Icons.Tint(nil, 0.4), false, "no icon is not an error")
+    T.eq(Icons.Tint({}, 0.4), false, "and neither is one that cannot be coloured")
+end

@@ -593,6 +593,17 @@ ns.RegisterLocale("ruRU", {
         .. "кнопке. По умолчанию выключено.",
     ["Round the Minimap Buttons"] = "Скруглить кнопки на миникарте",
     ["Square Minimap"] = "Квадратная миникарта",
+    ["Dim the Icons Too"] = "Затемнять и иконки",
+    ["Darkens a spell's picture along with the interface around it, "
+        .. "at the same strength. Off by default: the dimming spares "
+        .. "icons on purpose, because an icon is how a spell is "
+        .. "recognised. The game still colours an icon red out of range "
+        .. "or grey when unusable - it is answering you, and it wins."] =
+        "Затемняет картинку заклинания вместе с интерфейсом вокруг, той "
+            .. "же силой. По умолчанию выключено: затемнение щадит иконки "
+            .. "нарочно, потому что иконкой заклинание и узнают. Игра "
+            .. "по-прежнему красит иконку красным вне радиуса и серым, "
+            .. "когда применить нельзя, — это её ответ вам, и он главнее.",
     ["Cuts the minimap square instead of round. The ring around it "
         .. "is drawn as a circle and would lie across the corners, so it "
         .. "is taken away with the same tick. Off by default."] =

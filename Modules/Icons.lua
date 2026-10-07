@@ -171,6 +171,11 @@ Icons.defaults = {
     -- The shape of the minimap. False is the game's own, which on every
     -- client served here is round: a fresh install changes nothing.
     square = false,
+
+    -- Whether a spell's picture is dimmed with the rest of the interface.
+    -- Off: the dimming pass spares icons on purpose, and this setting is how
+    -- that decision is overruled by whoever wants it overruled.
+    dim = false,
 }
 
 --- The subsystem's settings from the profile.
@@ -322,6 +327,55 @@ local hidingArt = false
 -- without faking the whole skinning layer: what is worth testing here is that
 -- the game's own call is answered in the same breath and that a hook which
 -- cannot be removed can still be told to stand down.
+--- Icons we have tinted: icon -> true.
+local TINTED = ns.Skin.Memory()
+
+--- Dim a spell's icon with the rest of the interface, or let it be.
+--
+-- Why this is a setting and not the default.
+--
+-- The dimming pass treats an icon as CONTENTS and never touches it, on a rule
+-- written down in Modules/Darkness.lua: an icon is how a player recognises a
+-- spell, and a recognisable picture is the one thing a dark theme must not
+-- take away. That rule is why gold, silver and copper are spared, why a
+-- portrait is spared, why the micro buttons are spared.
+--
+-- The author wants the opposite for the action bars, and names the precedent:
+-- Masque dims the whole button, picture included, and that is the look he is
+-- after. Both positions are defensible, which is exactly what a setting is
+-- for. It is off by default, because the rule above is the addon's considered
+-- position and a fresh install should not quietly contradict it.
+--
+-- What this does NOT fight. The game colours an icon itself to say something:
+-- red when out of range, grey when unusable, dark when on another resource.
+-- Those are answers to questions the player asked, and we let them win - we
+-- write our shade when the pass runs, the game overwrites it when it has
+-- something to say, and it is right to. That is a different case from the
+-- button's bright frame, which says nothing and was worth taking out of the
+-- race.
+--
+-- @param icon table|nil the icon texture
+-- @param factor number|nil 1 for untouched, below 1 for darker
+-- @return boolean whether anything was written
+function Icons.Tint(icon, factor)
+    if type(icon) ~= "table" then return false end
+    if type(icon.SetVertexColor) ~= "function" then return false end
+
+    local shade = tonumber(factor)
+    if shade == nil or shade >= 1 then
+        -- Only what WE tinted is put back. An icon some other addon shades
+        -- for a reason of its own is none of our business, and an
+        -- unconditional reset would take that away from it.
+        if not TINTED[icon] then return false end
+        TINTED[icon] = nil
+        return pcall(icon.SetVertexColor, icon, 1, 1, 1)
+    end
+
+    if shade < 0 then shade = 0 end
+    TINTED[icon] = true
+    return pcall(icon.SetVertexColor, icon, shade, shade, shade)
+end
+
 function Icons.BlankArt(button, hide)
     if type(button) ~= "table" then return false end
     if type(button.GetNormalTexture) ~= "function" then return false end
@@ -747,7 +801,7 @@ end
 -- @param border boolean whether to draw the border
 -- @param crop boolean whether to trim the native edge
 -- @return number how many buttons were touched
-function Icons.Paint(border, crop, shadow, round)
+function Icons.Paint(border, crop, shadow, round, dim)
     local touched = Icons.RoundMinimap(round)
 
     for i = 1, #BAR_GROUPS do
@@ -767,8 +821,10 @@ function Icons.Paint(border, crop, shadow, round)
         if ok and type(objects) == "table" then
             for j = 1, #objects do
                 local button = objects[j]
+                local icon = Icons.IconOf(button)
                 local painted = frame(button, border)
-                local cropped = Icons.Crop(Icons.IconOf(button), crop)
+                local cropped = Icons.Crop(icon, crop)
+                Icons.Tint(icon, dim)
                 if painted then counters.framed = counters.framed + 1 end
                 if cropped then counters.cropped = counters.cropped + 1 end
                 if painted or cropped then touched = touched + 1 end
@@ -795,15 +851,30 @@ function Icons:ApplySettings()
     local round  = settings.minimap == true
     local square = settings.square == true
 
+    -- The shade follows the dimming slider rather than a number of its own:
+    -- an icon darker or lighter than the window around it would read as a
+    -- mistake, and a second slider for the same idea is a second answer to
+    -- one question. One means untouched, which is what the pass writes when
+    -- the setting is off.
+    local dim = 1
+    if settings.dim == true then
+        local dark = ns.Darkness
+        local profile = ns.Addon and ns.Addon.db and ns.Addon.db.profile
+        local amount = profile and profile.darkness and profile.darkness.amount
+        if type(dark) == "table" and type(dark.Factor) == "function" then
+            dim = tonumber(dark.Factor(amount)) or 1
+        end
+    end
+
     if ns.Combat and ns.Combat.InCombat and ns.Combat.InCombat() then
         ns.Combat.Enqueue(ns.Combat.QueueFor(Icons.name), "icons", function()
-            Icons.Paint(border, crop, shadow, round)
+            Icons.Paint(border, crop, shadow, round, dim)
             Icons.Shape(square)
         end)
         return
     end
 
-    Icons.Paint(border, crop, shadow, round)
+    Icons.Paint(border, crop, shadow, round, dim)
     Icons.Shape(square)
 end
 
@@ -973,6 +1044,18 @@ if type(ns.Schema) == "table" then
     -- player ticks it, the minimap stays round, and what they conclude is that
     -- the addon is broken. The shape of the minimap is a separate thing and
     -- will get a setting of its own, with its own key.
+    Schema.Add(PAGE, {
+        kind = "toggle",
+        label = "Dim the Icons Too",
+        path = { "dim" },
+        apply = "icons",
+        hint = "Darkens a spell's picture along with the interface around it, "
+            .. "at the same strength. Off by default: the dimming spares "
+            .. "icons on purpose, because an icon is how a spell is "
+            .. "recognised. The game still colours an icon red out of range "
+            .. "or grey when unusable - it is answering you, and it wins.",
+    })
+
     Schema.Add(PAGE, {
         kind = "toggle",
         label = "Square Minimap",

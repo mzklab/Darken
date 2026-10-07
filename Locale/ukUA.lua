@@ -598,6 +598,17 @@ ns.RegisterLocale("ukUA", {
         .. "Типово вимкнено.",
     ["Round the Minimap Buttons"] = "Заокруглити кнопки на мінікарті",
     ["Square Minimap"] = "Квадратна мінімапа",
+    ["Dim the Icons Too"] = "Затемнювати й іконки",
+    ["Darkens a spell's picture along with the interface around it, "
+        .. "at the same strength. Off by default: the dimming spares "
+        .. "icons on purpose, because an icon is how a spell is "
+        .. "recognised. The game still colours an icon red out of range "
+        .. "or grey when unusable - it is answering you, and it wins."] =
+        "Затемнює зображення закляття разом з інтерфейсом навколо, тією "
+            .. "ж силою. Типово вимкнено: затемнення щадить іконки "
+            .. "навмисно, бо саме іконкою закляття й упізнають. Гра "
+            .. "й далі фарбує іконку червоним поза радіусом і сірим, "
+            .. "коли застосувати не можна, — це її відповідь вам, і вона головніша.",
     ["Cuts the minimap square instead of round. The ring around it "
         .. "is drawn as a circle and would lie across the corners, so it "
         .. "is taken away with the same tick. Off by default."] =

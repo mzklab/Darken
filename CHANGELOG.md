@@ -9,6 +9,18 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.2.0
+
+**Spell icons can be dimmed with everything else.** The dimming has
+always spared them on purpose - an icon is how a spell is recognised,
+the same rule that spares gold, silver and copper - and that is still
+what a fresh install does. "Dim the Icons Too", on the Icons page, is
+how the decision gets overruled by whoever wants it overruled. The shade
+follows the dimming slider, so the picture never sits darker or lighter
+than the window around it. The game still colours an icon red out of
+range or grey when unusable: that is the game answering you, and it
+wins.
+
 ## 1.1.0
 
 **The white edge around action buttons is gone.** It was the button's
