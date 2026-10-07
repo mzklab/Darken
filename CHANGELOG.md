@@ -9,6 +9,19 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.4.0
+
+**The minimap buttons are left where their own addons put them.** 1.1.0
+moved them to the edge of a square minimap, on the sound argument that
+having made the map square we owed them a sensible place. The execution
+was not sound: they are placed once, and the addons that own them place
+them again afterwards by their own angle around a circle. A placement
+that is overwritten a moment later is worse than none, because it looks
+like a bug in whichever addon loses. Removed rather than left half
+working.
+
+The square map and its edge stay.
+
 ## 1.3.2
 
 **The report counts dimmed icons.** Five attempts at "the icons are not
