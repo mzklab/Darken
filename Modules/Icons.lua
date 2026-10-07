@@ -750,17 +750,6 @@ if type(ns.Schema) == "table" then
             .. "is taken away with the same tick. Off by default.",
     })
 
-    Schema.Add(PAGE, {
-        kind = "toggle",
-        label = "Round the Minimap Buttons",
-        path = { "minimap" },
-        apply = "icons",
-        hint = "Cuts the square buttons other addons put around the minimap "
-            .. "into circles and gives each the same line the icons above "
-            .. "get. Only other addons' buttons: the game's own are round "
-            .. "already, and the few that are not are drawn that way on "
-            .. "purpose. Off by default.",
-    })
 end
 
 ns.Registry:Register(Icons)
