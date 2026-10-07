@@ -9,7 +9,11 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## 1.4.0
+## Unreleased
+
+Not released. The version in the TOC is 1.0.1, the one that was
+uploaded; what follows is what has changed since, waiting for whatever
+number the next release is given.
 
 **The minimap buttons are left where their own addons put them.** 1.1.0
 moved them to the edge of a square minimap, on the sound argument that
@@ -22,15 +26,11 @@ working.
 
 The square map and its edge stay.
 
-## 1.3.2
-
 **The report counts dimmed icons.** Five attempts at "the icons are not
 dimmed" went by without anybody establishing whether the setting was on,
 because nothing counted it. Now something does, and a zero beside a
 ticked box means something quite different from a zero beside an
 unticked one.
-
-## 1.3.1
 
 **"Dim the Icons Too" now actually dims them.** It was written to yield
 to the game, on the grounds that the game colours an icon to tell you
@@ -41,8 +41,6 @@ wiped within a frame of being applied, on exactly the icons the setting
 exists for. Now white is the one state the shade overwrites; red and
 grey keep, so out of range and unusable read exactly as the game meant.
 
-## 1.3.0
-
 **The texture lists show the textures.** Choosing between "Darken
 Purple" and "Darken Pink" by their names asks a word to do the one thing
 a word cannot. Each row of the health and power bar texture lists now
@@ -50,8 +48,6 @@ carries a strip of the texture itself, drawn from the same place the bar
 gets it - so what the list shows and what the bar gets are one answer,
 not two. The game's own entry has no strip, because there is no file of
 ours behind it.
-
-## 1.2.0
 
 **Spell icons can be dimmed with everything else.** The dimming has
 always spared them on purpose - an icon is how a spell is recognised,
@@ -62,8 +58,6 @@ follows the dimming slider, so the picture never sits darker or lighter
 than the window around it. The game still colours an icon red out of
 range or grey when unusable: that is the game answering you, and it
 wins.
-
-## 1.1.0
 
 **The white edge around action buttons is gone.** It was the button's
 own bevelled frame, and the addon had been losing a race for it: the
@@ -81,15 +75,11 @@ by our doing - so where they land is ours to answer for. Only other
 addons' buttons are moved, each remembers the place it actually had, and
 turning the square off puts every one of them back.
 
-## 1.0.5
-
 **A square minimap gets an edge.** Hiding the round ring and stopping
 there left the map a bare rectangle of terrain with nothing to say where
 it ends. It is now bordered with the same line that goes around an icon,
 so the two read as one addon rather than two ideas. Turning the square
 off takes the line away and gives the game its ring back.
-
-## 1.0.4
 
 **The round ring around a square minimap is gone.** The map was already
 cut square; the ring stayed because the names it was looked up by do not
@@ -102,8 +92,6 @@ used before are kept behind them for the lines that have them.
 set an empty mask, which on this client means "no mask" rather than "the
 mask you had", so a button it had rounded came back square by our doing.
 
-## 1.0.3
-
 **The icon settings can work at all now.** Everything on that page rests
 on finding a button's icon, and it was looked for only in a field on the
 button. The older templates keep it nowhere but in a global named after
@@ -114,8 +102,6 @@ nothing whatever was ticked. The icon is now looked for in both places.
 rounding the minimap buttons all added to one number, so that number
 proved nothing about any of them - and was read three times as proof of
 the wrong one. Each has its own count now.
-
-## 1.0.2
 
 **The minimap can be square.** The setting promising it had been in the
 window for a long time with nothing behind it - it wrote the key that
