@@ -15,6 +15,14 @@ Not released. The version in the TOC is 1.0.1, the one that was
 uploaded; what follows is what has changed since, waiting for whatever
 number the next release is given.
 
+**Dimmed icons keep their shade.** The shade was written and lost: the
+author's probe read every texture of a button at 0.27 and the icon at
+1.00. The game does not reach an icon through anything an addon can sit
+on - it takes it by name inside its own repaint and writes there - so
+that repaint is what is hooked now, once, for every button. White means
+"usable, nothing to report" and is ours to overwrite; the blue of not
+enough mana and the grey of unusable are answers to the player and keep.
+
 **The minimap buttons are left where their own addons put them.** 1.1.0
 moved them to the edge of a square minimap, on the sound argument that
 having made the map square we owed them a sensible place. The execution

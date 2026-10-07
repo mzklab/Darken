@@ -63,6 +63,10 @@ counters.rounded = counters.rounded or 0
 -- five attempts went by without anyone noticing the setting was off.
 counters.tinted = counters.tinted or 0
 
+-- Whether the game's own repaint of a button was hooked. A zero with
+-- icons dimmed means the shade is written and then lost.
+counters.hooked_icons = counters.hooked_icons or 0
+
 -- An icon's border: button -> the set of sides (see ns.Skin.Outline).
 --
 -- Side memory rather than a field on the button: a button is a game object,
@@ -338,9 +342,6 @@ local TINTED = ns.Skin.Memory()
 --- not ours to shade. Read by the hook below.
 local SHADE = ns.Skin.Memory()
 
---- Icons whose colour setter we have already hooked.
-local HOOKED = ns.Skin.Memory()
-
 --- Whether the write in progress is ours, so the hook stands aside for it.
 local writingTint = false
 
@@ -386,6 +387,84 @@ local writingTint = false
 -- @param icon table|nil the icon texture
 -- @param factor number|nil 1 for untouched, below 1 for darker
 -- @return boolean whether anything was written
+--- Whether the game's own repaint of a button has been hooked.
+local usableHooked = false
+
+-- The game's function that repaints a button when it becomes usable, and the
+-- order to try its names in.
+--
+-- The older line keeps it as a plain global; the newer ones moved the same
+-- work onto the button's mixin. A name that does not exist here is simply not
+-- hooked, which is the same rule the rest of the addon follows for a guessed
+-- name.
+local USABLE_HOOKS = { "ActionButton_UpdateUsable" }
+
+--- Put our shade back after the game has repainted a button.
+--
+-- Why the function and not the texture.
+--
+-- The shade was first held by a hook on the icon itself, and the author's own
+-- probe shows what that was worth: every texture of a button read 0.27 while
+-- the icon read 1.00 1.00 1.00. We wrote, the game overwrote, and our hook
+-- never answered.
+--
+-- The game's source says why. It does not reach the icon through anything we
+-- can sit on - it takes it by its global name inside its own function and
+-- writes there:
+--
+--     function ActionButton_UpdateUsable()
+--         local icon = getglobal(this:GetName().."Icon");
+--         if ( isUsable ) then icon:SetVertexColor(1.0, 1.0, 1.0);
+--
+-- So the thing to sit on is that function. hooksecurefunc runs ours after the
+-- game's, in the same call, for every button there is - one hook rather than
+-- one per icon, and it cannot be outrun because it IS the game's own moment.
+--
+-- The rule for what we overwrite is unchanged, and the source above is where
+-- it comes from: white means usable and says nothing, so it is ours; the blue
+-- of "not enough mana" and the grey of "cannot use this" are answers to the
+-- player and are left alone.
+local function hookUsable()
+    if usableHooked then return end
+    if type(_G.hooksecurefunc) ~= "function" then return end
+
+    for i = 1, #USABLE_HOOKS do
+        local name = USABLE_HOOKS[i]
+        if type(_G[name]) == "function" then
+            local fine = pcall(_G.hooksecurefunc, name, function(button)
+                -- The older line passes nothing and leaves the button in
+                -- "this"; the newer one passes it. Either way we need the
+                -- button before we can find its icon.
+                local self = button
+                if type(self) ~= "table" then self = _G.this end
+                if type(self) ~= "table" then return end
+
+                local icon = Icons.IconOf(self)
+                if type(icon) ~= "table" then return end
+
+                local mine = SHADE[icon]
+                if mine == nil then return end
+
+                if type(icon.GetVertexColor) ~= "function" then return end
+                local got, r, g, b = pcall(icon.GetVertexColor, icon)
+                if not got then return end
+
+                -- Only the colourless state is ours.
+                if r ~= 1 or g ~= 1 or b ~= 1 then return end
+
+                writingTint = true
+                pcall(icon.SetVertexColor, icon, mine, mine, mine)
+                writingTint = false
+            end)
+            if fine then
+                usableHooked = true
+                counters.hooked_icons = counters.hooked_icons + 1
+                return
+            end
+        end
+    end
+end
+
 function Icons.Tint(icon, factor)
     if type(icon) ~= "table" then return false end
     if type(icon.SetVertexColor) ~= "function" then return false end
@@ -395,27 +474,7 @@ function Icons.Tint(icon, factor)
     -- Remembered for the hook, which outlives this call and has to know what
     -- the setting says now rather than what it said when it was placed.
     SHADE[icon] = (shade ~= nil and shade < 1) and shade or nil
-
-    if SHADE[icon] ~= nil and not HOOKED[icon]
-        and type(_G.hooksecurefunc) == "function" then
-        if pcall(_G.hooksecurefunc, icon, "SetVertexColor",
-            function(self, r, g, b)
-                if writingTint then return end
-                local mine = SHADE[self]
-                if mine == nil then return end
-
-                -- Only the colourless state is ours. Anything else the game
-                -- wrote is a thing it is telling the player.
-                if r ~= 1 or g ~= 1 or b ~= 1 then return end
-
-                writingTint = true
-                pcall(self.SetVertexColor, self, mine, mine, mine)
-                writingTint = false
-            end)
-        then
-            HOOKED[icon] = true
-        end
-    end
+    if SHADE[icon] ~= nil then hookUsable() end
 
     if shade == nil or shade >= 1 then
         -- Only what WE tinted is put back. An icon some other addon shades

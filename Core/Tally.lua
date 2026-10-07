@@ -160,6 +160,14 @@ local COUNTERS = {
             .. "setting is worth checking before the code is",
     },
     {
+        key = "hooked_icons", label = "Game Functions Hooked",
+        kind = Tally.NORMAL, subsystem = "Icon Borders",
+        means = "the game's own repaint of a button, hooked so our shade "
+            .. "goes back in the same call - a zero beside dimmed icons "
+            .. "means the shade is written and then lost, which is exactly "
+            .. "what the probe showed before this hook existed",
+    },
+    {
         key = "rounded", label = "Minimap Buttons Rounded", kind = Tally.NORMAL,
         subsystem = "Icon Borders",
         means = "buttons other addons put around the minimap that were cut "

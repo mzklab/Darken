@@ -349,52 +349,66 @@ do
     T.eq(Icons.Tint({}, 0.4), false, "and neither is one that cannot be coloured")
 end
 
-T.suite("the icon shade holds against white and yields to meaning")
+T.suite("the icon shade is put back where the game repaints it")
 
--- The first cut of this lost everywhere. The game writes plain white to a
--- usable spell's icon on every update of the button, our shade was wiped
--- within a frame, and the author reported the setting as doing nothing. White
--- is not an answer, it is the absence of one - so that is the one state we
--- overwrite. Red out of range and grey when unusable are answers, and they
--- keep.
+-- The first cut held the shade with a hook on the icon texture, and the
+-- author's own probe showed what that was worth: every texture of a button
+-- read 0.27 while the icon read 1.00 1.00 1.00. We wrote, the game overwrote,
+-- and the hook never answered - because the game does not reach the icon
+-- through anything we can sit on. It takes it by its global name inside
+-- ActionButton_UpdateUsable and writes there, so that function is the thing
+-- to sit on.
 do
     local Icons = ns.Icons
 
     local hooks = {}
     local savedHook = _G.hooksecurefunc
-    _G.hooksecurefunc = function(object, method, fn)
-        hooks[#hooks + 1] = { object = object, method = method, fn = fn }
+    _G.hooksecurefunc = function(target, fn)
+        hooks[#hooks + 1] = { target = target, fn = fn }
     end
 
-    local icon = { r = 1, g = 1, b = 1 }
+    local savedUsable = _G.ActionButton_UpdateUsable
+    _G.ActionButton_UpdateUsable = function() end
+
+    -- Icons.IconOf asks for SetTexCoord before it will call something an
+    -- icon: the trimming lives on the same object, and a texture that cannot
+    -- be trimmed is not one.
+    local icon = { r = 1, g = 1, b = 1, SetTexCoord = function() end }
     function icon:SetVertexColor(r, g, b) self.r, self.g, self.b = r, g, b end
+    function icon:GetVertexColor() return self.r, self.g, self.b end
+
+    local button = { icon = icon }
 
     T.eq(Icons.Tint(icon, 0.4), true, "the shade is written")
     T.eq(icon.r, 0.4, "and it is on the icon")
-    T.eq(#hooks, 1, "the icon's colour setter is hooked once")
+    T.eq(#hooks, 1, "the game's own repaint is hooked")
+    T.eq(hooks[1].target, "ActionButton_UpdateUsable",
+        "and it is that function, not the texture")
 
-    -- The game says nothing: it writes white, and the shade comes back.
+    -- The game repaints a usable spell white. Our shade goes back in the same
+    -- call.
     icon.r, icon.g, icon.b = 1, 1, 1
-    hooks[1].fn(icon, 1, 1, 1)
-    T.eq(icon.r, 0.4, "white is overwritten: it reports nothing")
+    hooks[1].fn(button)
+    T.eq(icon.r, 0.4, "white is answered: it reports nothing")
 
-    -- The game says "out of range": red keeps.
-    icon.r, icon.g, icon.b = 1, 0.3, 0.3
-    hooks[1].fn(icon, 1, 0.3, 0.3)
-    T.eq(icon.g, 0.3, "red is left alone: the game is answering the player")
+    -- Not enough mana: the game's blue is an answer, and it keeps.
+    icon.r, icon.g, icon.b = 0.5, 0.5, 1
+    hooks[1].fn(button)
+    T.eq(icon.b, 1, "the blue of not enough mana is left alone")
 
-    -- The game says "unusable": grey keeps.
+    -- Cannot use it at all: the grey keeps too.
     icon.r, icon.g, icon.b = 0.4, 0.4, 0.4
-    hooks[1].fn(icon, 0.4, 0.4, 0.4)
-    T.eq(icon.r, 0.4, "grey is left alone too")
+    hooks[1].fn(button)
+    T.eq(icon.r, 0.4, "and so does the grey of unusable")
 
-    -- Switched off, the hook stands down and white stays white.
+    -- Switched off, the standing hook leaves white alone.
     T.eq(Icons.Tint(icon, 1), true, "the setting is switched off")
-    T.eq(icon.r, 1, "the icon is white again")
-    hooks[1].fn(icon, 1, 1, 1)
-    T.eq(icon.r, 1, "and the standing hook no longer darkens it")
+    icon.r, icon.g, icon.b = 1, 1, 1
+    hooks[1].fn(button)
+    T.eq(icon.r, 1, "and the icon stays white")
 
-    T.eq(#hooks, 1, "no second hook on the same icon")
+    T.eq(#hooks, 1, "the function is hooked once, not once per icon")
 
+    _G.ActionButton_UpdateUsable = savedUsable
     _G.hooksecurefunc = savedHook
 end
