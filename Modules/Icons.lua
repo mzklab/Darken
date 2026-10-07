@@ -416,6 +416,11 @@ end
 -- not the compatibility layer's business: that layer answers "what is this
 -- frame called here", and a texture path is the same everywhere.
 -- everywhere.
+-- Our own edge around a square minimap: one set of four lines, kept beside
+-- the map rather than on it, like every other texture of ours on a frame we
+-- do not own.
+local SHAPE_RING = ns.Skin.Memory()
+
 local MASKS = {
     square = "Interface\\BUTTONS\\WHITE8X8",
     round  = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask",
@@ -448,6 +453,26 @@ function Icons.Shape(square)
 
     local mask = square and MASKS.square or MASKS.round
     if not pcall(minimap.SetMaskTexture, minimap, mask) then return false end
+
+    -- A square needs an edge of ours, because the one it had was round.
+    --
+    -- Hiding the ring and stopping there leaves the map a bare rectangle of
+    -- terrain with nothing to say where it ends - the author's word for it was
+    -- that there is no texture for the square. There is no art to make here:
+    -- the same line that goes round an icon goes round the map, so the two
+    -- read as one addon rather than two ideas.
+    --
+    -- Drawn on the map itself and anchored to it: it is our texture on a frame
+    -- of the game's, which is what the side memory is for everywhere else in
+    -- this file.
+    if square then
+        if pcall(ns.Skin.Outline, minimap, SHAPE_RING, minimap, BORDER_COLOR)
+        then
+            display(SHAPE_RING[minimap], true)
+        end
+    elseif SHAPE_RING[minimap] then
+        display(SHAPE_RING[minimap], false)
+    end
 
     local ok, _, objects = pcall(ns.Compat.Resolve, "minimap-ring")
     if ok and type(objects) == "table" then

@@ -158,7 +158,7 @@ have is not shown at all.
 
 ## Current state
 
-Version 1.0.4. What changed from one version to the next is in
+Version 1.0.5. What changed from one version to the next is in
 [CHANGELOG.md](CHANGELOG.md).
 
 ## Commands

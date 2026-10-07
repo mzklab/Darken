@@ -9,6 +9,14 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.0.5
+
+**A square minimap gets an edge.** Hiding the round ring and stopping
+there left the map a bare rectangle of terrain with nothing to say where
+it ends. It is now bordered with the same line that goes around an icon,
+so the two read as one addon rather than two ideas. Turning the square
+off takes the line away and gives the game its ring back.
+
 ## 1.0.4
 
 **The round ring around a square minimap is gone.** The map was already
