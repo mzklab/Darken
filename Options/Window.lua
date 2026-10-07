@@ -1212,13 +1212,35 @@ function Window.Choices(item)
     local out = {}
     if type(values) ~= "table" then return out end
 
+    -- What a choice looks like, where the row knows how to say.
+    --
+    -- The schema declares "preview" as a function from a key to a texture
+    -- path; a row with no such function simply has no picture, and the list
+    -- draws as it always did. The window does not know what a bar texture is
+    -- and must not: it asks the row that declared the choices.
+    local function seen(key)
+        local how = type(item) == "table" and item.preview or nil
+        if type(how) ~= "function" then return nil end
+        local ok, path = pcall(how, key)
+        if not ok or type(path) ~= "string" or path == "" then return nil end
+        return path
+    end
+
     if values[1] ~= nil then
-        for i = 1, #values do out[i] = values[i] end
+        for i = 1, #values do
+            local one = values[i]
+            if type(one) == "table" then
+                out[i] = { key = one.key, text = one.text,
+                    preview = one.preview or seen(one.key) }
+            else
+                out[i] = one
+            end
+        end
         return out
     end
 
     for key, text in pairs(values) do
-        out[#out + 1] = { key = key, text = text }
+        out[#out + 1] = { key = key, text = text, preview = seen(key) }
     end
     table.sort(out, function(a, b)
         return tostring(a.text) < tostring(b.text)

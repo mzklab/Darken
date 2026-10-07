@@ -2144,6 +2144,28 @@ local NATIVE_BAR_LABEL = "Game's Own Texture"
 -- tree is built: addons add textures of their own at any time after we are
 -- loaded.
 -- @return table name -> label
+--- The picture behind a texture's name in the list.
+--
+-- A list of nine names asks the player to tell "Darken Purple" from "Darken
+-- Pink" by the word, which is the one thing a word cannot do. The row shows
+-- the texture itself instead.
+--
+-- Resolved by the same door the bar itself uses, so what the list shows and
+-- what the bar gets are one answer rather than two: a preview that resolved
+-- differently would be a lie exactly where it matters.
+--
+-- The game's own entry has no file of ours to show, and gets no strip.
+--
+-- @param key string the texture's name
+-- @return string|nil the path, or nothing
+local function BarPreview(key)
+    if key == UnitFrames.NATIVE then return nil end
+    local media = _G.LibStub and _G.LibStub("LibSharedMedia-3.0", true) or nil
+    local ok, path = pcall(UnitFrames.ResolveTexture, key, media, nil)
+    if not ok or type(path) ~= "string" or path == "" then return nil end
+    return path
+end
+
 local function BarValues()
     -- The native entry is always added, including when the library is absent:
     -- it means not a texture out of the registry but a refusal to replace one,
@@ -2880,6 +2902,7 @@ if type(ns.Schema) == "table" then
         label = "Health Bar Texture",
         path = { "health" },
         apply = "unitframes",
+        preview = BarPreview,
         hint = "The texture the health bar is drawn with. The first entry "
             .. "leaves the game's own.",
         values = BarValues,
@@ -2911,6 +2934,7 @@ if type(ns.Schema) == "table" then
         label = "Power Bar Texture",
         path = { "power" },
         apply = "unitframes",
+        preview = BarPreview,
         hint = "The texture the power bar is drawn with. The first entry "
             .. "leaves the game's own.",
         values = BarValues,

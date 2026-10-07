@@ -189,3 +189,47 @@ do
     T.ok((pages or 0) >= 12, "pages assembled: " .. tostring(pages))
     T.ok((rows or 0) >= 100, "rows assembled: " .. tostring(rows))
 end
+
+T.suite("a choice can carry the picture it stands for")
+
+-- A list of nine bar textures named "Darken Purple" against "Darken Pink" asks
+-- the player to tell two pictures apart by their words. The row shows the
+-- texture itself instead, and the window learns the path from the row that
+-- declared the choices rather than knowing what a bar texture is.
+do
+    local r = coldboot.boot({ toc = "Darken.toc", interface = 11507,
+        modules = true })
+    local Window = r.ns.Window
+
+    local item = {
+        kind = "select",
+        values = { a = "Alpha", b = "Beta" },
+        preview = function(key)
+            if key == "a" then return "Interface/Alpha" end
+            return nil
+        end,
+    }
+
+    local out = Window.Choices(item)
+    T.eq(#out, 2, "both choices are offered")
+
+    local byKey = {}
+    for i = 1, #out do byKey[out[i].key] = out[i] end
+
+    T.eq(byKey.a.preview, "Interface/Alpha", "the one with a picture carries it")
+    T.eq(byKey.b.preview, nil, "and the one without carries nothing")
+
+    -- A row that declares no preview at all is the ordinary case and must not
+    -- be disturbed: the list draws exactly as it did before.
+    local plain = Window.Choices({ kind = "select", values = { a = "Alpha" } })
+    T.eq(plain[1].preview, nil, "a list with no previews has none")
+
+    -- A preview that falls over is no preview, not a broken window.
+    local broken = Window.Choices({
+        kind = "select",
+        values = { a = "Alpha" },
+        preview = function() error("no such file") end,
+    })
+    T.eq(broken[1].preview, nil, "a preview that fell over is simply absent")
+    T.eq(broken[1].text, "Alpha", "and the choice itself is untouched")
+end

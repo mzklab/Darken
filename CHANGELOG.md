@@ -9,6 +9,16 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.3.0
+
+**The texture lists show the textures.** Choosing between "Darken
+Purple" and "Darken Pink" by their names asks a word to do the one thing
+a word cannot. Each row of the health and power bar texture lists now
+carries a strip of the texture itself, drawn from the same place the bar
+gets it - so what the list shows and what the bar gets are one answer,
+not two. The game's own entry has no strip, because there is no file of
+ours behind it.
+
 ## 1.2.0
 
 **Spell icons can be dimmed with everything else.** The dimming has

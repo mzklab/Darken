@@ -46,6 +46,13 @@ local LIST_ROWS = 12
 --- Draw a downward arrow out of bars.
 -- @param frame table the frame to draw in
 -- @return table array of textures
+-- The preview strip: how wide it is, and how much shorter than the row.
+--
+-- Wide enough that a gradient reads as a gradient rather than as a colour, and
+-- narrow enough that the longest texture name still fits beside it.
+local PREVIEW_WIDE = 90
+local PREVIEW_INSET = 10
+
 local function arrow(frame)
     local rows = {}
     for i = 1, ARROW_ROWS do
@@ -125,6 +132,25 @@ local function rowAt(list, index)
     else
         Try(row, "SetPoint", "TOP", list.rows[index - 1], "BOTTOM", 0, 0)
     end
+
+    -- The strip that shows what a choice looks like.
+    --
+    -- A list of bar textures named "Darken Purple" against "Darken Pink" asks
+    -- the player to choose a picture by its word, which is the one thing a
+    -- word cannot do. The strip is the picture itself, drawn at the right of
+    -- the row where it does not crowd the name.
+    --
+    -- Created with the row rather than when a preview first appears: a row is
+    -- reused for whatever list opens next, and a texture made halfway through
+    -- would arrive after the row had already been laid out.
+    local show = Try(row, "CreateTexture", nil, "ARTWORK")
+    if show then
+        Try(show, "SetPoint", "RIGHT", row, "RIGHT", -M.gap, 0)
+        Try(show, "SetWidth", PREVIEW_WIDE)
+        Try(show, "SetHeight", M.row - PREVIEW_INSET)
+        Try(show, "Hide")
+    end
+    row.show = show
 
     local text = Widgets.Text(row, "text")
     if text then
@@ -239,6 +265,24 @@ function Widgets.Dropdown(parent, text, onPick)
             if row then
                 local item = items[i]
                 Try(row.text, "SetText", item.text)
+
+                -- The name gives way to the strip, and takes the room back
+                -- when there is none: a list where only some entries have a
+                -- picture must not indent the others for nothing.
+                if row.show then
+                    local path = type(item.preview) == "string"
+                        and item.preview or nil
+                    if path ~= nil and Try(row.show, "SetTexture", path) then
+                        Try(row.show, "Show")
+                        Try(row.text, "SetPoint", "RIGHT", row, "RIGHT",
+                            -(M.gap * 2 + PREVIEW_WIDE), 0)
+                    else
+                        Try(row.show, "Hide")
+                        Try(row.text, "SetPoint", "RIGHT", row, "RIGHT",
+                            -M.gap, 0)
+                    end
+                end
+
                 Try(row, "Show")
 
                 Widgets.Respond(row, "select", function(me, state)
