@@ -559,7 +559,7 @@ function Addon:HandleCommand(input)
             end
         end
 
-        local records, tally = ns.Darkness.Probe(frame)
+        local records, tally, dropped = ns.Darkness.Probe(frame)
         local lines = ns.Darkness.ProbeLines(records, tally, 20)
 
         self:Print(string.format(
@@ -574,6 +574,12 @@ function Addon:HandleCommand(input)
                 frame   = tostring(where),
                 tally   = tally,
                 records = records,
+
+                -- Said rather than left to be worked out by comparing two
+                -- numbers that do not add up. A reader of this file has to be
+                -- told what is not in it; a probe that silently keeps a
+                -- fraction is worse than no probe, because it is believed.
+                dropped = dropped or 0,
             }
             self:Print(ns.Localize(
                 "log out - the whole list will land in Darken.lua "

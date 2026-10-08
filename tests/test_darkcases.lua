@@ -1068,3 +1068,38 @@ do
 
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: the probe says what it could not keep")
+
+-- The ceiling was four hundred records, and one window answers with more than
+-- a thousand: the character sheet counted 1273 textures, printed that number
+-- in its tally and kept the first four hundred. Two thirds of the evidence
+-- never reached the file and nothing said so, which is how a measurement
+-- comes to be believed while being wrong.
+do
+    local many = {}
+    for i = 1, 30 do
+        many[i] = newArt("Interface\\FrameGeneral\\UI-Background-Rock")
+    end
+
+    -- A window the walk knows, for the same reason the suite above uses it:
+    -- an unnamed stranger is turned back at the threshold and the
+    -- regions are never reached.
+    local window = newFrame("Frame", "PlayerTalentFrame", many)
+
+    local kept, tally, dropped = Darkness.Probe(window, 10)
+
+    T.eq(#kept, 10, "only as many records as there was room for")
+    T.ok(dropped > 0, "and the rest are counted rather than lost: "
+        .. tostring(dropped))
+
+    local counted = 0
+    for _, n in pairs(tally) do counted = counted + n end
+    T.eq(counted, #kept + dropped,
+        "the tally equals what was kept plus what was dropped")
+
+    -- With the ordinary ceiling the whole window fits, and nothing is missing.
+    local all, _, none = Darkness.Probe(window)
+    T.eq(none, 0, "nothing is reported missing when everything fits")
+    T.ok(#all > 10, "and the whole window is kept: " .. #all)
+end

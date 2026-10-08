@@ -4978,17 +4978,45 @@ end
 -- A pure function over an object: it needs the same methods as the walk, so it
 -- is tested with a fake made of tables, without a client.
 --
+-- The ceiling on records kept.
+--
+-- It was four hundred, and four hundred is less than one window. The
+-- character sheet answers with 1273 textures: the probe printed that number
+-- in its tally and quietly kept the first four hundred, so two thirds of the
+-- evidence never reached the file - including, every time, the end of the
+-- window where the thing being looked for was. A measurement that reports a
+-- total it did not keep is the reassuring lie this whole file is written
+-- against.
+--
+-- Four thousand is chosen against the biggest window there is rather than
+-- against a feeling. The cost is a larger saved file on the one occasion
+-- somebody typed /dark probe, which is a cost worth paying exactly then.
+local PROBE_LIMIT = 4000
+
+--- Probe one window: what will darken, what will not and why.
+--
+-- A pure function over an object: it needs the same methods as the walk, so it
+-- is tested with a fake made of tables, without a client.
+--
 -- @param object table the probe's root
--- @param limit number|nil the ceiling on records (400 by default)
+-- @param limit number|nil the ceiling on records (PROBE_LIMIT by default)
 -- @return table an array of records { depth, name, kind, image, verdict }
 -- @return table cause -> how many times
+-- @return number how many records were dropped for want of room
 function Darkness.Probe(object, limit)
     local out, tally = {}, {}
-    limit = tonumber(limit) or 400
+    limit = tonumber(limit) or PROBE_LIMIT
+
+    -- Counted rather than left to be inferred from two numbers that do not
+    -- match: a reader of the file has to be told what is missing from it.
+    local dropped = 0
 
     local function say(depth, thing, verdict, kind)
         tally[verdict] = (tally[verdict] or 0) + 1
-        if #out >= limit then return end
+        if #out >= limit then
+            dropped = dropped + 1
+            return
+        end
 
         -- What we wrote onto this picture and what is on it now.
         --
@@ -5083,7 +5111,7 @@ function Darkness.Probe(object, limit)
 
     look(object, 0)
 
-    return out, tally
+    return out, tally, dropped
 end
 
 --- The probe's lines for the chat.
