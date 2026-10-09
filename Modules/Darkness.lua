@@ -1549,11 +1549,43 @@ end
 -- in a field with a speaking name — and that is what we use.
 -- @param frame table
 -- @return table a set of objects
+--- Whether a picture sitting in an owner's icon field is really contents.
+--
+-- The field rule exists for an item's icon and a unit's portrait: the owner
+-- knows what they are earlier and more exactly than any look at the picture
+-- would. What it does not know is that today's templates keep their OWN
+-- artwork in a field of the same name. The author's probe of the character
+-- sheet named them one after another:
+--
+--     content: owner field, atlas common-icon-zoomin
+--     content: owner field, atlas common-icon-rotateleft
+--     content: owner field, atlas common-stat-bar-green
+--
+-- Those are the model's turn buttons and a stat bar - framing, spared as
+-- though they were a player's face, and left bright in a dark window.
+--
+-- The question that separates them is already answered in this file, by the
+-- rule about atlases: "a portrait and an item's icon are never an atlas". An
+-- atlas is a piece of a shared sheet, which is how framing is drawn and how
+-- contents never are. So a picture in an icon field that comes from an atlas
+-- is framing, and only the handful of atlases this file already calls
+-- contents keep their exemption.
+--
+-- @param region table
+-- @return boolean
+local function fieldIsContent(region)
+    local atlas = stringFrom(region, "GetAtlas")
+    if atlas == nil then return true end
+    return containsAny(atlas:lower(), CONTENT_ATLASES)
+end
+
 local function contentRegions(frame)
     local set = {}
     for i = 1, #CONTENT_FIELDS do
         local region = frame[CONTENT_FIELDS[i]]
-        if type(region) == "table" then set[region] = true end
+        if type(region) == "table" and fieldIsContent(region) then
+            set[region] = true
+        end
     end
     return set
 end
@@ -3852,7 +3884,9 @@ function adopt(texture)
     -- turned black: the author sent in a screenshot saying he had asked for
     -- such things not to be painted.
     for i = 1, #CONTENT_FIELDS do
-        if parent[CONTENT_FIELDS[i]] == texture then return end
+        if parent[CONTENT_FIELDS[i]] == texture and fieldIsContent(texture) then
+            return
+        end
     end
 
     if type(parent.GetStatusBarTexture) == "function" then

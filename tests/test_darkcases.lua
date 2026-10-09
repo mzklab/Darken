@@ -1103,3 +1103,50 @@ do
     T.eq(none, 0, "nothing is reported missing when everything fits")
     T.ok(#all > 10, "and the whole window is kept: " .. #all)
 end
+
+T.suite("darkness: an atlas in an icon field is still framing")
+
+-- The field rule exists for an item's icon and a unit's portrait: the owner
+-- knows what they are sooner and more exactly than any look at the picture.
+-- What it did not know is that today's templates keep their OWN artwork in a
+-- field of the same name. The author's probe of the character sheet named
+-- them one after another - "content: owner field, atlas common-icon-zoomin",
+-- the same for rotateleft, rotateright, undo and a stat bar. Those are the
+-- model's turn buttons, spared as though they were a player's face and left
+-- bright in a dark window.
+do
+    -- The frame keeps three pictures in icon fields: its own button art from
+    -- an atlas, an item's icon from a file, and a portrait from a file.
+    local chrome = newRegion({ kind = "Texture", layer = "ARTWORK",
+        atlas = "common-icon-zoomin" })
+    local item = newRegion({ kind = "Texture", layer = "ARTWORK",
+        texture = 134939 })
+    local face = newRegion({ kind = "Texture", layer = "ARTWORK",
+        texture = 626004 })
+
+    local window = newFrame("Frame", "PaperDollFrame", { chrome, item, face })
+    window.Icon = chrome
+    window.icon = item
+    window.portrait = face
+
+    local records = Darkness.Probe(window)
+
+    local verdict = {}
+    for i = 1, #records do
+        local r = records[i]
+        if r.image and r.image:find("zoomin", 1, true) then
+            verdict.chrome = r.verdict
+        end
+    end
+
+    T.eq(verdict.chrome, Darkness.PROBE_DIMS,
+        "a button's own art from an atlas is framing, whatever field holds it")
+
+    -- And the two that the rule exists for keep their exemption: an item's
+    -- icon and a portrait arrive as files, never as an atlas.
+    local spared = 0
+    for i = 1, #records do
+        if records[i].verdict ~= Darkness.PROBE_DIMS then spared = spared + 1 end
+    end
+    T.ok(spared >= 2, "the item icon and the portrait are still spared: " .. spared)
+end

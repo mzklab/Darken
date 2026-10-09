@@ -15,6 +15,14 @@ Not released. The version in the TOC is 1.0.1, the one that was
 uploaded; what follows is what has changed since, waiting for whatever
 number the next release is given.
 
+**The character sheet's golden slot frames darken.** The rule that spares
+an item's icon works by asking the frame which of its pictures is the
+icon - and today's templates keep their own artwork in a field of that
+name too, so the model's turn buttons, a stat bar and the slot frames
+were all spared as though they were a player's face. A picture that
+comes from an atlas is framing, whatever field holds it: an item's icon
+and a portrait always arrive as files.
+
 **Dimmed icons keep their shade.** The shade was written and lost: the
 author's probe read every texture of a button at 0.27 and the icon at
 1.00. The game does not reach an icon through anything an addon can sit
