@@ -9,11 +9,7 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## Unreleased
-
-Not released. The version in the TOC is 1.0.1, the one that was
-uploaded; what follows is what has changed since, waiting for whatever
-number the next release is given.
+## 1.0.2
 
 **The character sheet's golden slot frames darken.** The rule that spares
 an item's icon works by asking the frame which of its pictures is the
