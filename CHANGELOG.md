@@ -9,7 +9,11 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## 1.0.2
+## 1.0.3
+
+Everything here was reported from a live game, most of it with a probe
+of the window in question attached. Where a name of the client's
+appears in a rule below, it was read off one of those probes.
 
 **The red frame of a unit in combat stays red.** The client keeps two
 variants of a unit frame and swaps between them while that unit is
@@ -20,45 +24,42 @@ for every unit frame that has one; its ordinary twin is the same metal
 as the rest of the interface and goes on darkening. The flash of a
 swinging autoattack is spared with it, for the same reason.
 
-**A quest read off the map is readable at once.** The addon raised
-pages when the game announced one, and picking a quest out of the
-list on the map announces nothing it listens for. It now stands after
-the game's own filling of a quest page instead - the one moment both
-roads into a page have in common, and the moment the headings are set
-black by hand over the font objects, which is why a page could come
-out with a light body and a dark heading.
-
-**Quest markers stay bright.** The bang, the question mark, the turn-in
-and the number on a map pin say what a quest is and what state it is
-in; darkened they were identical grey blobs and the tracker stopped
-saying which line was ready to hand in. They are spared now. The quest
-log's own frames, tiles and backgrounds carry the same word in their
-names and still darken, because they are framing.
-
-**A page is readable the first time it opens.** Picking a quest from
-the map coloured nothing until something else happened to come along -
-"only the second time". A page the addon has just discovered now
-raises its own text instead of waiting for an announcement from the
-game that picking a quest never makes.
-
 **Text on parchment is readable** - the quest window, the quest panel
-inside the world map, books, letters and the trainer's text. Quest pages, books, letters and the
-trainer's text were dark ink meant for a light page, left dark on a
-darkened one. They are painted at the source now - the game keeps one
-font object per kind of text, and one call colours every label that
-uses it, including the ones not on screen yet. Turning the darkening
-off gives each object the ink it had. Gold and white text is left
-alone: those colours are how the game tells one kind of line from
-another, and they read on a dark page already.
+inside the world map, books, letters and the trainer's text. All of it
+is dark ink meant for a light page, and it was left dark on a darkened
+one. It is painted at the source now: the game keeps one font object
+per kind of text, and one call colours every label that uses it,
+including the ones not on screen yet. Turning the darkening off gives
+each object the ink it had. Gold and white text is left alone - those
+colours are how the game tells one kind of line from another, and they
+read on a dark page already.
 
-**A window that was shown could stay bright.** The watcher that catches
-a window appearing tested a boolean the game had handed it, and on this
-client that boolean is sometimes a protected value which cannot be
-tested at all. The test threw, the throw happened inside the watcher,
-and the walk that was to follow never ran - so the window kept the
-colours it opened with. A value that cannot be read now counts as
-shown: walking a frame that was hidden costs one pass and shows
-nothing, while skipping one that was shown is the bug.
+**A quest read off the map is readable the first time.** It coloured
+nothing until something else happened to come along - open it again
+and it was white. Two causes, both gone. A page the addon has just
+found now raises its own text instead of waiting for an announcement,
+and the addon stands after the game's own filling of a quest page -
+the one moment both roads into a page have in common, and the moment a
+heading is set black by hand over the font object, which is why a page
+could come out with a light body and a dark heading.
+
+**Quest markers stay bright.** The bang, the question mark, the
+turn-in and the number on a map pin say what a quest is and what state
+it is in; darkened they were identical grey blobs and the tracker
+stopped saying which line was ready to hand in. They are spared now.
+The quest log's own frames, tiles and backgrounds carry the same word
+in their names and still darken, because they are framing.
+
+**A window that was shown could stay bright.** The watcher that
+catches a window appearing tested a boolean the game had handed it,
+and on this client that boolean is sometimes a protected value which
+cannot be tested at all. The test threw, the throw happened inside the
+watcher, and the walk that was to follow never ran - so the window
+kept the colours it opened with. A value that cannot be read now
+counts as shown: walking a frame that was hidden costs one pass and
+shows nothing, while skipping one that was shown is the bug.
+
+## 1.0.2
 
 **The character sheet's golden slot frames darken.** The rule that spares
 an item's icon works by asking the frame which of its pictures is the
