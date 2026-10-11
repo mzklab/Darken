@@ -11,6 +11,15 @@ to the contract a module is written against.
 
 ## 1.0.2
 
+**Text on parchment is readable.** Quest pages, books, letters and the
+trainer's text were dark ink meant for a light page, left dark on a
+darkened one. They are painted at the source now - the game keeps one
+font object per kind of text, and one call colours every label that
+uses it, including the ones not on screen yet. Turning the darkening
+off gives each object the ink it had. Gold and white text is left
+alone: those colours are how the game tells one kind of line from
+another, and they read on a dark page already.
+
 **A window that was shown could stay bright.** The watcher that catches
 a window appearing tested a boolean the game had handed it, and on this
 client that boolean is sometimes a protected value which cannot be

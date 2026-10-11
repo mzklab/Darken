@@ -644,3 +644,56 @@ do
     Darkness.lastWindow = savedWindow
     _G.C_Timer = savedTimer
 end
+
+T.suite("the parchment fonts are painted, not hunted")
+
+-- The quest window came back unreadable and the count of labels raised was
+-- zero. The per-label raising is the hard way round: it needs a threshold to
+-- guess with, reaches only labels that already exist, and has to be re-run
+-- after the game writes a page.
+--
+-- A font object is the easy way round, and this addon already leans on it for
+-- the typeface - the head of Modules/Fonts.lua says a SetFont on
+-- GameFontNormal changes the text everywhere. Colour works the same.
+do
+    local function fontObject(r, g, b)
+        local o = { r = r, g = g, b = b, a = 1 }
+        function o:GetTextColor() return self.r, self.g, self.b, self.a end
+        function o:SetTextColor(cr, cg, cb, ca)
+            self.r, self.g, self.b = cr, cg, cb
+            if ca ~= nil then self.a = ca end
+        end
+        return o
+    end
+
+    local saved = {}
+    for _, name in ipairs({ "QuestFont", "QuestTitleFont", "GameFontBlack" }) do
+        saved[name] = _G[name]
+    end
+
+    -- Dark ink on a light page: exactly what the parchment family carries.
+    local quest = fontObject(0.1, 0.1, 0.1)
+    local title = fontObject(0.2, 0.1, 0.05)
+    _G.QuestFont = quest
+    _G.QuestTitleFont = title
+    _G.GameFontBlack = nil      -- a name this client does not have
+
+    local painted = ns.Darkness.PaintFonts(true)
+    T.ok(painted >= 2, "every object present was painted: " .. painted)
+
+    local ink1 = select(1, ns.Darkness.Ink())
+    T.eq(quest.r, ink1, "the body ink is ours now")
+    T.eq(title.r, ink1, "and so is the heading's")
+
+    -- The road back writes what was there, not what we think it should be.
+    ns.Darkness.PaintFonts(false)
+    T.eq(quest.r, 0.1, "the body's own ink came back")
+    T.eq(title.r, 0.2, "and the heading's, which was a different colour")
+
+    -- A name missing from this client is skipped in silence rather than
+    -- counted as a failure: the list is common to three client lines.
+    local okMissing = pcall(ns.Darkness.PaintFonts, true)
+    T.ok(okMissing, "a missing font object is not an error")
+
+    for name, was in pairs(saved) do _G[name] = was end
+end

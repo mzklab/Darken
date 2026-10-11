@@ -1938,6 +1938,92 @@ end
 -- reconnaissance's cost catches that.
 local TEXT_DEPTH = 2
 
+-- The game's font objects whose ink is dark because the page under it is
+-- light.
+--
+-- Why this exists beside the per-label raising, and why it comes first.
+--
+-- The raising walks a page, reads each label's colour and decides. That is
+-- the hard way round, and it showed: it needs a threshold to guess with, it
+-- only reaches labels that already exist, and it has to be re-run after the
+-- game writes a page. A quest window arrived unreadable and the count of
+-- labels raised was zero.
+--
+-- A font object is the easy way round, and this addon already relies on it
+-- for the typeface - the note at the head of Modules/Fonts.lua puts it
+-- plainly: a SetFont on GameFontNormal changes the text everywhere. Colour
+-- works the same way. One call per object paints every label that uses it,
+-- including the ones the game has not created yet, with no walk, no
+-- threshold and nothing to re-run.
+--
+-- Only the dark-on-parchment family is here. GameFontNormal is gold and
+-- GameFontHighlight is white: both read on a dark page already, and their
+-- colour is how the game tells one kind of line from another. Taking that
+-- away would cost more than it gives.
+--
+-- Fonts owns the typeface, this owns the colour, and the split is not
+-- arbitrary: the typeface is a choice the player makes, while the colour here
+-- is a consequence of the page having been darkened, and it is undone when
+-- the darkening is.
+local PARCHMENT_FONTS = {
+    "QuestFont", "QuestFontNormalSmall", "QuestTitleFont",
+    "ItemTextFontNormal", "ItemTextFontNormalLarge",
+    "MailTextFontNormal", "GameFontBlack", "GameFontBlackSmall",
+    "GameFontDarkGraySmall",
+}
+
+--- The ink each font object had before we touched it: name -> { r, g, b, a }.
+local FONT_BASE = {}
+
+--- Paint the parchment fonts with our ink, or give them back their own.
+--
+-- The native colour is remembered at the first painting and restored from
+-- that rather than from any idea of what it ought to be - the same rule the
+-- per-label raising follows.
+--
+-- A name this client does not have is skipped in silence: the list is common
+-- to three client lines and that is the ordinary case, not a failure.
+--
+-- @param lift boolean true to paint our ink, false to give theirs back
+-- @return number how many objects were written
+function Darkness.PaintFonts(lift)
+    local written = 0
+
+    for i = 1, #PARCHMENT_FONTS do
+        local name = PARCHMENT_FONTS[i]
+        local object = _G[name]
+
+        if type(object) == "table"
+            and type(object.SetTextColor) == "function"
+            and type(object.GetTextColor) == "function" then
+
+            if FONT_BASE[name] == nil then
+                local ok, r, g, b, a = pcall(object.GetTextColor, object)
+                r, g, b = ns.Skin.Numeric(r), ns.Skin.Numeric(g),
+                    ns.Skin.Numeric(b)
+                if ok and r ~= nil and g ~= nil and b ~= nil then
+                    FONT_BASE[name] = { r, g, b, ns.Skin.Numeric(a) or 1 }
+                end
+            end
+
+            local base = FONT_BASE[name]
+            if base ~= nil then
+                if lift then
+                    local r, g, b = Darkness.Ink()
+                    if pcall(object.SetTextColor, object, r, g, b, base[4]) then
+                        written = written + 1
+                    end
+                elseif pcall(object.SetTextColor, object,
+                    base[1], base[2], base[3], base[4]) then
+                    written = written + 1
+                end
+            end
+        end
+    end
+
+    return written
+end
+
 --- Raise a dark label into the light, if it is a dark one.
 --
 -- Called by the walk on every label of the conversation areas. The decision is
@@ -4166,10 +4252,23 @@ function Darkness.LiftPages()
     -- a single one — has the interface been touched at all.
     local settings = Settings()
     if settings == nil then return 0 end
-    if Darkness.Factor(settings.amount) >= 1 then return 0 end
+
+    -- Not darkened at all: give the fonts their own ink back and stop. This
+    -- is the one road back - the slider at zero has to undo the painting as
+    -- surely as it undoes the dimming, or a player who turns the addon down
+    -- is left with our colour on the game's own pages.
+    if Darkness.Factor(settings.amount) >= 1 then
+        Darkness.PaintFonts(false)
+        return 0
+    end
 
     -- The areas may have moved to "as in the game" since last time.
     refreshLift(settings)
+
+    -- The font objects first, and the walk after. One call paints every
+    -- label that inherits from an object, including the ones not created
+    -- yet; the walk is then left with only what the game colours inline.
+    counters.lifted = counters.lifted + Darkness.PaintFonts(true)
 
     local count = 0
     for i = 1, pagesN do
@@ -4604,6 +4703,15 @@ end
 function Darkness:ApplySettings()
     local settings = Settings()
     if not settings then return end
+
+    -- The parchment fonts, painted or given back, on every application.
+    --
+    -- Here rather than only inside the page walk, because the road back has
+    -- to work with no page on screen: a player who drags the slider to zero
+    -- while no quest is open would otherwise keep our ink on the game's
+    -- pages until the next time one was opened. One call either way, and it
+    -- costs a handful of writes.
+    Darkness.PaintFonts(Darkness.Factor(settings.amount) < 1)
 
     -- The gryphons come before the darkening: there is no point darkening what
     -- is hidden, while what is shown is obliged to be in the plan.
