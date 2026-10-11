@@ -1285,3 +1285,80 @@ do
             "and the log's own frame is framing: " .. chrome[i])
     end
 end
+
+T.suite("darkness: the combat glow on a unit frame is a reading")
+
+-- The author, in a fight: "why do you keep repainting the target's frame from
+-- red to black". The red glow says the target is fighting, and the frame
+-- pulses it - so showing it again is showing it again, and we darkened it
+-- again each time. An answer that flickers black is not an answer.
+do
+    local function named(name)
+        return newRegion({ kind = "Texture", layer = "ARTWORK", name = name })
+    end
+
+    T.eq(Darkness.ContentReason(named("TargetFrameFlash")), "name",
+        "the target's combat glow is contents")
+    T.eq(Darkness.ContentReason(named("FocusFrameFlash")), "name",
+        "and so is the focus frame's")
+    T.eq(Darkness.ContentReason(named("ActionButton1Flash")), "name",
+        "and the yellow flash of a swinging autoattack")
+
+    -- The frame around it is still framing: the glow is spared by the word,
+    -- and the word is not in the rest of the frame's names.
+    local chrome = {
+        "TargetFrameBackground", "TargetFrameTextureFrameTexture",
+        "TargetFrameNameBackground",
+    }
+    for i = 1, #chrome do
+        T.eq(Darkness.ContentReason(named(chrome[i])), nil,
+            "the frame itself still darkens: " .. chrome[i])
+    end
+end
+
+T.suite("darkness: a quest page is answered where the game fills it")
+
+-- The author: "I open the map, pick a quest, and it is not white; I close the
+-- map, open the quest, and only then it is". The raising runs on the game's
+-- announcements, and picking a quest off the map's list makes none of them.
+-- The game's own filling of the page is the moment both roads have in common,
+-- so that is where we now stand - and the page arrives as an argument of the
+-- call, so nothing has to be guessed by name.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedHook, savedDisplay = _G.hooksecurefunc, _G.QuestInfo_Display
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local installed = {}
+    _G.hooksecurefunc = function(name, fn) installed[name] = fn end
+    _G.QuestInfo_Display = function() end
+
+    Darkness.HookPages()
+    T.ok(type(installed.QuestInfo_Display) == "function",
+        "we stand after the game's filling of a quest page")
+
+    -- A second application does not hook a second time: a hook laid twice
+    -- answers twice for one call, for ever.
+    local again = false
+    _G.hooksecurefunc = function() again = true end
+    Darkness.HookPages()
+    T.eq(again, false, "and only once")
+
+    -- The heading the game sets black by hand, on a page it hands us.
+    local head = newRegion({ kind = "FontString", layer = "OVERLAY" })
+    head.r, head.g, head.b = 0, 0, 0
+    function head:GetTextColor() return self.r, self.g, self.b, 1 end
+    function head:SetTextColor(r, g, b) self.r, self.g, self.b = r, g, b end
+
+    local parent = newFrame("Frame", "MapQuestDetails", { head })
+
+    installed.QuestInfo_Display("template", parent)
+    Darkness.LiftPages()
+
+    T.ok(close(head.r, select(1, Darkness.Ink())),
+        "the heading was raised on the page the call named")
+
+    _G.hooksecurefunc, _G.QuestInfo_Display = savedHook, savedDisplay
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

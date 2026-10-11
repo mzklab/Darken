@@ -11,6 +11,22 @@ to the contract a module is written against.
 
 ## 1.0.2
 
+**The combat glow on a unit frame stays red.** The target frame puts a
+red light around the portrait while the target is fighting, and pulses
+it; we darkened it on every pulse, so an answer to "is this thing in
+combat" flickered black for as long as the fight lasted. It is a
+reading, like the grey of a mob somebody else tapped, and it is left
+alone now - as is the yellow flash of a swinging autoattack, which is
+the same thing on a button.
+
+**A quest read off the map is readable at once.** The addon raised
+pages when the game announced one, and picking a quest out of the
+list on the map announces nothing it listens for. It now stands after
+the game's own filling of a quest page instead - the one moment both
+roads into a page have in common, and the moment the headings are set
+black by hand over the font objects, which is why a page could come
+out with a light body and a dark heading.
+
 **Quest markers stay bright.** The bang, the question mark, the turn-in
 and the number on a map pin say what a quest is and what state it is
 in; darkened they were identical grey blobs and the tracker stopped

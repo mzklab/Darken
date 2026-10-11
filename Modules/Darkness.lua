@@ -843,6 +843,20 @@ local CONTENT_FIELDS = {
     -- the frame itself that is asked, and "Fill" on a frame means exactly one
     -- thing — a fill.
     "fill", "Fill", "BarFill", "barFill",
+
+    -- The flash of a frame whose unit is fighting.
+    --
+    -- The target frame puts a red glow around the portrait while the target is
+    -- in combat, and pulses it. That glow is the frame answering a question -
+    -- is this thing fighting - in the same way the grey of a mob somebody else
+    -- tapped answers "is this kill yours". Darkened, the answer turns black
+    -- and stops being one, and because the game shows the glow again on every
+    -- pulse, we darkened it again on every pulse: a red light flickering black
+    -- for as long as the fight lasted.
+    --
+    -- The same field holds the yellow flash on an action button while the
+    -- autoattack is swinging, which is a reading for the same reason.
+    "flash", "Flash",
 }
 
 -- The pieces of a name by which a texture is recognised as contents.
@@ -862,7 +876,13 @@ local CONTENT_FIELDS = {
 -- is recognised by an exact question put to the frame itself
 -- (GetStatusBarTexture in the walk) and by the rule about a coloured fill with
 -- no picture — it must not be guessed at by a piece of a name.
-local CONTENT_NAMES = { "portrait", "icon" }
+--
+-- "flash" stands here as well as in the fields above, because the two client
+-- lines reach the same glow by different roads: the older frames name it
+-- (TargetFrameFlash), the newer ones keep it only in a field of its owner. A
+-- name is asked before the atlas, so the older road does not depend on how the
+-- glow happens to be drawn.
+local CONTENT_NAMES = { "portrait", "icon", "flash" }
 
 -- The pieces of an OWNER's name by which a picture is recognised as contents.
 --
@@ -4449,6 +4469,57 @@ function Darkness.LiftPagesLater()
     end
 end
 
+-- The game's own function that fills a quest page, by name.
+--
+-- Written as a list for the reason USABLE_HOOKS in Modules/Icons.lua is: a
+-- name this client does not have is simply not hooked, and that is the same
+-- rule the rest of the addon follows for a name it cannot find.
+local PAGE_HOOKS = { "QuestInfo_Display" }
+
+-- Whether we are already standing after that function.
+local pagesHooked = false
+
+--- Stand after the game's filling of a quest page.
+--
+-- Why a hook and not an event. The raising of pages runs on announcements -
+-- a quest offered, a conversation opened - and the two roads into the same
+-- page do not announce the same things. Reading a quest off an NPC announces
+-- plenty; picking one out of the list on the world map announces nothing we
+-- listen for, and the author put it exactly: "I open the map, pick a quest,
+-- and it is not white; I close the map, open the quest, and only then it is".
+--
+-- The game's own filling is the one moment both roads have in common, and it
+-- is the right moment besides: it is where the page's text is written, and
+-- where the colour that has to be answered is written with it. A quest title
+-- in the log is set black there by hand, over the font object, which is why
+-- painting the font objects alone leaves the heading dark while the body of
+-- the same page comes out light.
+--
+-- The page is taken from the call rather than looked up by a name: the
+-- function is handed the frame it is filling, so the one frame that matters
+-- arrives for free and no guessed name is needed.
+local function hookPages()
+    if pagesHooked then return end
+    if type(_G.hooksecurefunc) ~= "function" then return end
+
+    for i = 1, #PAGE_HOOKS do
+        local name = PAGE_HOOKS[i]
+        if type(_G[name]) == "function" then
+            pcall(_G.hooksecurefunc, name, function(_, parent)
+                if type(parent) == "table" then rememberPage(parent) end
+                Darkness.LiftPagesLater()
+            end)
+        end
+    end
+
+    -- Once per session either way: a name absent now will be absent later,
+    -- and trying again every time the settings are applied would cost a
+    -- lookup for nothing.
+    pagesHooked = true
+end
+
+Darkness.HookPages = hookPages
+
 --- Restore the native colour to everything currently in the plan.
 --
 -- Why this exists. The ordinary "restore it as it was" is done by the plan
@@ -4791,6 +4862,12 @@ function Darkness:ApplySettings()
     -- pages until the next time one was opened. One call either way, and it
     -- costs a handful of writes.
     Darkness.PaintFonts(Darkness.Factor(settings.amount) < 1)
+
+    -- And stand after the game's own filling of a quest page, so a page it
+    -- fills without announcing anything is answered at the moment it is
+    -- filled. Only once the player has asked for darkening at all: until
+    -- then the addon touches nothing of the game's, hook included.
+    if Darkness.Factor(settings.amount) < 1 then hookPages() end
 
     -- The gryphons come before the darkening: there is no point darkening what
     -- is hidden, while what is shown is obliged to be in the plan.
