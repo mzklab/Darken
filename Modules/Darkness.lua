@@ -1015,6 +1015,23 @@ local CONTENT_PATHS = {
 local CONTENT_ATLASES = {
     "classicon", "raceicon", "questportrait",
     "roleicon", "microbutton", "micromenu", "lfg-icon",
+
+    -- The markers that say what a quest is and what state it is in: the
+    -- bang, the question mark, the turn-in, the number on a pin, the
+    -- storyline mark. Darkened, they become identical grey blobs, and the
+    -- tracker stops saying which of its lines is ready to hand in - the same
+    -- loss as three identically brown circles not saying who the tank is,
+    -- which is why the role icons are two lines above.
+    --
+    -- The author reported these going dark, and the names are read off his
+    -- own probe rather than guessed: the frames, tiles, tabs and backgrounds
+    -- of the quest log sit in the same list of atlases and are deliberately
+    -- NOT here - they are framing and are meant to darken. That is why these
+    -- are the marker families by name and not the word "quest".
+    "ui-questpoi", "ui-questicon", "questnormal",
+    "quest-in-progress-icon", "questlog-storylineicon", "taskpoi",
+    "questlog-icon-checkmark", "questlog-icon-ticksquare",
+    "waypoint-mappin", "questionmark",
 }
 
 -- The layer that is not subject to darkening.
@@ -2158,6 +2175,25 @@ local function rememberPage(frame)
     pageSeen[frame] = true
     pagesN = pagesN + 1
     pages[pagesN] = frame
+
+    -- A page just became known: raise it shortly, without waiting for an
+    -- event.
+    --
+    -- The author: the text is not coloured the first time, only the second.
+    -- That is this exactly. A page is remembered while the walk is passing
+    -- through it, and the raising of the pages runs on the game's own
+    -- announcements - a quest offered, a page turned. Picking a quest out of
+    -- the list on the map announces nothing we listen for, so the page was
+    -- remembered and then left alone until something else happened to run
+    -- the raising, which is what "the second time" is.
+    --
+    -- Deferred rather than immediate for the reason the deferral already
+    -- exists elsewhere in this file: the game fills a page after it builds
+    -- it, and a raising in the same frame reads colours that are about to be
+    -- overwritten.
+    if type(Darkness.LiftPagesLater) == "function" then
+        Darkness.LiftPagesLater()
+    end
 end
 
 --- Raise every dark label inside a window.

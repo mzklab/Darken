@@ -1246,3 +1246,42 @@ do
 
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: a quest marker is a marker, its frame is framing")
+
+-- The author reported the tracker's quest markers going dark after the rule
+-- about atlases went in. They are markers: the bang, the question mark, the
+-- turn-in, the number on a pin say what a quest is and what state it is in.
+-- Darkened they become identical grey blobs, and the tracker stops saying
+-- which line is ready to hand in - the same loss as three identically brown
+-- circles not saying who the tank is.
+--
+-- The names here are read off the author's own probe. The quest log's frames,
+-- tiles and backgrounds carry "Quest" in their names too and must keep
+-- darkening, which is why the rule names the marker families and not the word.
+do
+    local function atlas(name)
+        return newRegion({ kind = "Texture", layer = "ARTWORK", atlas = name })
+    end
+
+    local markers = {
+        "UI-QuestPoi-QuestNumber", "UI-QuestIcon-TurnIn-Normal",
+        "QuestNormal", "Quest-In-Progress-Icon-yellow",
+        "questlog-storylineicon", "TaskPOI-Icon",
+        "questlog-waypoint-finaldestination-questionmark",
+    }
+    for i = 1, #markers do
+        T.eq(Darkness.ContentReason(atlas(markers[i])), "atlas",
+            "a marker is contents: " .. markers[i])
+    end
+
+    local chrome = {
+        "QuestLog-frame", "QuestLog-main-background", "QuestDetailsBackgrounds",
+        "QuestLog-frame-filigree", "QuestLog-tab-icon-quest",
+        "QuestSharing-QuestLog-Button", "QuestItemBorder",
+    }
+    for i = 1, #chrome do
+        T.eq(Darkness.ContentReason(atlas(chrome[i])), nil,
+            "and the log's own frame is framing: " .. chrome[i])
+    end
+end

@@ -11,6 +11,19 @@ to the contract a module is written against.
 
 ## 1.0.2
 
+**Quest markers stay bright.** The bang, the question mark, the turn-in
+and the number on a map pin say what a quest is and what state it is
+in; darkened they were identical grey blobs and the tracker stopped
+saying which line was ready to hand in. They are spared now. The quest
+log's own frames, tiles and backgrounds carry the same word in their
+names and still darken, because they are framing.
+
+**A page is readable the first time it opens.** Picking a quest from
+the map coloured nothing until something else happened to come along -
+"only the second time". A page the addon has just discovered now
+raises its own text instead of waiting for an announcement from the
+game that picking a quest never makes.
+
 **Text on parchment is readable** - the quest window, the quest panel
 inside the world map, books, letters and the trainer's text. Quest pages, books, letters and the
 trainer's text were dark ink meant for a light page, left dark on a
