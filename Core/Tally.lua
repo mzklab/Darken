@@ -140,6 +140,23 @@ local COUNTERS = {
         means = "regions the dimming pass looked at and left alone because "
             .. "they are content, not chrome",
     },
+    -- Raising dark text out of a darkened page had no count, and the
+    -- question it answers cannot be answered any other way: "the raising
+    -- never ran" and "it ran and judged the text light enough to leave" look
+    -- identical on screen and are fixed in different places.
+    {
+        key = "lifted", label = "Labels Raised", kind = Tally.NORMAL,
+        means = "dark labels raised out of a darkened page - zero beside a "
+            .. "non-zero count of labels left alone means the rule judged "
+            .. "them all light enough, and the threshold is the thing to look "
+            .. "at rather than the walk",
+    },
+    {
+        key = "lightText", label = "Labels Left Light", kind = Tally.NORMAL,
+        means = "labels the raising looked at and left, because their own "
+            .. "colour is bright enough to read on a dark page - a yellow "
+            .. "name, a green quest title, a white reward line",
+    },
     -- Three operations shared one count, and the sharing cost three wrong
     -- diagnoses in a row: a number made of minimap buttons was read as proof
     -- that action buttons had been outlined. A count answers a question only

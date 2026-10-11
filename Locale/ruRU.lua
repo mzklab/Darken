@@ -1346,6 +1346,8 @@ ns.RegisterLocale("ruRU", {
         "затемнённый фрейм, а пропавший.",
     ["Icons"] = "Значки",
     ["Icons Dimmed"]               = "Иконок затемнено",
+    ["Labels Raised"]              = "Надписей поднято",
+    ["Labels Left Light"]          = "Надписей оставлено светлыми",
     ["Icon Edges Trimmed"]         = "Кромок у иконок срезано",
     ["Minimap Buttons Rounded"]    = "Кнопок миникарты скруглено",
     ["Icons Framed"] = "Значков обведено",

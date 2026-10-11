@@ -126,6 +126,13 @@ counters.fired_darkness  = counters.fired_darkness  or 0
 -- reading the watcher was cleared of a defect it may well own.
 counters.repainted = counters.repainted or 0
 
+-- Labels raised out of a darkened page, and labels looked at and left
+-- because their own colour reads on dark. Two counters rather than one:
+-- a zero in the first beside a number in the second says the threshold
+-- is wrong, while two zeroes say the raising never reached the page.
+counters.lifted = counters.lifted or 0
+counters.lightText = counters.lightText or 0
+
 -- The names of the game's functions whose subscription has already been
 -- counted.
 local counted = {}
@@ -1930,7 +1937,10 @@ function Darkness.LiftText(text)
             return false
         end
 
-        if not Darkness.DarkText(r, g, b) then return false end
+        if not Darkness.DarkText(r, g, b) then
+            counters.lightText = counters.lightText + 1
+            return false
+        end
 
         base = { r, g, b, ns.Skin.Numeric(a) or 1 }
 
@@ -1962,7 +1972,10 @@ function Darkness.LiftText(text)
 
     local ink1, ink2, ink3 = Darkness.Ink()
     Darkness.Unshadow(text)
-    return pcall(text.SetTextColor, text, ink1, ink2, ink3, base[4])
+
+    local ok = pcall(text.SetTextColor, text, ink1, ink2, ink3, base[4])
+    if ok then counters.lifted = counters.lifted + 1 end
+    return ok
 end
 
 --- Take the shadow off a raised label.

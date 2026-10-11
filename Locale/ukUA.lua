@@ -1358,6 +1358,8 @@ ns.RegisterLocale("ukUA", {
         "фрейм, а зниклий.",
     ["Icons"] = "Піктограми",
     ["Icons Dimmed"]               = "Іконок затемнено",
+    ["Labels Raised"]              = "Написів піднято",
+    ["Labels Left Light"]          = "Написів залишено світлими",
     ["Icon Edges Trimmed"]         = "Кромок в іконок зрізано",
     ["Minimap Buttons Rounded"]    = "Кнопок мінімапи заокруглено",
     ["Icons Framed"] = "Піктограм обведено",
