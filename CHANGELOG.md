@@ -11,6 +11,15 @@ to the contract a module is written against.
 
 ## 1.0.2
 
+**A window that was shown could stay bright.** The watcher that catches
+a window appearing tested a boolean the game had handed it, and on this
+client that boolean is sometimes a protected value which cannot be
+tested at all. The test threw, the throw happened inside the watcher,
+and the walk that was to follow never ran - so the window kept the
+colours it opened with. A value that cannot be read now counts as
+shown: walking a frame that was hidden costs one pass and shows
+nothing, while skipping one that was shown is the bug.
+
 **The character sheet's golden slot frames darken.** The rule that spares
 an item's icon works by asking the frame which of its pictures is the
 icon - and today's templates keep their own artwork in a field of that

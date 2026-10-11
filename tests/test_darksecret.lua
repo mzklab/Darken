@@ -450,3 +450,37 @@ do
     T.eq(ok, true, "the selection rule does not fail on a secret id")
     T.eq(reason, nil, "and counts such a texture as trim: its colour can be read")
 end
+
+T.suite("a secret boolean from SetShown does not stop the walk")
+
+-- The author's error log, caught in a live client:
+--
+--     Darkness.lua:1665: attempt to perform boolean test on local 'on'
+--     (a secret boolean value, while execution tainted by 'Darken')
+--
+-- The hook on SetShown tested that boolean plainly. The throw happened inside
+-- the hook, so the walk that was to follow never ran, and a window that is
+-- never walked is a window that stays bright.
+do
+    local Darkness = ns.Darkness
+
+    T.eq(Darkness.ToldHidden(false), true, "false means hidden: nothing to walk")
+    T.eq(Darkness.ToldHidden(nil), true, "and so does nothing at all")
+    T.eq(Darkness.ToldHidden(true), false, "true means shown: walk it")
+
+    -- A value that cannot be tested at all. In the client this is a secret
+    -- boolean; here it is a table whose metatable refuses the question, which
+    -- reaches the same answer by the same road - the test throws.
+    local refuses = setmetatable({}, {
+        __index = function() error("secret") end,
+        __len = function() error("secret") end,
+    })
+    T.eq(Darkness.ToldHidden(refuses), false,
+        "unreadable is read in favour of work: walk it")
+
+    -- The point of the whole thing: the answer for an unreadable value must
+    -- not be the same as the answer for false, or the bug comes straight
+    -- back in a quieter form.
+    T.ok(Darkness.ToldHidden(refuses) ~= Darkness.ToldHidden(false),
+        "unreadable and false are not the same answer")
+end

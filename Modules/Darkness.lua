@@ -1627,6 +1627,37 @@ local SHOWN_WAIT = ns.Skin.Memory()
 -- (it needs the plan and the slices) while it is called from here.
 local sweepShown
 
+--- Whether the game just said this frame was being hidden.
+--
+-- Why a function for one boolean.
+--
+-- The hook was written as "if not on then return end", and the author's error
+-- log says what that costs here:
+--
+--     Darkness.lua:1665: attempt to perform boolean test on local 'on'
+--     (a secret boolean value, while execution tainted by 'Darken')
+--
+-- The client hands out secret values for things an addon may not read, and a
+-- plain test on one throws. The throw happens inside the hook, so the walk
+-- that was to follow never runs - and a window that is never walked is a
+-- window that stays bright. That is the shape of several complaints at once.
+--
+-- Skin.Truth cannot be used here, and the reason is worth writing down: it
+-- answers false both for "this is false" and for "this cannot be read", and
+-- those two must part company in this one place. Unreadable has to mean
+-- SHOWN, because walking a frame that was in fact hidden costs one pass and
+-- changes nothing anybody can see, while skipping one that was shown leaves
+-- it light. The same rule the pictures follow: the unknown is read in favour
+-- of work.
+--
+-- @param on any what the game passed to SetShown
+-- @return boolean true only when it is readable AND says hidden
+function Darkness.ToldHidden(on)
+    local ok, hidden = pcall(function() return not on end)
+    if not ok then return false end
+    return hidden == true
+end
+
 --- Watch for the moment the hidden is shown.
 --
 -- The watcher is placed on the frame itself and only once: there are not many
@@ -1662,7 +1693,7 @@ local function watchShown(frame, area)
         if pcall(_G.hooksecurefunc, frame, "SetShown", function(self, on)
             -- It was hidden — there is nothing to walk: the next showing
             -- will call again.
-            if not on then return end
+            if Darkness.ToldHidden(on) then return end
             if type(sweepShown) == "function" then
                 pcall(sweepShown, self, area)
             end
