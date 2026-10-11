@@ -11,13 +11,14 @@ to the contract a module is written against.
 
 ## 1.0.2
 
-**The combat glow on a unit frame stays red.** The target frame puts a
-red light around the portrait while the target is fighting, and pulses
-it; we darkened it on every pulse, so an answer to "is this thing in
-combat" flickered black for as long as the fight lasted. It is a
-reading, like the grey of a mob somebody else tapped, and it is left
-alone now - as is the yellow flash of a swinging autoattack, which is
-the same thing on a button.
+**The red frame of a unit in combat stays red.** The client keeps two
+variants of a unit frame and swaps between them while that unit is
+fighting; the second one is red, and red is the whole of what it says.
+Darkened, both came out the same near-black, so the swap stopped being
+an answer and became a flicker. The combat variant is left alone now,
+for every unit frame that has one; its ordinary twin is the same metal
+as the rest of the interface and goes on darkening. The flash of a
+swinging autoattack is spared with it, for the same reason.
 
 **A quest read off the map is readable at once.** The addon raised
 pages when the game announced one, and picking a quest out of the

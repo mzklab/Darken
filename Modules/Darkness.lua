@@ -1052,6 +1052,23 @@ local CONTENT_ATLASES = {
     "quest-in-progress-icon", "questlog-storylineicon", "taskpoi",
     "questlog-icon-checkmark", "questlog-icon-ticksquare",
     "waypoint-mappin", "questionmark",
+
+    -- The red frame around a portrait while that unit is fighting.
+    --
+    -- The frame of a unit comes in variants of one atlas, and the client
+    -- swaps between them: "UI-HUD-UnitFrame-Target-PortraitOn" ordinarily,
+    -- "...-PortraitOn-InCombat" while the target is in combat. The second is
+    -- red, and red is the whole of what it says.
+    --
+    -- Darkened, both came out the same near-black, so the swap stopped being
+    -- an answer and became a flicker - which is how the author reported it,
+    -- in a fight, watching his target's frame go from red to black and back.
+    --
+    -- The ordinary variant beside it is framing and goes on darkening: it is
+    -- the same metal as the rest of the interface and says nothing. Only the
+    -- variant whose name says "in combat" is spared, and it is spared for
+    -- every unit frame that has one at once.
+    "-incombat",
 }
 
 -- The layer that is not subject to darkening.

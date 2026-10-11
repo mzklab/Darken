@@ -1362,3 +1362,36 @@ do
     _G.hooksecurefunc, _G.QuestInfo_Display = savedHook, savedDisplay
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: the red frame of a unit in combat stays red")
+
+-- Read off the author's probe of his target frame in a fight: the client
+-- keeps two variants of the same frame and swaps between them, and we
+-- darkened both to the same near-black. The swap then says nothing and only
+-- flickers - "why do you keep repainting it from red to black".
+do
+    local function atlas(name)
+        return newRegion({ kind = "Texture", layer = "ARTWORK", atlas = name })
+    end
+
+    local combat = {
+        "UI-HUD-UnitFrame-Target-PortraitOn-InCombat",
+        "UI-HUD-UnitFrame-Player-PortraitOn-InCombat",
+    }
+    for i = 1, #combat do
+        T.eq(Darkness.ContentReason(atlas(combat[i])), "atlas",
+            "the combat frame is a reading: " .. combat[i])
+    end
+
+    -- Its ordinary twin, and the rest of the frame's art, still darken: they
+    -- are the same metal as the interface around them.
+    local chrome = {
+        "UI-HUD-UnitFrame-Target-PortraitOn",
+        "UI-HUD-UnitFrame-Target-PortraitOn-Boss-Gold",
+        "UI-HUD-UnitFrame-Target-PortraitOn-Party",
+    }
+    for i = 1, #chrome do
+        T.eq(Darkness.ContentReason(atlas(chrome[i])), nil,
+            "and the frame itself darkens: " .. chrome[i])
+    end
+end
