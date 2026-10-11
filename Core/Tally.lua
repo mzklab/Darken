@@ -144,12 +144,22 @@ local COUNTERS = {
     -- question it answers cannot be answered any other way: "the raising
     -- never ran" and "it ran and judged the text light enough to leave" look
     -- identical on screen and are fixed in different places.
+    -- Required rather than ordinary, and that is the point of it.
+    --
+    -- An ordinary counter at zero is not printed: there may simply have been
+    -- no work, and twenty zeroes would bury the line. Here zero IS the
+    -- finding - a darkened page whose text was never raised is unreadable -
+    -- and the first time it was needed it could not be read, because nothing
+    -- is what the line shows for it. A measurement whose answer is invisible
+    -- in its most interesting case is not a measurement.
     {
-        key = "lifted", label = "Labels Raised", kind = Tally.NORMAL,
+        key = "lifted", label = "Labels Raised", kind = Tally.NEEDED,
+        pair = "lightText",
         means = "dark labels raised out of a darkened page - zero beside a "
             .. "non-zero count of labels left alone means the rule judged "
             .. "them all light enough, and the threshold is the thing to look "
-            .. "at rather than the walk",
+            .. "at rather than the walk; zero beside zero means the raising "
+            .. "never reached the page at all",
     },
     {
         key = "lightText", label = "Labels Left Light", kind = Tally.NORMAL,
