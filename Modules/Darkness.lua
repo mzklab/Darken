@@ -1966,9 +1966,24 @@ local TEXT_DEPTH = 2
 -- is a consequence of the page having been darkened, and it is undone when
 -- the darkening is.
 local PARCHMENT_FONTS = {
+    -- The quest family. More than the three obvious ones, and the author
+    -- found out why the hard way: the window an NPC opens went white while
+    -- the quest panel inside the world map stayed dark. Both are quest text;
+    -- they simply inherit from different objects of the same family, and the
+    -- first list only had the ones the NPC window happens to use.
     "QuestFont", "QuestFontNormalSmall", "QuestTitleFont",
+    "QuestTitleFontBlackShadow",
+    "QuestFont_Large", "QuestFont_Huge", "QuestFont_Super_Huge",
+    "QuestFont_Enormous", "QuestFont_Shadow_Small", "QuestFont_Shadow_Huge",
+    "QuestMapObjectiveFont",
+
+    -- Books, letters and the rest of the parchment.
     "ItemTextFontNormal", "ItemTextFontNormalLarge",
-    "MailTextFontNormal", "GameFontBlack", "GameFontBlackSmall",
+    "MailTextFontNormal", "MailFont_Large",
+
+    -- Ink named for being ink: black and dark grey are dark because the page
+    -- was light, which is this list's whole subject.
+    "GameFontBlack", "GameFontBlackSmall", "GameFontBlackMedium",
     "GameFontDarkGraySmall",
 }
 
@@ -5149,6 +5164,38 @@ Darkness.PROBE_DIMS = DIMS
 -- @param object table
 -- @return string|nil the atlas, the path or the file's number
 local function imageWord(object)
+    -- A label says which font object it inherits from.
+    --
+    -- Added because the colour of text is set at the object, one call for
+    -- every label that uses it, and the list of objects to paint was being
+    -- guessed. The quest window an NPC opens went white while the quest
+    -- panel inside the world map stayed dark - the same text, a different
+    -- object - and there was no way to ask which one short of trying names.
+    -- Now the probe says it, and the list is written from the answer instead
+    -- of from memory.
+    if isText(object) then
+        local said = nil
+        if type(object.GetFontObject) == "function" then
+            local ok, font = pcall(object.GetFontObject, object)
+            if ok and type(font) == "table" then
+                said = stringFrom(font, "GetName")
+            end
+        end
+
+        local shade = nil
+        if type(object.GetTextColor) == "function" then
+            local ok, r, g, b = pcall(object.GetTextColor, object)
+            r, g, b = ns.Skin.Numeric(r), ns.Skin.Numeric(g),
+                ns.Skin.Numeric(b)
+            if ok and r and g and b then
+                shade = string.format("%.2f %.2f %.2f", r, g, b)
+            end
+        end
+
+        return "font " .. (said or "unnamed")
+            .. (shade and (", ink " .. shade) or "")
+    end
+
     local atlas = stringFrom(object, "GetAtlas")
     if atlas then return "atlas " .. atlas end
 
@@ -5269,6 +5316,17 @@ function Darkness.Probe(object, limit)
             local reason = Darkness.ContentReason(thing)
             return say(depth, thing, reason and ("content: " .. reason)
                 or DIMS, kind)
+        end
+
+        -- A label. It was absent from the probe entirely, and the probe's
+        -- whole promise is to say why a window did not go dark - a promise it
+        -- was keeping only about pictures. Text is never darkened; it is
+        -- raised, by a different mechanism and for a different reason, and
+        -- when a page comes out unreadable the labels are the thing one needs
+        -- to see. The line names the font object behind each, which is where
+        -- the colour is actually decided.
+        if isText(thing) then
+            return say(depth, thing, "text, raised not darkened", kind)
         end
 
         local content = contentRegions(thing)

@@ -1150,3 +1150,50 @@ do
     end
     T.ok(spared >= 2, "the item icon and the portrait are still spared: " .. spared)
 end
+
+T.suite("darkness: the probe names the font object behind a label")
+
+-- Text colour is set at the font object: one call paints every label that
+-- inherits it. Which objects to paint was being guessed, and the guess cost a
+-- round: the quest window an NPC opens went white while the quest panel
+-- inside the world map stayed dark. The same text, a different object, and no
+-- way to ask which short of trying names.
+do
+    local font = { GetName = function() return "QuestFont_Super_Huge" end }
+
+    local label = {
+        GetObjectType = function() return "FontString" end,
+        GetFontObject = function() return font end,
+        GetTextColor = function() return 0.12, 0.09, 0.05, 1 end,
+    }
+
+    local window = newFrame("Frame", "QuestMapFrame", { label })
+    local records = Darkness.Probe(window)
+
+    local said = nil
+    for i = 1, #records do
+        local image = records[i].image
+        if image and image:find("font ", 1, true) then said = image end
+    end
+
+    T.ok(said ~= nil, "the label's line names a font")
+    T.ok(said and said:find("QuestFont_Super_Huge", 1, true) ~= nil,
+        "and names the object it inherits: " .. tostring(said))
+    T.ok(said and said:find("0.12", 1, true) ~= nil,
+        "with the ink on it, so a dark one is recognisable: " .. tostring(said))
+
+    -- A label whose object cannot be asked still gets a line rather than
+    -- disappearing from the report.
+    local bare = {
+        GetObjectType = function() return "FontString" end,
+    }
+    local plain = newFrame("Frame", "QuestMapFrame", { bare })
+    local more = Darkness.Probe(plain)
+    local any = false
+    for i = 1, #more do
+        if more[i].image and more[i].image:find("font ", 1, true) then
+            any = true
+        end
+    end
+    T.ok(any, "a label that cannot name its object is still reported")
+end
