@@ -1197,3 +1197,52 @@ do
     end
     T.ok(any, "a label that cannot name its object is still reported")
 end
+
+T.suite("darkness: a page of text buried inside another window")
+
+-- The author: open the map, pick a quest - the text is dark. Close the map,
+-- take the same quest from the NPC - it is white.
+--
+-- Two guards stood in the way and both were wrong for the map's panel. It was
+-- recognised as a page of text only where no area had been claimed yet, and
+-- the map claims one; and only down to a depth of two, while the author's own
+-- probe puts that panel's labels at five.
+--
+-- Which area a frame belongs to decides how hard it is dimmed. Whether it is
+-- a page of text decides whether its labels are raised. They are different
+-- questions, and the map's quest panel is the case where the answers differ.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local function darkLine()
+        local line = newRegion({ kind = "FontString", layer = "OVERLAY" })
+        line.r, line.g, line.b = 0.18, 0.12, 0.06
+        function line:GetTextColor() return self.r, self.g, self.b, 1 end
+        function line:SetTextColor(r, g, b) self.r, self.g, self.b = r, g, b end
+        return line
+    end
+
+    local body = darkLine()
+
+    -- The panel sits four frames down, which the old ceiling of two could
+    -- never have reached.
+    local scroll = newFrame("Frame", nil, { body })
+    local details = newFrame("Frame", nil, {}, { scroll })
+    local panel = newFrame("Frame", "QuestMapFrame", {}, { details })
+    local outer = newFrame("Frame", "WorldMapFrame", {}, { panel })
+
+    Darkness.ApplyToWindow(outer)
+    Darkness.LiftPages()
+
+    local ink = select(1, Darkness.Ink())
+    T.ok(close(body.r, ink),
+        "the buried page was found and its line raised: " .. tostring(body.r))
+
+    -- And the road back still works from there.
+    T.ok(Darkness.DropText() >= 1, "the label was restored")
+    T.ok(close(body.r, 0.18), "with the colour it actually had")
+
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

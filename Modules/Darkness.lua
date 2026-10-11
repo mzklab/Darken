@@ -1936,7 +1936,14 @@ end
 -- cases. Asking every frame for its name at any depth would mean paying a
 -- reading for every frame of the interface, and the measurement of the
 -- reconnaissance's cost catches that.
-local TEXT_DEPTH = 2
+-- Six, from a measurement rather than a guess.
+--
+-- It was two, and the note here said two was "the world map and its quest
+-- panel, that is, the deepest of the real cases". The author's probe of that
+-- very panel puts its labels at depth five. Six leaves one step of room; the
+-- price of asking more frames for their name is what the whole-cost
+-- measurement exists to catch, and it does.
+local TEXT_DEPTH = 6
 
 -- The game's font objects whose ink is dark because the page under it is
 -- light.
@@ -2422,10 +2429,31 @@ local function walk(object, depth, skip, sink, area, push)
     -- its own area: the player chooses that area's mode separately, and "as in
     -- the game" stands in it. The area travels down the tree, because the
     -- parchment lies not on the window itself but on a panel inside it.
-    if area == nil and depth <= TEXT_DEPTH then
+    -- Two conditions used to guard this, and both were wrong for the quest
+    -- panel inside the world map.
+    --
+    -- "area == nil" meant a conversation window was only recognised where no
+    -- area had been assigned yet. The map has an area of its own, so the
+    -- panel inside it was never recognised, never remembered, and its text
+    -- never raised - while the same quest read from an NPC, which opens at
+    -- the top with no area, worked. That is exactly what the author
+    -- reported: open it from the map and it is dark, open it from the NPC
+    -- and it is white.
+    --
+    -- The depth was two, with a note saying two reached the map's quest
+    -- panel. The author's own probe puts its labels at five.
+    --
+    -- The two questions were conflated. Which area a frame belongs to
+    -- decides how hard it is dimmed; whether it is a page of text decides
+    -- whether its labels are raised. A frame can be both inside somebody
+    -- else's area and a page of text, and the map's quest panel is.
+    --
+    -- So the page is remembered whatever area it is in, and the area is
+    -- still only claimed when nobody else has claimed it.
+    if depth <= TEXT_DEPTH then
         local said = stringFrom(object, "GetName")
         if Darkness.TextWindow(said) then
-            area = "questlog"
+            if area == nil then area = "questlog" end
             rememberPage(object)
         elseif depth == 0
             and Darkness.AddonWindow(said, Darkness.AddonNames()) then
