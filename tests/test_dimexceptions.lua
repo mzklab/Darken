@@ -380,6 +380,26 @@ do
     T.eq(store.session, 1, "the counter went up")
     T.eq(ns.Darkness.StartSession(), false, "a second time, no")
     T.eq(store.session, 1, "and the counter did not move")
+
+end
+
+do
+    local ns = newWorld({})
+    local store = ns.Addon.db.global.darkness
+
+    -- What the walk cost is kept per entry into the world, not per account:
+    -- it is read to answer one question - is the hitch on login ours - and a
+    -- number summed over every login since the addon was installed cannot
+    -- answer it. A store written by an older build, or by nothing at all,
+    -- has its shape corrected rather than trusted, like the rest of this
+    -- table.
+    store.cost = "not a table"
+    ns.Darkness.StartSession()
+
+    T.eq(type(store.cost), "table", "the cost of the walk has somewhere to go")
+    T.eq(store.cost.slices, 0, "and starts this session at nothing")
+    T.eq(store.cost.total, 0, "in time as well as in count")
+    T.eq(store.cost.login, nil, "with no login walk finished yet")
 end
 
 --============================================================================

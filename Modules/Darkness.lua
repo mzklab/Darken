@@ -3108,6 +3108,8 @@ Darkness.globals = {
     -- The counter of sessions. Incremented once per entry into the game and
     -- serving as the only measure of "how long ago".
     session = 0,
+    -- What the walk cost at this entry into the world: see Store().
+    cost = { slices = 0, total = 0, worst = 0 },
 }
 
 --- The subsystem's settings out of the profile.
@@ -3366,6 +3368,29 @@ local function Store()
 
     if type(store.windows) ~= "table" then store.windows = {} end
     if type(store.session) ~= "number" then store.session = 0 end
+
+    -- What the walk cost this session, in milliseconds of the game's own
+    -- clock.
+    --
+    -- Why it is kept at all. A player's review said the interface lags on
+    -- entering the game, and the author says the same of his own. Nothing in
+    -- the addon could say whether that is us: the walk is cut into slices of
+    -- three milliseconds a frame precisely so that it should not be felt, and
+    -- "should not be" is not a measurement. A hundred slices of three
+    -- milliseconds is three hundred milliseconds of the interface being busy,
+    -- spread over a hundred frames - which is exactly what a login hitch
+    -- feels like, and exactly what no counter here could show.
+    --
+    -- Three numbers and no more: how many slices ran, how long they took
+    -- together, and the longest single one. The first walk is recorded apart
+    -- because that is the one that happens at login, and it is the one the
+    -- report is being read for.
+    if type(store.cost) ~= "table" then store.cost = {} end
+    local cost = store.cost
+    if type(cost.slices) ~= "number" then cost.slices = 0 end
+    if type(cost.total)  ~= "number" then cost.total  = 0 end
+    if type(cost.worst)  ~= "number" then cost.worst  = 0 end
+
     return store
 end
 
@@ -3973,6 +3998,36 @@ function Darkness.Drain()
 
     local grew = plan.n >= from
     applyPlan(settings, from)
+
+    -- What this slice cost, painting included.
+    --
+    -- Measured after the painting rather than after the walk: the frame's
+    -- cost to the player is both, and it is the frame he feels. The clock is
+    -- the one the slicing already uses, and outside the game there is none -
+    -- in which case nothing is recorded and the walk is simply done whole.
+    local spent = nil
+    if started ~= nil then
+        local ended = nowMs()
+        if ended ~= nil then spent = ended - started end
+    end
+
+    if spent ~= nil then
+        local store = Store()
+        if store ~= nil then
+            local cost = store.cost
+            cost.slices = cost.slices + 1
+            cost.total = cost.total + spent
+            if spent > cost.worst then cost.worst = spent end
+
+            -- The first walk to finish is the login walk, and it is the one
+            -- the question is about. After it the numbers go on growing with
+            -- every window opened, which is a different question.
+            if work.at >= work.n and cost.login == nil then
+                cost.login = cost.total
+                cost.loginSlices = cost.slices
+            end
+        end
+    end
 
     if work.at >= work.n then
         slice = nil
@@ -5859,6 +5914,12 @@ function Darkness.StartSession()
 
     started = true
     store.session = store.session + 1
+
+    -- The cost is of THIS entry into the world. Kept on disk so that it
+    -- survives the logout a bug report is sent after, zeroed here so that
+    -- what is read is one login rather than a sum of all of them.
+    store.cost.slices, store.cost.total, store.cost.worst = 0, 0, 0
+    store.cost.login, store.cost.loginSlices = nil, nil
     Darkness.Forget(store.windows, store.session, FORGET_AFTER, CATALOG_MAX)
     return true
 end

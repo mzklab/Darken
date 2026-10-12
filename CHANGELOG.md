@@ -9,6 +9,31 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## Unreleased
+
+**The minimap belongs to whoever the player gave it to.** Darken's
+square minimap is off by default, and "off" was written down as "cut
+it round and show the round border" - so every login undid a square
+minimap set in another addon. Nothing is written now until the square
+is asked for, and what is put back is only what we took.
+
+The same line was behind quest objectives flickering on the minimap.
+A square map that does not say it is square leaves the libraries that
+place things on it - HereBeDragons for Questie's objectives, LibDBIcon
+for the buttons - clipping to a circle: an icon near a corner is
+inside the map and outside the circle, so it is hidden, shown, hidden
+again as the player walks. Darken now answers GetMinimapShape while
+the square is its own, and gives the former answer back when it is
+not.
+
+**The report says what the darkening cost at login.** Players report a
+hitch on entering the world, and nothing in the addon could say
+whether it is ours: the walk is cut into slices of three milliseconds
+a frame so that it should not be felt, and "should not be" is not a
+measurement. The saved file now carries three numbers for the walk
+that runs at login - how many slices, how long together, the longest
+one - and they are of that login alone.
+
 ## 1.0.3
 
 Everything here was reported from a live game, most of it with a probe
