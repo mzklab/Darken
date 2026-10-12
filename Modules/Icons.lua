@@ -675,6 +675,20 @@ end
 -- do not own.
 local SHAPE_RING = ns.Skin.Memory()
 
+--- The minimaps whose shape is ours at this moment: map -> true.
+--
+-- Empty until we have written a shape at all, and that is the state in which
+-- the map belongs to the game, or to whichever addon the player installed
+-- for it, and in which we are obliged to write nothing.
+--
+-- Kept against the frame rather than as one flag, like every other claim
+-- this file makes about somebody else's object: a claim is about the thing
+-- it was made on.
+local SHAPED = ns.Skin.Memory()
+
+--- What GetMinimapShape answered before we did, or false if nothing did.
+local SHAPE_SAID = nil
+
 local MASKS = {
     square = "Interface\\BUTTONS\\WHITE8X8",
     round  = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask",
@@ -705,8 +719,50 @@ function Icons.Shape(square)
     if type(minimap) ~= "table" then return false end
     if type(minimap.SetMaskTexture) ~= "function" then return false end
 
+    -- Nothing is written until the player has asked for a square, and
+    -- nothing is "put back" that we never took.
+    --
+    -- Reported by a player running Leatrix Plus, whose minimap is square by
+    -- its own setting. Darken's square is off by default, and the line below
+    -- used to read "the square mask or the round one", so every application
+    -- - and one happens on entering the world - wrote the round mask over
+    -- his square map and showed the round border again. He had asked us for
+    -- nothing, and we answered a question nobody put.
+    --
+    -- The rest of this addon has had the rule for a long time and states it
+    -- plainly in Modules/Darkness.lua: until the player has asked for
+    -- something, not one frame of the game's is touched. A default that
+    -- writes is not a default.
+    --
+    -- So the shape is ours only while SHAPED says we set it. Turning the
+    -- setting off restores the game's own shape, because that is what we
+    -- replaced; leaving it off from the start touches nothing at all, and
+    -- whoever else owns the minimap goes on owning it.
+    if not square and not SHAPED[minimap] then return false end
+
     local mask = square and MASKS.square or MASKS.round
     if not pcall(minimap.SetMaskTexture, minimap, mask) then return false end
+
+    SHAPED[minimap] = square and true or nil
+
+    -- Say out loud what shape the map now is.
+    --
+    -- GetMinimapShape is the question every button addon asks: LibDBIcon and
+    -- its like read it to decide where a button goes, and with no answer
+    -- they take the map for a circle and lay the buttons around a square
+    -- map's corners. Cutting the map square without saying so leaves them
+    -- wrong, and the player sees it as the OTHER addon being broken.
+    --
+    -- The former answer is kept and given back, because the global may not
+    -- be ours to begin with: another addon that squares the minimap defines
+    -- it too, and an addon that takes a thing over owes it back.
+    if square then
+        if SHAPE_SAID == nil then SHAPE_SAID = _G.GetMinimapShape or false end
+        _G.GetMinimapShape = function() return "SQUARE" end
+    elseif SHAPE_SAID ~= nil then
+        _G.GetMinimapShape = SHAPE_SAID or nil
+        SHAPE_SAID = nil
+    end
 
     -- A square needs an edge of ours, because the one it had was round.
     --

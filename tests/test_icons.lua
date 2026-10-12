@@ -412,3 +412,50 @@ do
     _G.ActionButton_UpdateUsable = savedUsable
     _G.hooksecurefunc = savedHook
 end
+
+T.suite("the minimap of another addon is left alone")
+
+-- From a player's report: Leatrix Plus squares the minimap by its own
+-- setting, and Darken turned it back into a circle without being asked.
+-- Darken's square is off by default, and "off" used to be written down as the
+-- round mask plus the round border shown - so every application, one of which
+-- happens on entering the world, answered a question nobody had put.
+do
+    local Icons = ns.Icons
+
+    local savedMinimap = _G.Minimap
+    local savedCompat = ns.Compat
+    local savedShape = _G.GetMinimapShape
+
+    -- Somebody else's square map: a mask of their choosing, their border
+    -- already hidden, and the global saying so.
+    local ring = { shown = false }
+    function ring:SetShown(on) self.shown = on end
+
+    local map = { mask = "ChatFrameBackground, a mask of their own" }
+    function map:SetMaskTexture(path) self.mask = path end
+
+    _G.Minimap = map
+    _G.GetMinimapShape = function() return "SQUARE" end
+    ns.Compat = { Resolve = function() return { "MinimapBorder" }, { ring } end }
+
+    T.eq(Icons.Shape(false), false, "off means we write nothing")
+    T.ok(map.mask:find("ChatFrameBackground", 1, true) ~= nil,
+        "their mask is still theirs: " .. tostring(map.mask))
+    T.eq(ring.shown, false, "and their hidden border stays hidden")
+    T.eq(_G.GetMinimapShape(), "SQUARE", "and their answer stands")
+
+    -- Asked for a square, we take it over - and say so, because the button
+    -- addons read that global to place themselves.
+    T.eq(Icons.Shape(true), true, "a square was asked for and set")
+    T.eq(_G.GetMinimapShape(), "SQUARE", "and we answer for the shape now")
+
+    -- And we give back what we took, rather than leaving our answer behind.
+    T.eq(Icons.Shape(false), true, "the game's own shape was asked for")
+    T.eq(_G.GetMinimapShape(), "SQUARE",
+        "the previous owner's answer is put back, not ours")
+
+    _G.Minimap = savedMinimap
+    _G.GetMinimapShape = savedShape
+    ns.Compat = savedCompat
+end
