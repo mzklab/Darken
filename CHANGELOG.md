@@ -11,6 +11,17 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**The chat is left to the addon that owns it.** With Prat, Chatter,
+Glass, BasicChatMods or ElvUI loaded, Darken no longer writes the
+chat's font objects and gives them back the font they had. Prat never
+sets a font on the chat itself - it calls the game's own
+FCF_SetChatWindowFontSize, which reads whatever font the frame
+currently has and writes it back with Prat's size - so Darken's font
+reached the chat through Prat's own hands, and every change of any
+Darken setting did it again. An addon that owns the chat and is not on
+that list still gets our font; the report counts the standing down, so
+the answer is there to read rather than guess at.
+
 **Another addon's pictures on the game's windows are left alone.**
 Questie's quest pins on the world map were painted black. They are
 frames of Questie's placed on the map's canvas, and their picture has

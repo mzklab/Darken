@@ -474,6 +474,78 @@ do
     T.eq(options.args.unitname.args.size.get(), 18, "the category get returns what was chosen")
 end
 
+T.suite("fonts: the chat is left to the addon that owns it")
+
+-- A player's report: Darken keeps overruling Prat's chat font and size.
+-- Prat does not set a font on the chat at all - it calls the game's
+-- FCF_SetChatWindowFontSize, which reads the frame's CURRENT font and writes
+-- it back with Prat's size. So our chat font object leaked into the chat
+-- through Prat's own hands, and every application of any Darken setting did
+-- it again.
+do
+    -- The question is pure: whether an addon is loaded arrives as a function.
+    T.eq(Fonts.ChatOwner(function(name) return name == "Prat-3.0" end),
+        "Prat-3.0", "the owner of the chat is found by name")
+    T.eq(Fonts.ChatOwner(function() return false end), nil,
+        "with none of them loaded the chat is ours")
+    T.eq(Fonts.ChatOwner(nil), nil,
+        "and with no way to ask, nobody owns it")
+
+    -- Installed is not loaded: an addon the player switched off owns nothing
+    -- and must not take the chat away from us.
+    local asked = {}
+    Fonts.ChatOwner(function(name) asked[#asked + 1] = name return false end)
+    T.ok(#asked > 0, "every name was put to the client: " .. #asked)
+end
+
+do
+    setupWorld()
+    _G.ChatFontNormal = newFont("Fonts\\Native.ttf", 13, "")
+    _G.ChatFontSmall  = newFont("Fonts\\Native.ttf", 11, "")
+
+    -- The stub answers one question and passes the rest through: the
+    -- category targets are resolved by the same layer.
+    local savedCompat = ns.Compat
+    local function withLoaded(answer)
+        ns.Compat = {
+            Resolve = savedCompat and savedCompat.Resolve,
+            ResolveFunction = function() return answer end,
+        }
+        Fonts.ForgetChat()
+    end
+
+    withLoaded(function(name) return name == "Prat-3.0" end)
+
+    withSettings({
+        skipGlobal = false,
+        global = { font = "Font A", adjust = 4, outline = "OUTLINE" },
+        categories = {},
+    })
+    Fonts:ApplySettings()
+
+    T.eq(GameFontNormal.current[1], "Fonts\\A.ttf",
+        "the rest of the interface still gets the player's font")
+    T.eq(_G.ChatFontNormal.current[1], "Fonts\\Native.ttf",
+        "and the chat keeps the font it had")
+    T.eq(_G.ChatFontNormal.current[2], 13,
+        "its size as well, unshifted by the adjustment")
+    T.eq(_G.ChatFontSmall.current[1], "Fonts\\Native.ttf",
+        "both of the chat's objects")
+
+    -- With nobody owning the chat it is ours like everything else: the
+    -- standing down is for an owner, not a permanent exemption.
+    withLoaded(function() return false end)
+    Fonts:ApplySettings()
+
+    T.eq(_G.ChatFontNormal.current[1], "Fonts\\A.ttf",
+        "with no chat addon the chat takes the player's font")
+    T.eq(_G.ChatFontNormal.current[2], 17, "shifted from its own native 13")
+
+    Fonts.ForgetChat()
+    ns.Compat = savedCompat
+    _G.ChatFontNormal, _G.ChatFontSmall = nil, nil
+end
+
 -- Restore the globals: the next file of the suite must not see the stubs.
 for i = 1, #FAKE_GLOBALS do _G[FAKE_GLOBALS[i]] = savedGlobals[i] end
 LibStub = savedLibStub

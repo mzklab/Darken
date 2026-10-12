@@ -1122,6 +1122,16 @@ local CONTAINERS = {
         "GetAddOnInfo",
     },
 
+    -- Whether one named addon is LOADED, which is a different question from
+    -- whether it is installed. The list above answers "what is on disk": a
+    -- disabled addon is on the list and owns nothing. The fonts subsystem
+    -- stands down from the chat for the addon that owns it, and standing
+    -- down for one the player switched off would be a defect of its own.
+    ["addon-loaded"] = {
+        "C_AddOns.IsAddOnLoaded",
+        "IsAddOnLoaded",
+    },
+
     ["container-slots"] = {
         "C_Container.GetContainerNumSlots",
         "GetContainerNumSlots",

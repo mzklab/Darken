@@ -1361,6 +1361,7 @@ ns.RegisterLocale("ukUA", {
     ["Labels Raised"]              = "Написів піднято",
     ["Labels Left Light"]          = "Написів залишено світлими",
     ["Another Addon's, Left Alone"] = "Чужих адонів не зайнято",
+    ["Chat Left To Its Owner"] = "Чат залишено його власнику",
     ["Icon Edges Trimmed"]         = "Кромок в іконок зрізано",
     ["Minimap Buttons Rounded"]    = "Кнопок мінімапи заокруглено",
     ["Icons Framed"] = "Піктограм обведено",

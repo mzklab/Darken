@@ -1349,6 +1349,7 @@ ns.RegisterLocale("ruRU", {
     ["Labels Raised"]              = "Надписей поднято",
     ["Labels Left Light"]          = "Надписей оставлено светлыми",
     ["Another Addon's, Left Alone"] = "Чужих аддонов не тронуто",
+    ["Chat Left To Its Owner"] = "Чат оставлен его хозяину",
     ["Icon Edges Trimmed"]         = "Кромок у иконок срезано",
     ["Minimap Buttons Rounded"]    = "Кнопок миникарты скруглено",
     ["Icons Framed"] = "Значков обведено",

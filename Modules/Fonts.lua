@@ -41,6 +41,13 @@ local Fonts = {
 }
 ns.Fonts = Fonts
 
+local counters = ns.Counters or {}
+ns.Counters = counters
+
+-- Claimed while the file is read, so that "this subsystem did nothing"
+-- cannot be mistaken for "this subsystem is not in the build".
+counters.yielded = counters.yielded or 0
+
 -- The marker for "no value is set, I take the level above". A string rather
 -- than a nil: it is visible as a row of its own in a dropdown, it is readable
 -- in SavedVariables and it does not vanish when AceDB strips the defaults. It
@@ -87,6 +94,94 @@ local GLOBAL_OBJECTS = {
     "NumberFontNormal", "NumberFontNormalLarge",
     "NumberFontNormalHuge", "NumberFontNormalYellow",
 }
+
+-- The font objects the chat is written with.
+--
+-- They stand in the list above as well: with no chat addon they are the
+-- game's chat and get the player's font like everything else. They are named
+-- here only so that they can be taken back out again, below.
+local CHAT_OBJECTS = {
+    ChatFontNormal = true,
+    ChatFontSmall  = true,
+}
+
+-- The addons that own the chat.
+--
+-- A list of names, and the cost of a list of names is written here plainly
+-- because this file argues against them elsewhere: an addon that owns the
+-- chat and is not named here gets our font anyway, and neither its author
+-- nor the player has any way of telling why. The author chose this knowingly
+-- over the alternative, which was a tab of its own and a switch the player
+-- would have had to find.
+--
+-- The entry it was written for is the first one. Prat does not set a font on
+-- the chat at all: it calls the game's FCF_SetChatWindowFontSize, which
+-- reads the frame's CURRENT font and writes it back with Prat's size - so
+-- our font object leaks into the chat through Prat's own hands, and the
+-- player sees his chat addon's settings being overruled by ours.
+--
+-- The report names the counter beside it, so a chat still in our font has an
+-- answer: the owner was not recognised, and the name belongs on this list.
+local CHAT_OWNERS = {
+    "Prat-3.0", "Chatter", "Glass", "BasicChatMods", "ElvUI",
+}
+
+--- Which of the chat's owners is loaded, if any.
+--
+-- A pure function over the client's answer: the question "is this addon
+-- loaded" arrives as a function, so the rule is tested without a client.
+--
+-- Loaded rather than installed, and the difference matters: an addon the
+-- player disabled is still on disk and owns nothing.
+--
+-- @param loaded function the client's "is this addon loaded"
+-- @return string|nil the name of the owner
+function Fonts.ChatOwner(loaded)
+    if type(loaded) ~= "function" then return nil end
+
+    for i = 1, #CHAT_OWNERS do
+        local name = CHAT_OWNERS[i]
+        local ok, yes = pcall(loaded, name)
+        if ok and yes then return name end
+    end
+
+    return nil
+end
+
+-- The owner found this session, false for "nobody", nil for "not asked yet".
+local chatOwner = nil
+
+--- The chat's owner on this client, asked once per session.
+--
+-- Addons do not load in the middle of a session, while the fonts are applied
+-- at every edit of every setting - and the question costs one call per name.
+--
+-- Not knowing is not remembered: before the client is determined the layer
+-- refuses, and an answer of "we do not know yet" kept for the session would
+-- hand the chat to nobody for ever.
+--
+-- @return string|nil
+function Fonts.ChatTaken()
+    if chatOwner ~= nil then return chatOwner or nil end
+
+    if type(ns.Compat) ~= "table"
+        or type(ns.Compat.ResolveFunction) ~= "function" then
+        return nil
+    end
+
+    local got, loaded = pcall(ns.Compat.ResolveFunction, "addon-loaded")
+    if not got or type(loaded) ~= "function" then return nil end
+
+    chatOwner = Fonts.ChatOwner(loaded) or false
+    return chatOwner or nil
+end
+
+--- Forget who owns the chat.
+-- Needed by the tests: a session there is one file, and its second case
+-- would arrive with the previous one's answer.
+function Fonts.ForgetChat()
+    chatOwner = nil
+end
 
 -- The categories of the targeted settings.
 --
@@ -1266,10 +1361,26 @@ function Fonts:ApplySettings()
     local path  = Fonts.MediaFont(media, font)
     local flags = Fonts.Flags(outline)
 
+    -- Whose chat this is. Asked once, outside the loop: the answer is the
+    -- same for both of the chat's objects and does not change while the
+    -- player is logged in.
+    local taken = Fonts.ChatTaken()
+
     for i = 1, #GLOBAL_OBJECTS do
-        local object = _G[GLOBAL_OBJECTS[i]]
+        local name = GLOBAL_OBJECTS[i]
+        local object = _G[name]
         if accept(object) then
-            if settings.skipGlobal then
+            if taken and CHAT_OBJECTS[name] then
+                -- The chat belongs to another addon: ours comes off it.
+                --
+                -- Restored rather than skipped, for the reason the switch
+                -- below is a restoration rather than a skip: a skip would
+                -- leave our font on the object for ever, and the chat addon
+                -- reads that object to build its own.
+                if Fonts.Restore(object) then
+                    counters.yielded = counters.yielded + 1
+                end
+            elseif settings.skipGlobal then
                 -- A restoration specifically rather than a skip. A skip
                 -- would leave the interface with our font forever, and the
                 -- switch would switch nothing off — the very defect for whose

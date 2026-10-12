@@ -172,6 +172,14 @@ local COUNTERS = {
             .. "never reached the page at all",
     },
     {
+        key = "yielded", label = "Chat Left To Its Owner",
+        kind = Tally.NORMAL, subsystem = "Fonts",
+        means = "chat font objects given their native font back because "
+            .. "another addon owns the chat. Zero with such an addon loaded "
+            .. "means its name is not on the list the fonts subsystem keeps, "
+            .. "and that is where to add it",
+    },
+    {
         key = "lightText", label = "Labels Left Light", kind = Tally.NORMAL,
         means = "labels the raising looked at and left, because their own "
             .. "colour is bright enough to read on a dark page - a yellow "
