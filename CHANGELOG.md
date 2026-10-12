@@ -9,7 +9,12 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## Unreleased
+## 1.0.4
+
+Five of these came from one review on CurseForge and from the author
+playing with the addons that review named. The theme they share is
+one sentence: an addon touches what the player gave it and nothing
+else.
 
 **Other addons' windows are recognised properly, and so left alone.**
 The setting that keeps them untouched has been there all along; what
