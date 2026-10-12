@@ -132,6 +132,7 @@ counters.repainted = counters.repainted or 0
 -- is wrong, while two zeroes say the raising never reached the page.
 counters.lifted = counters.lifted or 0
 counters.lightText = counters.lightText or 0
+counters.foreign = counters.foreign or 0
 
 -- The names of the game's functions whose subscription has already been
 -- counted.
@@ -2525,16 +2526,51 @@ local function walk(object, depth, skip, sink, area, push)
     -- still only claimed when nobody else has claimed it.
     if depth <= TEXT_DEPTH then
         local said = stringFrom(object, "GetName")
-        if Darkness.TextWindow(said) then
+        -- Whose frame this is, asked before what it looks like.
+        --
+        -- The order is the finding of a test rather than a preference.
+        -- Questie names its pins QuestieFrame<n>, and "Quest" is one of the
+        -- prefixes by which a page of parchment is recognised - so a quest
+        -- pin was taken for the quest log, remembered as a page of text, and
+        -- walked like one. A name tells us what a frame is only once we know
+        -- it is the game's to name.
+        if Darkness.AddonWindow(said, Darkness.AddonNames()) then
+            if depth == 0 then
+                -- Another addon's window takes both itself and everything
+                -- inside it into its own area: the player's question is "how
+                -- dark are other addons' windows" rather than "how dark is
+                -- this particular frame inside somebody else's window".
+                area = "addons"
+            else
+                -- Another addon's frame INSIDE a window of the game's is not
+                -- a window of theirs - it is their picture placed on ours,
+                -- and it is left alone entirely.
+                --
+                -- The author sent the world map with Questie loaded: its
+                -- quest pins were black blobs. They are frames of Questie's
+                -- named QuestieFrame<n>, reparented onto the map's canvas,
+                -- and their picture sits in a field of their own naming with
+                -- no name and no path we could recognise - so every rule in
+                -- ContentReason answers "framing" and we painted another
+                -- addon's icons black.
+                --
+                -- The two cases are told apart by depth, and the same depth
+                -- the rest of this block uses: at the top of the tree a
+                -- frame of theirs is their window, which the player may
+                -- choose to dim through the "other addons' windows" area;
+                -- inside somebody else's window it is a pin, a marker, an
+                -- overlay - a thing that says something, placed by someone
+                -- who is not us.
+                --
+                -- This file already states the rule for another addon's
+                -- property, in Icons.Round: we neither repair nor break what
+                -- belongs to others.
+                counters.foreign = counters.foreign + 1
+                return
+            end
+        elseif Darkness.TextWindow(said) then
             if area == nil then area = "questlog" end
             rememberPage(object)
-        elseif depth == 0
-            and Darkness.AddonWindow(said, Darkness.AddonNames()) then
-            -- Another addon's window takes both itself and everything inside
-            -- it into its own area: the player's question is "how dark are
-            -- other addons' windows" rather than "how dark is this particular
-            -- frame inside somebody else's window".
-            area = "addons"
         end
     end
 

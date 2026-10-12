@@ -1348,6 +1348,7 @@ ns.RegisterLocale("ruRU", {
     ["Icons Dimmed"]               = "Иконок затемнено",
     ["Labels Raised"]              = "Надписей поднято",
     ["Labels Left Light"]          = "Надписей оставлено светлыми",
+    ["Another Addon's, Left Alone"] = "Чужих аддонов не тронуто",
     ["Icon Edges Trimmed"]         = "Кромок у иконок срезано",
     ["Minimap Buttons Rounded"]    = "Кнопок миникарты скруглено",
     ["Icons Framed"] = "Значков обведено",

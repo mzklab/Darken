@@ -140,6 +140,16 @@ local COUNTERS = {
         means = "regions the dimming pass looked at and left alone because "
             .. "they are content, not chrome",
     },
+    {
+        key = "foreign", label = "Another Addon's, Left Alone",
+        kind = Tally.NORMAL,
+        means = "frames of other addons found inside a window of the game's "
+            .. "and left untouched with everything under them - a quest pin "
+            .. "on the world map, a marker, an overlay. Zero while such an "
+            .. "addon is loaded and its pictures are dark means the frame's "
+            .. "name did not begin with the addon's folder name, which is "
+            .. "how they are told apart",
+    },
     -- Raising dark text out of a darkened page had no count, and the
     -- question it answers cannot be answered any other way: "the raising
     -- never ran" and "it ran and judged the text light enough to leave" look

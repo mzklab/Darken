@@ -11,6 +11,19 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**Another addon's pictures on the game's windows are left alone.**
+Questie's quest pins on the world map were painted black. They are
+frames of Questie's placed on the map's canvas, and their picture has
+no name and no path we could recognise, so every rule for telling
+framing from contents answered "framing". A frame that belongs to
+another addon and sits inside a window of the game's is now left
+untouched with everything under it - a pin, a marker, an overlay. At
+the top of the tree a frame of theirs is still their window, which the
+"other addons' windows" setting goes on governing.
+
+The report counts what was left that way, so a pin still dark has an
+answer rather than a guess.
+
 **The minimap belongs to whoever the player gave it to.** Darken's
 square minimap is off by default, and "off" was written down as "cut
 it round and show the round border" - so every login undid a square

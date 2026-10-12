@@ -1395,3 +1395,61 @@ do
             "and the frame itself darkens: " .. chrome[i])
     end
 end
+
+T.suite("darkness: another addon's pin on the game's map is left alone")
+
+-- The author sent the world map with Questie loaded and its quest pins
+-- painted black: "the quest icons are black, and they should not be touched
+-- at all". They are frames of Questie's, named QuestieFrame<n>, reparented
+-- onto the map's canvas, and their picture sits in a field of their own
+-- naming with no name and no path - so every rule in ContentReason answers
+-- "framing" and we painted another addon's icons.
+--
+-- The depth tells the two cases apart. At the top of the tree a frame of
+-- theirs is their WINDOW, which the player may choose to dim through the
+-- "other addons' windows" area. Inside a window of the game's it is their
+-- picture placed on ours.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local installed = { "Questie", "Leatrix_Plus" }
+    ns.Compat = {
+        ResolveFunction = function(group)
+            if group == "addon-count" then
+                return function() return #installed end
+            end
+            return function(i) return installed[i] end
+        end,
+    }
+    Darkness.ForgetAddons()
+
+    -- Their frame is recognised as theirs, and that question is put before
+    -- "what does the name look like": "QuestieFrame12" begins with "Quest",
+    -- which is one of the prefixes a page of parchment is known by. Asked in
+    -- the other order, a quest pin was taken for the quest log.
+    T.eq(Darkness.AddonWindow("QuestieFrame12", Darkness.AddonNames()), true,
+        "their frame is recognised as theirs")
+    T.eq(Darkness.TextWindow("QuestieFrame12"), true,
+        "and it looks exactly like a page of the quest log")
+
+    local pin = newArt("their own picture of a quest pin")
+    local holder = newFrame("Frame", "QuestieFrame12", { pin })
+
+    local canvas = newArt("the game's own map parchment")
+    local map = newFrame("Frame", "WorldMapFrame", { canvas }, { holder })
+
+    Darkness.ApplyToWindow(map)
+
+    T.ok(close(canvas.r, helpers.whiteAt(Darkness.Factor(64))),
+        "the game's own map darkened")
+    T.eq(pin.r, 1, "and their pin was not touched")
+    T.eq(pin.g, 1, "in any channel")
+    T.eq(pin.b, 1, "at all")
+
+    Darkness.ForgetAddons()
+    ns.Compat = savedCompat
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end
