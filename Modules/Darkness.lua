@@ -1913,6 +1913,82 @@ function Darkness.AddonWindow(name, names)
     return false
 end
 
+--- Which addon created the global of this name, if any.
+--
+-- The direct answer, and the only one there is. A frame does not remember
+-- who made it, but the global variable holding it does: the client records
+-- which addon set a variable and hands the name back as the second answer
+-- of issecurevariable. Leatrix Plus reads the same pair in its own frame
+-- inspector.
+--
+-- Why it was needed. The rule above guesses from the name - a frame whose
+-- name begins with an addon's folder name is that addon's - and the guess
+-- misses whenever the two differ. The author found it with RXPGuides: its
+-- folder is RXPGuides and its frames are RXPG_something, so not one of them
+-- was recognised as somebody else's and they darkened along with the game's
+-- windows. "I want the game's windows touched and nothing else" is the
+-- whole of that setting, and a missed prefix was breaking it.
+--
+-- Our own name is not an answer: our frames are ours, the pass knows them
+-- by Darkness.IsOurs, and naming them here would only muddy the question.
+--
+-- What it costs, said plainly. The client reports a variable as tainted by
+-- whoever SET it, and one of the game's own frames created while an addon's
+-- code was running counts as set by that addon. Such a frame would be taken
+-- for somebody else's and left bright. That is the failure this can have;
+-- it is visible rather than silent, and it is the lesser error - a game
+-- window left bright is a line in a report, while another addon's window
+-- painted over is what the player is complaining about.
+--
+-- A pure function: the client's answer arrives as an argument.
+--
+-- @param name any the frame's name
+-- @param secure function|nil the client's issecurevariable
+-- @return string|nil the addon that created it
+function Darkness.Owner(name, secure)
+    if type(name) ~= "string" or name == "" then return nil end
+    if type(secure) ~= "function" then return nil end
+
+    local ok, safe, who = pcall(secure, name)
+    if not ok or safe then return nil end
+    if type(who) ~= "string" or who == "" or who == ADDON then return nil end
+
+    return who
+end
+
+-- The client's "who set this variable", resolved once.
+local secureVariable = nil
+local secureAsked = false
+
+--- Whether this frame belongs to another addon.
+--
+-- Two roads to one answer, and the order is accuracy: the client's own
+-- record first because it is exact, the guess at the name after it because
+-- a frame that never went into a global of its own has nothing else to be
+-- recognised by.
+--
+-- @param name any the frame's name
+-- @return boolean
+function Darkness.Foreign(name)
+    if not secureAsked then
+        secureAsked = true
+        if type(ns.Compat) == "table"
+            and type(ns.Compat.ResolveFunction) == "function" then
+            local got, fn = pcall(ns.Compat.ResolveFunction, "secure-variable")
+            if got and type(fn) == "function" then secureVariable = fn end
+        end
+    end
+
+    if Darkness.Owner(name, secureVariable) ~= nil then return true end
+    return Darkness.AddonWindow(name, Darkness.AddonNames())
+end
+
+--- Forget the client's answer about ownership.
+-- Needed by the tests, for the reason Darkness.ForgetAddons exists.
+function Darkness.ForgetOwners()
+    secureVariable, secureAsked = nil, false
+end
+
 -- The labels currently raised into the light: an array of objects.
 --
 -- Separate from the plan of textures rather than together with it: a label has
@@ -2534,7 +2610,7 @@ local function walk(object, depth, skip, sink, area, push)
         -- pin was taken for the quest log, remembered as a page of text, and
         -- walked like one. A name tells us what a frame is only once we know
         -- it is the game's to name.
-        if Darkness.AddonWindow(said, Darkness.AddonNames()) then
+        if Darkness.Foreign(said) then
             if depth == 0 then
                 -- Another addon's window takes both itself and everything
                 -- inside it into its own area: the player's question is "how

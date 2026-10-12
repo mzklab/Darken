@@ -11,6 +11,17 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**Other addons' windows are recognised properly, and so left alone.**
+The setting that keeps them untouched has been there all along; what
+failed was telling them apart. A window was judged somebody else's by
+its name beginning with that addon's folder name, which misses
+whenever the two are spelled differently - RXPGuides names its frames
+RXPG_something, so none of them was recognised and they darkened with
+the game's windows. The client is now asked instead: it records which
+addon set a global, and that is the direct answer to whose frame this
+is. The old guess is kept behind it for frames that never went into a
+global of their own.
+
 **The chat is left to the addon that owns it.** With Prat, Chatter,
 Glass, BasicChatMods or ElvUI loaded, Darken no longer writes the
 chat's font objects and gives them back the font they had. Prat never

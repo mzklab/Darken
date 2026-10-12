@@ -416,3 +416,53 @@ T.eq(Darkness.ModeOf(nil, "window"), "follow",
 -- to "as the shared strength" with one click.
 T.eq(Darkness.ModeAmount("addons", { addons = "follow" }, 80), 80,
     "the strength chosen by the player does not reach foreign addons")
+
+T.suite("darkness: the client is asked who made a frame")
+
+-- The guess by name misses whenever an addon's folder and its frames are
+-- spelled differently, and the author found it with a real one: the folder
+-- is RXPGuides, the frames are RXPG_something, so not one of them was
+-- recognised as somebody else's and they darkened along with the game's
+-- windows.
+--
+-- The client knows. A frame does not remember its author, but the global
+-- holding it does: issecurevariable answers with the name of the addon that
+-- set the variable.
+do
+    -- The client's answer, as the game gives it: secure, and whose.
+    local function client(made)
+        return function(name)
+            local who = made[name]
+            if who == nil then return true, nil end
+            return false, who
+        end
+    end
+
+    local secure = client({
+        RXPG_MenuFrame = "RXPGuides",
+        QuestieFrame12 = "Questie",
+    })
+
+    T.eq(Darkness.Owner("RXPG_MenuFrame", secure), "RXPGuides",
+        "the frame whose name the prefix rule cannot catch")
+    T.eq(Darkness.AddonWindow("RXPG_MenuFrame", { "RXPGuides" }), false,
+        "and the prefix rule indeed cannot catch it")
+
+    T.eq(Darkness.Owner("MerchantFrame", secure), nil,
+        "a frame of the game's belongs to nobody")
+
+    -- Our own frames are ours. The pass knows them by another road
+    -- (Darkness.IsOurs), and an answer here would only make the question
+    -- ambiguous.
+    T.eq(Darkness.Owner("DarkenWindow", client({ DarkenWindow = "Darken" })),
+        nil, "our own name is not an answer")
+
+    -- Rubbish gives an ordinary no: the name comes from the game and the
+    -- answer from a client that may not have the function at all.
+    T.eq(Darkness.Owner(nil, secure), nil, "no name, no owner")
+    T.eq(Darkness.Owner("", secure), nil, "an empty name is not a name")
+    T.eq(Darkness.Owner("RXPG_MenuFrame", nil), nil,
+        "and with no way to ask, nobody owns anything")
+    T.eq(Darkness.Owner("RXPG_MenuFrame", function() error("no") end), nil,
+        "a client that throws is a no rather than a failure")
+end

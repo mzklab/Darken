@@ -174,6 +174,9 @@ local CONSEQUENCE = {
     ["addon-loaded"] = {
         label = "Chat Left To Its Owner", kind = Report.ALTERNATIVES,
     },
+    ["secure-variable"] = {
+        label = "Other Addons' Windows", kind = Report.ALTERNATIVES,
+    },
 
     ["aura-buttons"] = {
         label = "Icon Borders", kind = Report.SERIES,

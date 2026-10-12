@@ -1132,6 +1132,19 @@ local CONTAINERS = {
         "IsAddOnLoaded",
     },
 
+    -- Who created a global variable. The client answers with the name of
+    -- the addon that set it, and that is the only direct answer to "whose
+    -- frame is this" there is: a frame does not remember its author, but
+    -- the global holding it does.
+    --
+    -- Asked by the dimming, which must touch the game's windows and not
+    -- other addons'. The rule before this was a guess at the name - a frame
+    -- whose name begins with an addon's folder name - and it misses whenever
+    -- the two differ: RXPGuides names its frames RXPG_something.
+    ["secure-variable"] = {
+        "issecurevariable",
+    },
+
     ["container-slots"] = {
         "C_Container.GetContainerNumSlots",
         "GetContainerNumSlots",
