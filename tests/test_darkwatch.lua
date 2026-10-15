@@ -1114,3 +1114,99 @@ do
     _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
     _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
 end
+
+T.suite("darkness: the repainting is counted where it lands")
+
+-- "Repaints Heard" was one number for everything, and one number cannot be
+-- acted on: the watcher sits on the shared method table of textures, so it
+-- hears Blizzard's own animations and other addons too. The author's session
+-- showed a hundred and thirty-six thousand of them, which says nothing about
+-- us until it is split - how many landed on a picture WE had painted, and in
+-- which window.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    local store = {}
+    fresh.Addon = { db = {
+        profile = { darkness = { amount = 64, mode = {} } },
+        global = { darkness = store },
+    } }
+
+    local savedTimer, savedHook, savedShow, savedCreate =
+        _G.C_Timer, _G.hooksecurefunc, _G.ShowUIPanel, _G.CreateFrame
+    _G.C_Timer = { After = function() end }
+    _G.ShowUIPanel = function() end
+
+    local methods = {
+        SetVertexColor = function() end,
+        SetAtlas = function() end,
+        SetTexture = function() end,
+    }
+    local installed = {}
+    _G.hooksecurefunc = function(object, method, handler)
+        if object == methods then installed[method] = handler end
+    end
+    _G.CreateFrame = function()
+        return {
+            CreateTexture = function()
+                return setmetatable({}, { __index = methods })
+            end,
+        }
+    end
+
+    Late.Watch()
+
+    local function art()
+        local region = {
+            r = 1, g = 1, b = 1, a = 1,
+            GetObjectType = function() return "Texture" end,
+            GetDrawLayer = function() return "ARTWORK" end,
+            GetTexture = function()
+                return "Interface" .. string.char(92) .. string.char(92)
+                    .. "DialogFrame" .. string.char(92) .. string.char(92)
+                    .. "UI-DialogBox-Background"
+            end,
+        }
+        function region:GetVertexColor() return self.r, self.g, self.b, self.a end
+        function region:SetVertexColor(cr, cg, cb)
+            self.r, self.g, self.b = cr, cg, cb
+        end
+        return region
+    end
+
+    local ours, stranger = art(), art()
+    Late.ApplyToWindow({
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "MerchantFrame" end,
+        GetRegions = function() return ours end,
+        GetChildren = function() return end,
+    })
+
+    -- The game writes three times to a picture of ours and once to a picture
+    -- that was never in the plan.
+    installed["SetVertexColor"](ours)
+    installed["SetVertexColor"](ours)
+    installed["SetVertexColor"](ours)
+    installed["SetVertexColor"](stranger)
+    Late.Repaint()
+
+    T.eq(store.churn.heard, 4, "every write the watcher heard is in the total")
+    T.eq(store.churn.ours, 3,
+        "and only the ones that landed on our own picture in the split")
+    T.eq(store.churn.by["MerchantFrame"], 3,
+        "named by the window they landed in")
+    T.eq(store.churn.by["(no window)"], nil,
+        "and a picture nobody painted is in no window's count")
+
+    fresh.Addon, fresh.flavor = nil, nil
+    _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
+    _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
+end

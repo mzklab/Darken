@@ -3497,6 +3497,24 @@ local function Store()
     -- together, and the longest single one. The first walk is recorded apart
     -- because that is the one that happens at login, and it is the one the
     -- report is being read for.
+    -- Where the game's repainting lands.
+    --
+    -- "Repaints Heard" counts every write to any texture in the interface,
+    -- by anybody - the watcher sits on the shared method table, so Blizzard's
+    -- own animations and other addons are in that number too. A hundred and
+    -- thirty-six thousand of them in one session says nothing about us until
+    -- it is split: how many landed on a texture WE had painted, and in which
+    -- window.
+    --
+    -- Written down rather than reasoned about, because the one time this was
+    -- reasoned about the conclusion was wrong: "Hooks That Ran" was read as
+    -- this watcher's firings when it counts openings of windows.
+    if type(store.churn) ~= "table" then store.churn = {} end
+    local churnStore = store.churn
+    if type(churnStore.heard) ~= "number" then churnStore.heard = 0 end
+    if type(churnStore.ours)  ~= "number" then churnStore.ours  = 0 end
+    if type(churnStore.by)    ~= "table"  then churnStore.by    = {} end
+
     if type(store.cost) ~= "table" then store.cost = {} end
     local cost = store.cost
     if type(cost.slices) ~= "number" then cost.slices = 0 end
@@ -3737,6 +3755,15 @@ local plan = {
     root  = nil,  -- the root the plan was built from
 }
 
+-- How often the game overwrote a picture of ours, and in which window.
+--
+-- Kept here rather than in the store: this is incremented on the hot path -
+-- six figures in a session - and the store corrects its own shape on every
+-- read. The numbers are handed over at the next repainting, which is
+-- throttled anyway (Darkness.Repaint).
+local churnOurs = 0
+local churnBy = {}
+
 -- The plan's generation number. Incremented on a clearing, and the former
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
@@ -3859,6 +3886,18 @@ local function gameRecolored(texture)
 
     if at > plan.n then return end
     if plan.tex[at] ~= texture then return end
+
+    -- From here on the game has overwritten a picture we painted, which is
+    -- the half of "repaints heard" that is about us. Counted before the
+    -- queue rather than after it: the queue deliberately collapses several
+    -- touches of one picture into one repainting, and the question here is
+    -- how often the game writes, not how often we answer.
+    --
+    -- The window and the area come out of the plan, so the key costs no call
+    -- to the game: the plan knew both when the picture went into it.
+    churnOurs = churnOurs + 1
+    local who = plan.win[at] or plan.group[at] or "(no window)"
+    churnBy[who] = (churnBy[who] or 0) + 1
 
     -- Into the queue rather than at once: the game, handing a list row out of
     -- a pool, touches its picture several times in a row, and answering every
@@ -4828,6 +4867,18 @@ function Darkness.Repaint()
     mine(false)
 
     dirtyN = 0
+
+    -- Hand the churn over to the store. Here because this function is
+    -- throttled already: whatever the game did since the last repainting is
+    -- written once, rather than six figures of times.
+    local store = Store()
+    if store ~= nil then
+        store.churn.heard = counters.repainted
+        store.churn.ours = churnOurs
+        local by = store.churn.by
+        for who, times in pairs(churnBy) do by[who] = times end
+    end
+
     return count
 end
 
@@ -6032,6 +6083,8 @@ function Darkness.StartSession()
     -- what is read is one login rather than a sum of all of them.
     store.cost.slices, store.cost.total, store.cost.worst = 0, 0, 0
     store.cost.login, store.cost.loginSlices = nil, nil
+    store.churn.heard, store.churn.ours = 0, 0
+    store.churn.by = {}
     Darkness.Forget(store.windows, store.session, FORGET_AFTER, CATALOG_MAX)
     return true
 end

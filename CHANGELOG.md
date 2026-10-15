@@ -9,6 +9,16 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## Unreleased
+
+**The report says where the game's repainting lands.** "Repaints
+Heard" was one number for everything - a hundred and thirty-six
+thousand in one session - and one number cannot be acted on: the
+watcher sits on the shared method table of textures, so it hears
+Blizzard's own animations and every other addon as well as the
+pictures we painted. It is now split into what was heard, what landed
+on a picture of ours, and which window each of those was in.
+
 ## 1.0.4
 
 Five of these came from one review on CurseForge and from the author
