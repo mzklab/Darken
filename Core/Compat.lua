@@ -926,6 +926,238 @@ distribute({
     ["inspect-window"] = { "InspectFrame" },
 })
 
+-- The windows whose framing the darkening paints by name.
+--
+-- WHY THIS LIST EXISTS, when the dimming already walks the whole interface.
+--
+-- The walk does not go into what is hidden, and that is the single largest
+-- saving it has: the talents window is ten thousand pictures of which a tenth
+-- is on screen. The price of that saving is that a window is painted at the
+-- moment it opens rather than before, and the player sees it - the author
+-- compared us with DarkMode, which has no such moment, and he is right about
+-- what he saw.
+--
+-- DarkMode has no such moment because it never walks. It names what to paint,
+-- and a named list can be painted before anything is shown, because naming
+-- the framing of a window is a few dozen objects where walking it is ten
+-- thousand. That is the trade this list takes: the discovery becomes a
+-- lookup, the decision of what is framing stays exactly where it was.
+--
+-- WHERE THE NAMES COME FROM. The author's own catalogue - the windows the
+-- walk really found in his client across his sessions, rather than a list
+-- written from memory. A name absent on another client line resolves to
+-- nothing and costs one failed lookup, which is how every group in this file
+-- already behaves.
+--
+-- Tabs and buttons of a window on the list are deliberately absent: the
+-- paths below reach them from the window itself, and a shorter list is a
+-- cheaper login.
+local CHROME_ROOTS = {
+    "AddFriendFrame", "AddonList", "ArcheologyDigsiteProgressBar",
+    "ArtifactLevelUpToast", "AzeriteLevelUpToast", "BNToastFrame",
+    "BackpackTokenFrame", "BankCleanUpConfirmationPopup", "BankFrame",
+    "BattleNetInviteFrame", "BattlePetTooltip", "BattlefieldMapFrame",
+    "BonusRollFrame", "BonusRollLootWonFrame", "BonusRollMoneyWonFrame",
+    "BossBanner", "BrowserSettingsTooltip", "BuffFrameTooltip",
+    "CatalogShopFrame", "CatalogShopRefundFrame", "CatalogShopTooltip",
+    "CatalogShopTopUpFrame", "ChannelFrame", "CharacterFrame",
+    "ChatConfigFrame", "ChatFrame10", "ChatFrame2", "ChatFrame3",
+    "ChatFrame4", "ChatFrame5", "ChatFrame6", "ChatFrame7",
+    "ChatFrame8", "ChatFrame9", "ChatFrameToggleVoiceDeafenButton",
+    "ChatFrameToggleVoiceMuteButton", "ClassTrainerFrame",
+    "CoinPickupFrame", "ColorPickerSoftCursor",
+    "CommunitiesAvatarPickerDialog", "CommunitiesFrame",
+    "CommunitiesGuildLogFrame", "CommunitiesGuildNewsFiltersFrame",
+    "CommunitiesGuildTextEditFrame", "CommunitiesTicketManagerDialog",
+    "ContainerFrame1", "ContainerFrame2", "ContainerFrame3",
+    "ContainerFrame4", "ContainerFrame5", "ContainerFrame6",
+    "ContainerFrame7", "ContainerFrameCombinedBags",
+    "CooldownViewerImportLayoutDialog", "CooldownViewerLayoutDialog",
+    "CooldownViewerSettings", "CovenantChoiceToast",
+    "CovenantRenownToast", "CreateChannelPopup", "CurrencyTransferMenu",
+    "DamageMeter", "DelvesCompanionAbilityListFrame",
+    "DelvesCompanionConfigurationFrame", "DressUpFrame",
+    "EditModeImportLayoutDialog", "EditModeLayoutDialog",
+    "EditModeManagerFrame", "EditModeSystemSettingsDialog",
+    "EditModeUnsavedChangesDialog", "EmbeddedItemTooltip",
+    "EventToastManagerFrame", "EventToastManagerSideDisplay",
+    "ExtraActionButton1", "F0EcA7mmcDPdYqvSQ", "F1HdPHxWAEaANDKFN",
+    "F1xee8fWxcEDG3V0Y", "F3mykWDtsj7yoAB2k", "F4cQVOMNJUhTBz2GC",
+    "F7KnWSXMfNEsBHcJp", "FCBaW6v6kALaFUbMz", "FE4TWYi6HJM83yJhy",
+    "FEvrT7hn1BDD9w9Zf", "FGlR5wQYHRKJ8IXq6", "FHLoQjxmumg5bf6qL",
+    "FHdYd5MfhNv7tHLbB", "FHjoLwx1ZXpMdfq9d", "FK697w0EBZ62Bq9pP",
+    "FLUmwOlFBJfHNpBtU", "FLzvLLXs1fFCUQli2", "FMdH85wO0TapdCt5Z",
+    "FNLqpXyn20qok8oCC", "FOg6mFLnyv98GyZEd", "FOj30E8CWBhMUyI1u",
+    "FOk4lu4hMq4t9MFu3", "FPPlyKT4oHNj7CDkc", "FRFydCBVebLGwHQzT",
+    "FTcHoPp8yShtasNoJ", "FTwbqBcSEpO5ByGa9", "FU3bKoCr0SBfKo4s2",
+    "FUxVnAzYrqavdzWLR", "FVDwluX24iIwZbz9n", "FW745BDvdqQefG7HB",
+    "FWL1sRdNW42CR8vto", "FWUdFL44JoR5soQ9C", "FWqI3l04lmgpzFqZD",
+    "FXEMTR3ZXpqReRoTU", "FXlSGXgisdJ6lVdU9", "FZ0CH8xnOyIBHPRKM",
+    "FZodK2oDhyg8Yyuld", "FbpaOraRWa5ONT8FD", "Fc18EYew2ivBZLacV",
+    "FckuVXyjtKPnZ2G70", "FdFi0Sc2LbRl7uxB9", "FdG6CJVgfiMobyKTA",
+    "FdoXohQ2ht8fD1EqB", "FeOkhmcYzswtfT8ci", "FfQyPczuKXLhTZIY5",
+    "FfvSOtOYaZbJHLBOZ", "FgeaA2W2g4SJ0AT8d", "FgeqFrRWW03JqxKaZ",
+    "FjSVZiEBiQyjJH52b", "Fk8qCUJwdQNE8ytUK", "FkHpk9E0yyOXVu1wK",
+    "FkvMUphBobTXjj9Y5", "FlTtcW6VAkJmGElDD", "FlcLkSEwC5aLL9Ozk",
+    "FloatingBattlePetTooltip",
+    "FloatingGarrisonFollowerAbilityTooltip",
+    "FloatingGarrisonFollowerTooltip", "FloatingGarrisonMissionTooltip",
+    "FloatingGarrisonShipyardFollowerTooltip",
+    "FloatingPetBattleAbilityTooltip", "Fm1wMtl6EP9u0qC53",
+    "FoMFY8hCInSYbSHeq", "FoYp17qQyzX27QIw6", "FocusFrame",
+    "Fog9TDvHzr1NU4gww", "FpukooPHNQqZsrtg2", "FriendsFrame",
+    "FriendsFriendsFrame", "FsJ9jZEYayFONh4tp", "FwRjmrbLEZbq98JrY",
+    "FyrUu4R3Qnx5wR3un", "FyyTlXbcMnW2m0ad1", "GameMenuFrame",
+    "GameNoHeaderTooltip", "GameSmallHeaderTooltip",
+    "GamepadActionBarEditFrame", "GamepadGroupLootRollFrame",
+    "GamepadHudMode", "GamepadMainActionBarFrame",
+    "GamepadPersistentInputLegend", "GamepadRadial", "GamepadReticle",
+    "GamepadScrollBarHint", "GarrisonFollowerAbilityTooltip",
+    "GarrisonFollowerAbilityWithoutCountersTooltip",
+    "GarrisonFollowerMissionAbilityWithoutCountersTooltip",
+    "GarrisonFollowerTooltip", "GarrisonShipyardFollowerTooltip",
+    "GhostFrame", "GossipFrame", "GroupLootFrame1", "GroupLootFrame2",
+    "GroupLootFrame3", "GroupLootFrame4", "GroupLootHistoryFrame",
+    "GuildControlUI", "GuildInviteFrame", "GuildRegistrarFrame",
+    "GuildRenameFrame", "HelpFrame", "IMECandidatesFrame",
+    "ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2",
+    "LFGBrowseSearchEntryTooltip", "LFGInvitePopup", "LFGParentFrame",
+    "LeaMapsPOITooltip", "LootFrame", "LootHistoryExtraTooltip",
+    "LossOfControlFrame", "MailFrame", "MajorFactionUnlockToast",
+    "MajorFactionsRenownToast", "MerchantFrame", "ModelPreviewFrame",
+    "MotionSicknessFrame", "MultiBar5", "MultiBar6", "MultiBar7",
+    "MultiCastActionBarFrame", "NamePlatesTutorial",
+    "ObjectiveTrackerTopBannerFrame", "OpacityFrame", "OpenMailFrame",
+    "OverrideActionBar", "OverrideActionBarLeaveFrameLeaveButton",
+    "PTRIssueReporterAlertFrame", "PVPFramePopup", "PVPMatchResults",
+    "PVPMatchScoreboard", "PVPReadyDialog", "PVPReadyPopup",
+    "PVPRoleCheckPopup", "PetActionBar", "PetBattleFrame",
+    "PetBattlePrimaryAbilityTooltip", "PetBattleQueueReadyFrame",
+    "PetStableFrame", "PetitionFrame", "PingSystemTutorial",
+    "PlunderstormFramePopup", "PossessActionBar",
+    "PvPObjectiveBannerFrame", "QuestFrame", "QueueStatusFrame",
+    "QuickJoinRoleSelectionFrame", "QuickJoinToastButton",
+    "QuickKeybindFrame", "QuickKeybindTooltip",
+    "RPETutorialInterrupt_Frame", "RXPDangerFrame", "RXPItemFrame",
+    "RXPTargetFrame", "RXP_MMMenuFrame", "RaidParentFrame",
+    "RaidTargetingFreeSelection", "RatingMenuFrame",
+    "RecruitAFriendRecruitmentFrame", "RecruitAFriendRewardsFrame",
+    "ReportCheatingDialog", "ReportFrame", "RolePollPopup",
+    "ScenarioRewardsFrame", "SettingsPanel",
+    "ShardTransferImminentFrame", "ShardTransferImminentMinimizeButton",
+    "SideDressUpFrame", "SmartNavigation", "SocialUIFrame",
+    "SoftCursor", "SplashFrame", "StackSplitFrame", "StanceBar",
+    "StartSplash", "StopwatchFrame", "StreamingIcon",
+    "SuperTrackedFrame", "SwingTimerMainHandFrame",
+    "SwingTimerOffHandFrame", "SwingTimerRangedFrame", "TabardFrame",
+    "TalkingHeadFrame", "TaxiFrame", "TicketStatusFrame",
+    "TimeAlertFrame", "TimeManagerFrame", "TradeFrame",
+    "TutorialDoubleKey_Frame", "TutorialFrame",
+    "TutorialKeyboardMouseFrame_Frame", "TutorialMainFrame_Frame",
+    "TutorialSingleKey_Frame", "TutorialWalk_Frame",
+    "UIWidgetCenterDisplayFrame",
+    "VoiceChatChannelActivatedNotification",
+    "VoiceChatPromptActivateChannel", "WardrobeCustomSetEditFrame",
+    "WorldMapFrame",
+}
+
+distribute({ chrome = CHROME_ROOTS })
+
+-- The eight pieces a nine-slice border is cut into.
+local CHROME_CORNERS = {
+    "TopEdge", "RightEdge", "LeftEdge", "BottomEdge",
+    "TopRightCorner", "TopLeftCorner",
+    "BottomRightCorner", "BottomLeftCorner",
+}
+
+-- Where a window keeps its framing, under its own name.
+--
+-- The game builds its windows out of the same handful of parts, and they are
+-- reached by the same handful of paths in every one of them. So the list of
+-- targets is a product rather than a transcript: roots multiplied by paths,
+-- which is how a few hundred names cover an interface that a transcript
+-- could not.
+--
+-- An empty path is the window itself: its own regions are its backdrop and
+-- its edges on the older templates.
+local CHROME_PATHS = { "", "Bg", "Background", "NineSlice", "Inset",
+    "Inset.Bg", "Inset.NineSlice", "Border", "BorderFrame", "TitleBg",
+    "TopTileStreaks" }
+
+for i = 1, #CHROME_CORNERS do
+    CHROME_PATHS[#CHROME_PATHS + 1] = "NineSlice." .. CHROME_CORNERS[i]
+    CHROME_PATHS[#CHROME_PATHS + 1] = "Inset.NineSlice." .. CHROME_CORNERS[i]
+end
+
+-- The paths above, split into their steps. Built at the first call rather
+-- than here: the splitter is declared further down this file, and a list
+-- built at load would have to wait for it.
+--
+-- A path is a string with dots in it and reading it costs a split. There are
+-- seven thousand of these lookups on an application of the settings, and the
+-- whole-cost measurement caught the splitting at once - eighteen
+-- milliseconds, which is a dropped frame. Split once, indexed thereafter.
+local CHROME_STEPS = nil
+
+-- One step into an object, in a form a protected call can take.
+local function chromeStep(object, key) return object[key] end
+
+--- Every named piece of framing that exists on this client.
+--
+-- The product of the two lists above, filtered by existence - the same
+-- promise Compat.Resolve makes and no more: the object is there, and what
+-- kind of object it is the caller asks the object itself.
+--
+-- The root is looked up once per root rather than once per path: a window
+-- this client does not have costs one failed index instead of twenty-seven,
+-- and on any given client line most of the list is such a window.
+--
+-- @param globals table|nil the globals table; _G when absent
+-- @return table array of paths
+-- @return table array of objects
+function Compat.ResolveChrome(globals)
+    local where = type(globals) == "table" and globals or _G
+    local paths, objects = {}, {}
+
+    if CHROME_STEPS == nil then
+        CHROME_STEPS = {}
+        for i = 1, #CHROME_PATHS do
+            CHROME_STEPS[i] = Compat.PathParts(CHROME_PATHS[i])
+        end
+    end
+
+    local roots = Compat.GetFrameNames(ns.flavor, "chrome")
+    for i = 1, #roots do
+        local root = roots[i]
+        local ok, base = pcall(chromeStep, where, root)
+
+        if ok and type(base) == "table" then
+            for j = 1, #CHROME_STEPS do
+                local steps = CHROME_STEPS[j]
+                local object = base
+
+                for k = 1, #steps do
+                    if type(object) ~= "table" then object = nil break end
+                    local fine, value = pcall(chromeStep, object, steps[k])
+                    if not fine then object = nil break end
+                    object = value
+                end
+
+                if type(object) == "table" then
+                    local path = root
+                    if CHROME_PATHS[j] ~= "" then
+                        path = root .. "." .. CHROME_PATHS[j]
+                    end
+                    paths[#paths + 1] = path
+                    objects[#objects + 1] = object
+                end
+            end
+        end
+    end
+
+    return paths, objects
+end
+
 -- The pet's game functions used to be declared here: its happiness and what
 -- it eats. They existed for the pet-feeding part, which is no longer in the
 -- addon, and the groups went with it.

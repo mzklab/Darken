@@ -141,6 +141,14 @@ local COUNTERS = {
             .. "they are content, not chrome",
     },
     {
+        key = "named", label = "Painted By Name", kind = Tally.NORMAL,
+        means = "pictures painted because the compatibility layer could name "
+            .. "them, before any window was shown - the share of the "
+            .. "interface that no longer darkens only at the moment it "
+            .. "opens. Read beside Objects Dimmed: the two together say how "
+            .. "far the naming has got",
+    },
+    {
         key = "foreign", label = "Another Addon's, Left Alone",
         kind = Tally.NORMAL,
         means = "frames of other addons found inside a window of the game's "

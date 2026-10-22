@@ -1453,3 +1453,53 @@ do
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: the framing we can name is painted before it is shown")
+
+-- The walk does not enter what is hidden - its largest saving, and the
+-- reason a window used to darken at the moment it opened rather than before.
+-- The author compared this addon with one that names its targets instead of
+-- walking and said theirs looks better on entering the game. It does, and a
+-- name is why: a name does not care whether the frame is shown.
+--
+-- What changes is the finding, not the deciding. A picture still goes
+-- through the same rule that tells framing from contents.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local backdrop = newArt("the window's own backdrop")
+    local edge = newArt("a piece of its border")
+    local portrait = newRegion({ kind = "Texture", layer = "ARTWORK",
+        name = "SomeWindowPortrait" })
+    portrait.r, portrait.g, portrait.b = 1, 1, 1
+
+    -- Hidden, as every window is until the player opens it.
+    local window = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "SomeWindow" end,
+        IsShown = function() return false end,
+        GetRegions = function() return backdrop, portrait end,
+        GetChildren = function() return end,
+    }
+
+    ns.Compat = {
+        ResolveChrome = function()
+            return { "SomeWindow", "SomeWindow.NineSlice.TopEdge" },
+                   { window, edge }
+        end,
+    }
+
+    local painted = Darkness.PaintNamed()
+    T.ok(painted >= 2, "the named framing went into the plan: " .. painted)
+
+    local dark = helpers.whiteAt(Darkness.Factor(64))
+    T.ok(close(backdrop.r, dark), "the hidden window's backdrop is dark already")
+    T.ok(close(edge.r, dark), "and so is the border named by a path of its own")
+    T.eq(portrait.r, 1, "while the portrait is spared, as it is by the walk")
+
+    ns.Compat = savedCompat
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

@@ -177,6 +177,11 @@ local CONSEQUENCE = {
     ["secure-variable"] = {
         label = "Other Addons' Windows", kind = Report.ALTERNATIVES,
     },
+    ["chrome"] = {
+        label = "Interface Darkness", kind = Report.SERIES,
+        later = "the windows the darkening paints by name: a window the "
+            .. "client does not have resolves to nothing, which is ordinary",
+    },
 
     ["aura-buttons"] = {
         label = "Icon Borders", kind = Report.SERIES,

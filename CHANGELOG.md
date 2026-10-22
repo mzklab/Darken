@@ -11,6 +11,21 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**Windows are dark before they open.** Until now the darkening found
+its work by walking the interface, and the walk does not enter what is
+hidden - which is its largest saving and also why a window darkened at
+the moment it opened rather than before. The framing the addon can
+name is now painted straight away, with no walk and no waiting for the
+window to be shown. What the names do not cover the walk still finds,
+and what counts as framing is decided by exactly the same rule as
+before: only the finding changed.
+
+The names are the player's own: the windows this client really has,
+taken from the catalogue the walk built over past sessions, multiplied
+by the handful of paths the game keeps a window's framing in. The
+report counts what was painted that way, so how far the naming has got
+is a number rather than an impression.
+
 **The minimap's icons stopped stuttering.** Questie writes to its pins
 as the player walks, and every such write made us climb up to six
 generations of frames through protected calls looking for the area

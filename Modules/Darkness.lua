@@ -134,6 +134,13 @@ counters.lifted = counters.lifted or 0
 counters.lightText = counters.lightText or 0
 counters.foreign = counters.foreign or 0
 
+--- The pictures painted by name rather than found by the walk.
+--
+-- The measure of how far the naming has got. Beside "Objects Dimmed" it says
+-- what share of the interface no longer waits for a window to open before it
+-- darkens, and that share is the whole point of the list of names.
+counters.named = counters.named or 0
+
 -- The names of the game's functions whose subscription has already been
 -- counted.
 local counted = {}
@@ -4404,6 +4411,80 @@ function adopt(texture)
     if plan.n >= from then applyPlan(settings, from) end
 end
 
+--- Paint the framing the compatibility layer can name, without a walk.
+--
+-- WHY THIS EXISTS BESIDE THE WALK.
+--
+-- The walk does not enter what is hidden, which is its largest saving and
+-- also the reason a window darkens at the moment it opens rather than
+-- before. The author put it plainly, comparing this addon with one that
+-- names its targets instead of walking: theirs looks better on entering the
+-- game. It does, and this is why.
+--
+-- A name does not care whether the frame is shown. So the framing the layer
+-- can name is painted here, at once, before anything is on screen - and the
+-- walk afterwards finds it already in the plan and passes over it.
+--
+-- WHAT IS AND IS NOT DIFFERENT. The discovery changes; the decision does
+-- not. Every picture still goes through the same rule that tells framing
+-- from contents, and a picture that rule spares is spared here too. This is
+-- not a second opinion about what to paint - it is the same opinion,
+-- reached without a walk.
+--
+-- Only the regions of a named frame, and no descent into its children. A
+-- child that matters is named by a path of its own (the nine-slice parts);
+-- a child that is not named is the walk's business, and taking it here
+-- would be the ten thousand pictures over again.
+--
+-- @return number how many pictures were painted
+function Darkness.PaintNamed()
+    local settings = Settings()
+    if settings == nil then return 0 end
+    if type(ns.Compat) ~= "table"
+        or type(ns.Compat.ResolveChrome) ~= "function" then
+        return 0
+    end
+
+    local ok, paths, objects = pcall(ns.Compat.ResolveChrome)
+    if not ok or type(objects) ~= "table" then return 0 end
+
+    local from = plan.n + 1
+
+    for i = 1, #objects do
+        local object = objects[i]
+
+        if not ns.Skin.Forbidden(object) and not Darkness.IsOurs(object) then
+            local kind = objectType(object)
+
+            if kind == "Texture" then
+                if chromeOf(object) then
+                    record(object, "window", nil)
+                    counters.named = counters.named + 1
+                end
+            elseif kind ~= nil and not SKIP_TYPES[kind] then
+                local fine, regions = pcall(gather, object.GetRegions, object)
+                if fine then
+                    local content = contentRegions(object)
+                    for j = 1, #regions do
+                        local region = regions[j]
+                        if not content[region]
+                            and not ns.Skin.Forbidden(region)
+                            and not Darkness.IsOurs(region)
+                            and objectType(region) == "Texture"
+                            and chromeOf(region) then
+                            record(region, "window", nil)
+                            counters.named = counters.named + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if plan.n >= from then applyPlan(settings, from) end
+    return plan.n - from + 1
+end
+
 --- Reconnoitre the interface and gather what was found into the plan.
 -- The very same walk as before: the named groups by their own names, everything
 -- else from the interface's root over every named window. Not one list of names
@@ -5175,6 +5256,14 @@ function Darkness:ApplySettings()
         gryphonsShown = wanted
         Darkness.ShowGryphons(wanted)
     end
+
+    -- The framing we can name is painted first, and whole.
+    --
+    -- Before the walk rather than after it, and that order is the point: a
+    -- picture already in the plan is not looked at twice, so naming what we
+    -- can means the walk arrives to find the work done. What the names do
+    -- not cover the walk still finds, exactly as before.
+    Darkness.PaintNamed()
 
     -- The application goes on inside the reconnaissance, in slices: each slice
     -- paints what was found in it (Darkness.Drain). There is deliberately no
