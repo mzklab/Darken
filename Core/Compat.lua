@@ -1112,12 +1112,19 @@ local function chromeStep(object, key) return object[key] end
 -- this client does not have costs one failed index instead of twenty-seven,
 -- and on any given client line most of the list is such a window.
 --
+-- The root each path belongs to is handed back beside it. The caller needs
+-- it and cannot recover it: which area a window is darkened by, and whether
+-- the player excluded that window by name, are both answers about the
+-- WINDOW, and a path is a piece of one.
+--
 -- @param globals table|nil the globals table; _G when absent
 -- @return table array of paths
 -- @return table array of objects
+-- @return table array of root names, one per path
+-- @return table array of root objects, one per path
 function Compat.ResolveChrome(globals)
     local where = type(globals) == "table" and globals or _G
-    local paths, objects = {}, {}
+    local paths, objects, named, bases = {}, {}, {}, {}
 
     if CHROME_STEPS == nil then
         CHROME_STEPS = {}
@@ -1150,12 +1157,14 @@ function Compat.ResolveChrome(globals)
                     end
                     paths[#paths + 1] = path
                     objects[#objects + 1] = object
+                    named[#named + 1] = root
+                    bases[#bases + 1] = base
                 end
             end
         end
     end
 
-    return paths, objects
+    return paths, objects, named, bases
 end
 
 -- The pet's game functions used to be declared here: its happiness and what

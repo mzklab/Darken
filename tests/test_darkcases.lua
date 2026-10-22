@@ -1486,9 +1486,12 @@ do
     }
 
     ns.Compat = {
+        Resolve = function() return {}, {} end,
         ResolveChrome = function()
             return { "SomeWindow", "SomeWindow.NineSlice.TopEdge" },
-                   { window, edge }
+                   { window, edge },
+                   { "SomeWindow", "SomeWindow" },
+                   { window, window }
         end,
     }
 
@@ -1499,6 +1502,68 @@ do
     T.ok(close(backdrop.r, dark), "the hidden window's backdrop is dark already")
     T.ok(close(edge.r, dark), "and so is the border named by a path of its own")
     T.eq(portrait.r, 1, "while the portrait is spared, as it is by the walk")
+
+    -- And it is recorded as belonging to its window, not to nowhere.
+    --
+    -- A picture painted here is never looked at by the walk - it is already
+    -- in the plan - so the answer given here is the final one. The first
+    -- version answered "the general area, no name", which would have taken
+    -- the per-area modes and the per-window exceptions away from every
+    -- window this list covers.
+    local found = nil
+    for i = 1, Darkness.PlanSize() do
+        if Darkness.PlanWindow(i) == "SomeWindow" then found = i break end
+    end
+    T.ok(found ~= nil, "the window's name went into the plan with its picture")
+
+    ns.Compat = savedCompat
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end
+
+T.suite("darkness: a named picture keeps the area its window is darkened by")
+
+-- The other half of the same defect. The bags, the chat, the tooltips and
+-- the map are areas the player sets separately, and a window of such an area
+-- must carry that area's key rather than the general one - otherwise the
+-- setting is there, reads correctly, and changes nothing.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local art = newArt("a bag window's own framing")
+    local bag = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "ABagWindow" end,
+        IsShown = function() return false end,
+        GetRegions = function() return art end,
+        GetChildren = function() return end,
+    }
+
+    ns.Compat = {
+        -- The layer answers for the bags group with this very window, which
+        -- is how the walk learns that it is not a general one.
+        Resolve = function(key)
+            if key == "bags" then return { "ABagWindow" }, { bag } end
+            return {}, {}
+        end,
+        ResolveChrome = function()
+            return { "ABagWindow" }, { bag }, { "ABagWindow" }, { bag }
+        end,
+    }
+
+    local before = Darkness.PlanSize()
+    Darkness.PaintNamed()
+
+    local at = nil
+    for i = before + 1, Darkness.PlanSize() do
+        if Darkness.PlanArea(i) == "bags" then at = i break end
+    end
+
+    T.ok(at ~= nil, "the picture is darkened by the bags' own area")
+    T.eq(Darkness.PlanWindow(at or 0), nil,
+        "and carries no window name, because a named area has its own row")
 
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon

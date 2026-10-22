@@ -20,6 +20,11 @@ window to be shown. What the names do not cover the walk still finds,
 and what counts as framing is decided by exactly the same rule as
 before: only the finding changed.
 
+A picture painted by name carries the area and the window it belongs
+to, the same two answers the walk gives: the chat, the bags, the
+tooltips and the map keep the settings the player set for them, and a
+window keeps its row in the list of exceptions.
+
 The names are the player's own: the windows this client really has,
 taken from the catalogue the walk built over past sessions, multiplied
 by the handful of paths the game keeps a window's framing in. The

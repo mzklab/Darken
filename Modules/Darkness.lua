@@ -3836,6 +3836,26 @@ function Darkness.PlanSize()
     return plan.n
 end
 
+--- Which window the texture at this place in the plan was found in.
+--
+-- Needed by the tests, and by one question in particular: a picture painted
+-- by name is never looked at by the walk afterwards, so the window recorded
+-- with it is the only one it will ever have. The per-window exceptions rest
+-- on that name.
+--
+-- @param at number
+-- @return string|nil
+function Darkness.PlanWindow(at)
+    return plan.win[tonumber(at) or 0]
+end
+
+--- Which area darkens the texture at this place in the plan.
+-- @param at number
+-- @return string|nil
+function Darkness.PlanArea(at)
+    return plan.group[tonumber(at) or 0]
+end
+
 -- Whether we are writing a colour right now.
 --
 -- Needed in order to tell our own write from somebody else's: the watcher of
@@ -4445,20 +4465,45 @@ function Darkness.PaintNamed()
         return 0
     end
 
-    local ok, paths, objects = pcall(ns.Compat.ResolveChrome)
+    local ok, paths, objects, roots, bases = pcall(ns.Compat.ResolveChrome)
     if not ok or type(objects) ~= "table" then return 0 end
 
+    -- A layer that answers with less than it promises costs the areas, not
+    -- the painting: everything then lands in the general area under no name,
+    -- which is what the old version did everywhere.
+    if type(roots) ~= "table" then roots = {} end
+    if type(bases) ~= "table" then bases = {} end
+
+    -- Which window a picture belongs to, and therefore which area darkens it.
+    --
+    -- The first version of this recorded everything under the general
+    -- "window" area with no window name at all, and that was a defect rather
+    -- than a shortcut: the chat, the bags, the tooltips and the map each have
+    -- an area of their own that the player sets separately, and a window has
+    -- a checkbox of its own in the list of exceptions. A picture painted here
+    -- is not looked at by the walk afterwards - it is already in the plan -
+    -- so whatever answer is given here is the final one, and "window, no
+    -- name" would have silently taken both settings away from every window
+    -- this list covers.
+    --
+    -- The same two answers the walk gives: a frame of a named group carries
+    -- that group's key, and everything else is the general area under its own
+    -- name.
+    local covered = coveredFrames()
     local from = plan.n + 1
 
     for i = 1, #objects do
         local object = objects[i]
+        local area = covered[bases[i]]
+        local window = nil
+        if area == nil then window = roots[i] end
 
         if not ns.Skin.Forbidden(object) and not Darkness.IsOurs(object) then
             local kind = objectType(object)
 
             if kind == "Texture" then
                 if chromeOf(object) then
-                    record(object, "window", nil)
+                    record(object, area or "window", window)
                     counters.named = counters.named + 1
                 end
             elseif kind ~= nil and not SKIP_TYPES[kind] then
@@ -4472,7 +4517,7 @@ function Darkness.PaintNamed()
                             and not Darkness.IsOurs(region)
                             and objectType(region) == "Texture"
                             and chromeOf(region) then
-                            record(region, "window", nil)
+                            record(region, area or "window", window)
                             counters.named = counters.named + 1
                         end
                     end
