@@ -1210,3 +1210,112 @@ do
     _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
     _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
 end
+
+T.suite("darkness: a frame we do not enter turns the climb back")
+
+-- The minimap's pins, measured: 68382 writes heard in one short session and
+-- only 2162 of them on a picture of ours. The other sixty-six thousand went
+-- into the adoption path - the game writes to a picture that is not in the
+-- plan, and we climb the tree looking for the area it belongs to.
+--
+-- The minimap is a type we skip whole, so the answer is always "nothing".
+-- The walk knew that and turned back without saying so, and the climb, which
+-- takes another road, asked afresh on every write: six protected calls, per
+-- pin, per frame, while the player walks.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    local store = {}
+    fresh.Addon = { db = {
+        profile = { darkness = { amount = 64, mode = {} } },
+        global = { darkness = store },
+    } }
+
+    local savedTimer, savedHook, savedShow, savedCreate =
+        _G.C_Timer, _G.hooksecurefunc, _G.ShowUIPanel, _G.CreateFrame
+    _G.C_Timer = { After = function() end }
+    _G.ShowUIPanel = function() end
+
+    local methods = {
+        SetVertexColor = function() end,
+        SetAtlas = function() end,
+        SetTexture = function() end,
+    }
+    local installed = {}
+    _G.hooksecurefunc = function(object, method, handler)
+        if object == methods then installed[method] = handler end
+    end
+    _G.CreateFrame = function()
+        return {
+            CreateTexture = function()
+                return setmetatable({}, { __index = methods })
+            end,
+        }
+    end
+
+    Late.Watch()
+
+    -- A pin of another addon's, on a minimap, inside a window the walk does
+    -- enter. Every GetParent is counted: that is what the climb costs.
+    local climbs = 0
+
+    local pin = { r = 1, g = 1, b = 1, a = 1 }
+    local pinFrame
+
+    pin.GetObjectType = function() return "Texture" end
+    pin.GetDrawLayer = function() return "OVERLAY" end
+    pin.GetTexture = function() return 12345 end
+    function pin:GetVertexColor() return self.r, self.g, self.b, self.a end
+    function pin:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+    pin.GetParent = function() climbs = climbs + 1 return pinFrame end
+
+    pinFrame = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "QuestiePin1" end,
+        GetRegions = function() return pin end,
+        GetChildren = function() return end,
+    }
+
+    local map = {
+        GetObjectType = function() return "Minimap" end,
+        GetName = function() return "Minimap" end,
+        GetRegions = function() return end,
+        GetChildren = function() return pinFrame end,
+    }
+    pinFrame.GetParent = function() climbs = climbs + 1 return map end
+    map.GetParent = function() climbs = climbs + 1 return nil end
+
+    -- The walk meets the minimap and goes no further into it.
+    Late.ApplyToWindow(map)
+    T.eq(pin.r, 1, "the pin was not painted by the walk")
+
+    -- Now the game writes to the pin, twice, as it does while walking.
+    climbs = 0
+    installed["SetVertexColor"](pin)
+    local afterFirst = climbs
+    installed["SetVertexColor"](pin)
+
+    -- The first write still walks up as far as the minimap, which is one
+    -- step: that is the climb doing its job, not the defect.
+    T.ok(afterFirst <= 3,
+        "the first write turns back at the minimap: " .. afterFirst)
+
+    -- The second is the whole point: it asks the picture who owns it, reads
+    -- the remembered "nothing here" and stops. One call to the game instead
+    -- of the climb, and the climb was what the minimap could not afford.
+    T.eq(climbs, afterFirst + 1,
+        "the second write costs one question and no climb")
+    T.eq(pin.r, 1, "the pin is still not ours to paint")
+
+    fresh.Addon, fresh.flavor = nil, nil
+    _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
+    _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
+end

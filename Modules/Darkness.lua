@@ -2526,7 +2526,24 @@ local function walk(object, depth, skip, sink, area, push)
 
     depth = tonumber(depth) or 0
     if depth > MAX_DEPTH then return end
-    if SKIP_TYPES[objectType(object)] then return end
+
+    -- A type we skip whole, and the adoption path is told so.
+    --
+    -- The walk turned back here and said nothing, so the OTHER road into a
+    -- picture - the one taken when the game creates it later (adopt) - knew
+    -- nothing of this decision and climbed the tree looking for an area
+    -- anyway. On the minimap that is the whole of the cost: Questie writes
+    -- to its pins as the player walks, every write climbs six generations
+    -- through protected calls, finds nothing, remembers nothing, and does it
+    -- again on the next frame.
+    --
+    -- The marker is the one the map's canvas already uses, and for exactly
+    -- the same reason: a frame the walk will not enter must turn the climb
+    -- back at its threshold rather than let it pass through.
+    if SKIP_TYPES[objectType(object)] then
+        FRAME_AREA[object] = UNTOUCHED
+        return
+    end
 
     -- The hidden is not walked.
     --
@@ -2642,6 +2659,10 @@ local function walk(object, depth, skip, sink, area, push)
                 -- property, in Icons.Round: we neither repair nor break what
                 -- belongs to others.
                 counters.foreign = counters.foreign + 1
+
+                -- And their later pictures turn back at the threshold,
+                -- without a climb: the decision is made once, here.
+                FRAME_AREA[object] = UNTOUCHED
                 return
             end
         elseif Darkness.TextWindow(said) then
@@ -3513,6 +3534,7 @@ local function Store()
     local churnStore = store.churn
     if type(churnStore.heard) ~= "number" then churnStore.heard = 0 end
     if type(churnStore.ours)  ~= "number" then churnStore.ours  = 0 end
+    if type(churnStore.climbs) ~= "number" then churnStore.climbs = 0 end
     if type(churnStore.by)    ~= "table"  then churnStore.by    = {} end
 
     if type(store.cost) ~= "table" then store.cost = {} end
@@ -3763,6 +3785,16 @@ local plan = {
 -- throttled anyway (Darkness.Repaint).
 local churnOurs = 0
 local churnBy = {}
+
+-- How often the search for an area actually had to climb the tree.
+--
+-- The number that says whether the memory of areas is doing its work. A
+-- climb is six protected calls at worst and it happens on the game's own
+-- repainting, which is to say per frame while the player walks; the whole
+-- design rests on each frame paying for it once. A six-figure count here
+-- means it is paying every time, which is what the minimap's pins were
+-- doing.
+local churnClimbs = 0
 
 -- The plan's generation number. Incremented on a clearing, and the former
 -- markers on the textures stop matching at a stroke (see PLANNED).
@@ -4238,6 +4270,8 @@ local function areaAbove(frame)
         climbed = climbed + 1
     end
 
+    if climbed > 0 then churnClimbs = churnClimbs + 1 end
+
     return area
 end
 
@@ -4304,7 +4338,21 @@ function adopt(texture)
         if claimed then area = claimed end
     end
 
-    if area == nil then return end
+    if area == nil then
+        -- Nothing above this picture's owner that we know, and that answer
+        -- is remembered.
+        --
+        -- It was not, and the absence is the cost: a picture whose owner we
+        -- cannot place is the commonest case there is - every pin, every
+        -- tile, every frame of another addon - and each write climbed six
+        -- generations afresh to reach the same "no".
+        --
+        -- Safe to remember because the walk overwrites it: should this frame
+        -- ever be reconnoitred, FRAME_AREA is set from the walk with the
+        -- real area, and the marker is gone.
+        FRAME_AREA[parent] = UNTOUCHED
+        return
+    end
 
     -- The climb ran into something we do not touch at all (the map's canvas,
     -- the colour picker's wheel). The marker is remembered for the direct owner:
@@ -4875,6 +4923,7 @@ function Darkness.Repaint()
     if store ~= nil then
         store.churn.heard = counters.repainted
         store.churn.ours = churnOurs
+        store.churn.climbs = churnClimbs
         local by = store.churn.by
         for who, times in pairs(churnBy) do by[who] = times end
     end
@@ -6083,7 +6132,7 @@ function Darkness.StartSession()
     -- what is read is one login rather than a sum of all of them.
     store.cost.slices, store.cost.total, store.cost.worst = 0, 0, 0
     store.cost.login, store.cost.loginSlices = nil, nil
-    store.churn.heard, store.churn.ours = 0, 0
+    store.churn.heard, store.churn.ours, store.churn.climbs = 0, 0, 0
     store.churn.by = {}
     Darkness.Forget(store.windows, store.session, FORGET_AFTER, CATALOG_MAX)
     return true

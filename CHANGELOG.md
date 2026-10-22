@@ -11,6 +11,17 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**The minimap's icons stopped stuttering.** Questie writes to its pins
+as the player walks, and every such write made us climb up to six
+generations of frames through protected calls looking for the area
+that picture belongs to - find nothing, remember nothing, and do it
+all again on the next frame. The minimap is a type the addon skips
+whole, so the answer was always "nothing"; it simply had no way of
+saying so to that second road into a picture. Now it does, and so does
+every frame of another addon: the climb turns back at the threshold,
+and an answer of "nothing here" is remembered instead of being
+re-derived for ever.
+
 **The report says where the game's repainting lands.** "Repaints
 Heard" was one number for everything - a hundred and thirty-six
 thousand in one session - and one number cannot be acted on: the
