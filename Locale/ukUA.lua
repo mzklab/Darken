@@ -1363,6 +1363,7 @@ ns.RegisterLocale("ukUA", {
     ["Another Addon's, Left Alone"] = "Чужих адонів не зайнято",
     ["Chat Left To Its Owner"] = "Чат залишено його власнику",
     ["Painted By Name"] = "Пофарбовано за іменем",
+    ["Supported Addons' Windows"] = "Вікна підтриманих адонів",
     ["Icon Edges Trimmed"]         = "Кромок в іконок зрізано",
     ["Minimap Buttons Rounded"]    = "Кнопок мінімапи заокруглено",
     ["Icons Framed"] = "Піктограм обведено",

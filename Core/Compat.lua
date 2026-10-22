@@ -1244,6 +1244,34 @@ for addon, built in pairs(CHROME_ADDON_SERIES) do
     end
 end
 
+--- Whether this addon is one the layer knows the windows of.
+--
+-- The question the dimming puts before it goes into somebody else's window.
+-- An addon on this list is one we have read the source of and written the
+-- names down from; everything else we know nothing about, and what we know
+-- nothing about we leave alone.
+--
+-- @param addon any the addon's folder name
+-- @return boolean
+function Compat.KnownAddon(addon)
+    if type(addon) ~= "string" or addon == "" then return false end
+    return CHROME_ADDONS[addon] ~= nil
+end
+
+--- Whether this addon is one the layer knows the windows of.
+--
+-- The question the dimming puts before it goes into somebody else's window.
+-- An addon on this list is one we have read the source of and written the
+-- names down from; everything else we know nothing about, and what we know
+-- nothing about we leave alone.
+--
+-- @param addon any the addon's folder name
+-- @return boolean
+function Compat.KnownAddon(addon)
+    if type(addon) ~= "string" or addon == "" then return false end
+    return CHROME_ADDONS[addon] ~= nil
+end
+
 --- The named windows of the other addons that are loaded right now.
 --
 -- Loaded rather than installed: an addon the player switched off has no

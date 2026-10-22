@@ -188,7 +188,15 @@ local GROUPS = {
     -- reason: "there is nothing to look for". A general marker here would be a
     -- second walk over the whole interface tree, that is, doubled
     -- reconnaissance for nothing.
-    { key = "addons",        label = "Other Addons' Windows", dynamic = true },
+    --
+    -- WHICH other addons. The ones the compatibility layer knows by name,
+    -- and no others: the pass goes into a window of theirs only after
+    -- asking whose it is and finding the answer on that list. An addon
+    -- nobody has read the source of is not reached from here at all, which
+    -- is why this area follows the slider on a fresh install without
+    -- painting anything its owner did not ask to have painted.
+    { key = "addons",        label = "Supported Addons' Windows",
+      dynamic = true },
     -- Everything else there is on the screen. The general marker tells the
     -- pass to look for these frames not by name but by walking the interface
     -- tree: the names above are listed only so that the groups named there get
@@ -425,8 +433,18 @@ Darkness.FOLLOW = FOLLOW
 -- named another: that we could simply make it light, since our background was
 -- dark — and now the sheet darkens along with everything else while the text
 -- on it rises into the light (Darkness.LiftText).
+-- The area "other addons' windows" follows the slider on a fresh install.
+--
+-- It was "as in the game", and that was right while the area meant EVERY
+-- addon: painting a window whose author we had never read is the complaint
+-- the author made about RestedXP, and a default must not make it.
+--
+-- The area no longer means that. The pass goes into the windows of the
+-- addons the compatibility layer knows by name and into no others, so what
+-- this default switches on is exactly the list whose source we have read -
+-- which is what the author asked for: his addons dark along with the game,
+-- out of the box.
 local DEFAULT_MODES = {
-    addons = "native",
 }
 Darkness.DEFAULT_MODES = DEFAULT_MODES
 
@@ -1920,6 +1938,24 @@ function Darkness.AddonWindow(name, names)
     return false
 end
 
+--- Whether this addon is one whose windows we know.
+--
+-- Asked before going into somebody else's window. The layer holds the
+-- names; this is the door to it, and a layer that cannot answer means "we
+-- know nobody", which leaves every other addon alone - the safe answer.
+--
+-- @param addon any the addon's folder name
+-- @return boolean
+function Darkness.Known(addon)
+    if type(ns.Compat) ~= "table"
+        or type(ns.Compat.KnownAddon) ~= "function" then
+        return false
+    end
+
+    local ok, yes = pcall(ns.Compat.KnownAddon, addon)
+    return ok and yes == true
+end
+
 --- Which addon created the global of this name, if any.
 --
 -- The direct answer, and the only one there is. A frame does not remember
@@ -2658,17 +2694,29 @@ local function walk(object, depth, skip, sink, area, push)
         -- pin was taken for the quest log, remembered as a page of text, and
         -- walked like one. A name tells us what a frame is only once we know
         -- it is the game's to name.
-        if Darkness.Foreign(said) then
-            if depth == 0 then
+        local owner = Darkness.OwnerOf(said)
+        if owner ~= nil then
+            if depth == 0 and Darkness.Known(owner) then
                 -- Another addon's window takes both itself and everything
                 -- inside it into its own area: the player's question is "how
                 -- dark are other addons' windows" rather than "how dark is
                 -- this particular frame inside somebody else's window".
                 area = "addons"
             else
-                -- Another addon's frame INSIDE a window of the game's is not
-                -- a window of theirs - it is their picture placed on ours,
-                -- and it is left alone entirely.
+                -- Everything else of somebody else's is left alone
+                -- entirely, and there are two such cases.
+                --
+                -- An addon we know nothing about. The player installed it
+                -- to look the way its author made it, and we have not read
+                -- that author's source, so we have no business inside. That
+                -- is what the author meant by "these are other addons, why
+                -- are you touching them" - and it is why the area above can
+                -- now be on by default: what it governs is the addons we DO
+                -- know.
+                --
+                -- Or another addon's frame INSIDE a window of the game's,
+                -- which is not a window of theirs at all - it is their
+                -- picture placed on ours.
                 --
                 -- The author sent the world map with Questie loaded: its
                 -- quest pins were black blobs. They are frames of Questie's

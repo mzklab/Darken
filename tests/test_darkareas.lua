@@ -401,21 +401,38 @@ end
 T.suite("darkness: foreign addons are not tinted unasked")
 
 -- A foreign addon is someone else's work: its colours were chosen by its
--- author, its windows were configured by the player. The author said it
--- outright: "I hope we do not tint third-party addons, only what belongs to the game".
-T.eq(Darkness.ModeOf(nil, "addons"), "native",
-    "the default for the foreign addon area is not \"as in the game\"")
-T.eq(Darkness.ModeAmount("addons", nil, 80), nil,
-    "and it has no strength: we do not touch them at all")
+-- author, its windows were configured by the player. The author put it
+-- twice, and the two times are not the same sentence. First: "these are
+-- other addons, I want the game's windows touched and nothing else". Later,
+-- about four he names: "I want Bartender4, Leatrix, Rack and the rest
+-- darkened too, this matters."
+--
+-- Both hold, because the promise moved. It used to be the area's default -
+-- the area meant EVERY addon, so it had to be off. It is now the list: the
+-- pass goes into the windows of the addons whose source we have read and
+-- into no others, so the area can follow the slider out of the box and
+-- still touch nothing the author did not name.
+T.eq(Darkness.ModeOf(nil, "addons"), "follow",
+    "the addons we know follow the slider on a fresh install")
+
+-- And this is where the promise lives now. An addon nobody named is not
+-- known, and a pass that does not know an addon does not enter its windows.
+T.eq(Darkness.Known("RXPGuides"), false,
+    "an addon we never read the source of is not ours to paint")
+T.eq(Darkness.Known("SomeAddonInventedToday"), false,
+    "nor is one that does not exist")
+T.eq(Darkness.Known(nil), false, "and nothing is not an addon")
 
 -- The other areas still listen to the slider.
 T.eq(Darkness.ModeOf(nil, "window"), "follow",
     "the other windows stopped listening to the slider")
 
--- The area still works: whoever wants one look for the whole screen sets it
--- to "as the shared strength" with one click.
+-- And it still switches off with one click, for a player who wants the
+-- game's own windows dark and everything else untouched.
+T.eq(Darkness.ModeAmount("addons", { addons = "native" }, 80), nil,
+    "set to \"as in the game\", the area stops reaching them")
 T.eq(Darkness.ModeAmount("addons", { addons = "follow" }, 80), 80,
-    "the strength chosen by the player does not reach foreign addons")
+    "and the strength chosen by the player reaches the ones we know")
 
 T.suite("darkness: the client is asked who made a frame")
 

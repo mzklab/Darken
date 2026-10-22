@@ -11,18 +11,23 @@ to the contract a module is written against.
 
 ## Unreleased
 
-**Other addons can be darkened with the game, by name.** Bartender4,
-Rack, Hive and Leatrix Plus are known to the addon now: their windows
-are painted along with the game's when the player asks for it. The
-switch is the one that has always governed other addons' windows, and
-it stays "as in the game" until moved - a fresh install paints none of
-them.
+**Supported addons are darkened with the game, out of the box.**
+Bartender4, Rack, Hive and Leatrix Plus are known to the addon now,
+and their windows darken along with the game's on a fresh install.
+The row in the settings is named for what it covers - "Supported
+Addons' Windows" - and one click still sets it back to the game's own
+look.
 
-An addon nobody named is still left alone, and that is not a
-contradiction: an unknown addon goes untouched because we know nothing
-about it, and a named one is painted because the player asked and we
-do. The names were read out of each addon's own source and are cited
-where they are written down, one line each.
+An addon nobody named is left alone, and that is not a contradiction:
+the promise simply moved. It used to be this row's default, because
+the row meant every addon at once and therefore had to be off. It is
+now the list - the pass goes into a window of another addon only after
+asking whose it is and finding that addon among the ones whose source
+we have read. Everything else is not reached at all, whatever the row
+is set to.
+
+The names were read out of each addon's own source and are cited where
+they are written down, one line each.
 
 **Windows are dark before they open.** Until now the darkening found
 its work by walking the interface, and the walk does not enter what is

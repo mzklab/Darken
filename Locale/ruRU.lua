@@ -1351,6 +1351,7 @@ ns.RegisterLocale("ruRU", {
     ["Another Addon's, Left Alone"] = "Чужих аддонов не тронуто",
     ["Chat Left To Its Owner"] = "Чат оставлен его хозяину",
     ["Painted By Name"] = "Покрашено по имени",
+    ["Supported Addons' Windows"] = "Окна поддержанных аддонов",
     ["Icon Edges Trimmed"]         = "Кромок у иконок срезано",
     ["Minimap Buttons Rounded"]    = "Кнопок миникарты скруглено",
     ["Icons Framed"] = "Значков обведено",
