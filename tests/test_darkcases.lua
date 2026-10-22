@@ -1575,3 +1575,65 @@ do
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: a supported addon's window is darkened when asked for")
+
+-- The author wants his own addons darkened with the game - Rack, Hive,
+-- Bartender4, Leatrix Plus - while an addon nobody named stays untouched.
+-- The two are not in conflict: an unknown addon is left alone because we
+-- know nothing about it, and a named one is painted because the player asked
+-- and we do.
+--
+-- The switch is the one that has always governed other addons' windows, and
+-- it is "as in the game" until he moves it - so a fresh install paints none
+-- of them.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = { addons = "follow" } } } } }
+
+    local art = newArt("a bar of theirs")
+    local bar = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "RackBar_main" end,
+        IsShown = function() return false end,
+        GetRegions = function() return art end,
+        GetChildren = function() return end,
+    }
+
+    ns.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveChrome = function() return {}, {}, {}, {} end,
+        ResolveFunction = function(group)
+            if group == "addon-loaded" then
+                return function(name) return name == "Rack" end
+            end
+            return nil
+        end,
+        ResolveAddonChrome = function(_, loaded)
+            if not loaded("Rack") then return {}, {}, {} end
+            return { "RackBar_main" }, { bar }, { "Rack" }
+        end,
+    }
+    Darkness.ForgetChrome()
+
+    local before = Darkness.PlanSize()
+    Darkness.PaintNamed()
+
+    local at = nil
+    for i = before + 1, Darkness.PlanSize() do
+        if Darkness.PlanWindow(i) == "Rack" then at = i break end
+    end
+
+    T.ok(at ~= nil, "their window went into the plan under their own name")
+    T.eq(Darkness.PlanArea(at or 0), "addons",
+        "and into the area that has always governed other addons' windows")
+    T.ok(close(art.r, helpers.whiteAt(Darkness.Factor(64))),
+        "so it darkens with the rest while that area is set to follow")
+
+    Darkness.ForgetChrome()
+    ns.Compat = savedCompat
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

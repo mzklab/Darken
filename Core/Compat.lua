@@ -1173,6 +1173,110 @@ local CHROME_PATHS = { "", "Bg", "Background", "NineSlice", "Inset",
     "Inset.Bg", "Inset.NineSlice", "Border", "BorderFrame", "TitleBg",
     "TopTileStreaks" }
 
+-- The windows of other addons the player may ask us to darken, by addon.
+--
+-- WHY A LIST OF SOMEBODY ELSE'S FRAMES IS HERE AT ALL.
+--
+-- The general rule is the opposite one and it stays: an addon we know
+-- nothing about is not touched, because the player installed it to look the
+-- way its author made it. What the rule could not express is the case the
+-- author put plainly - he wants HIS addons darkened along with the game, and
+-- "leave every other addon alone" takes that from him.
+--
+-- So the two cases are separated. An unknown addon is still left alone. One
+-- named here is darkened when the player asks for it - the area "other
+-- addons' windows" is the switch, and it is "as in the game" until he moves
+-- it. Nothing here happens on a fresh install.
+--
+-- WHERE THE NAMES COME FROM. Each addon's own source on disk, read and cited
+-- below. Not from any other addon's list of them: a list copied is a list
+-- that was someone's work, while a frame's name is the author's own
+-- vocabulary and is found where he wrote it.
+--
+-- An addon that is not loaded contributes nothing: the names are asked for
+-- only when the client says the addon is there.
+local CHROME_ADDONS = {
+    -- Bartender4: Bar.lua:152 names a bar ("BT4Bar%s"):format(id),
+    -- ActionBar.lua:282 a button format("BT4Button%d"), PetButton.lua:63 and
+    -- StanceBar.lua:199 the other two prefixes.
+    ["Bartender4"] = {
+        "BT4BarBlizzardArt", "BT4BarVehicleExit",
+    },
+
+    -- Rack: Build.lua:65 names a bar "RackBar_" .. key, and the keys are the
+    -- seven in Core/Frames.lua:23. Build.lua:743 names the flyout's buttons.
+    ["Rack"] = {
+        "RackBar_main", "RackBar_bottomleft", "RackBar_bottomright",
+        "RackBar_right", "RackBar_left", "RackBar_pet", "RackBar_stance",
+        "RackFlyout",
+    },
+
+    -- Hive: its frames are named in full in its own source.
+    ["Hive"] = {
+        "HiveAnchor", "HiveAttic", "HiveBoard", "HiveBuffs", "HiveCast",
+        "HiveCapture", "HiveMarks", "HiveMenu", "HiveBattleRes",
+        "HiveAssistHeader", "HiveAssistPin", "HiveIndicatorDrag",
+    },
+
+    -- Leatrix Plus: the panels it names in full.
+    ["Leatrix_Plus"] = {
+        "LeaPlusGlobalPanel", "LeaPlusGlobalHelpPanel",
+        "LeaPlusGlobalMutePanel", "LeaPlusGlobalMinimapCombinedButtonFrame",
+    },
+}
+
+-- The numbered series of the same addons, kept apart because they are built
+-- rather than written: a count with room to spare, and whatever does not
+-- exist is dropped by the same existence filter as everything else.
+local CHROME_ADDON_SERIES = {
+    ["Bartender4"] = {
+        { "BT4Bar", 20 }, { "BT4Button", 120 },
+        { "BT4PetButton", 12 }, { "BT4StanceButton", 12 },
+    },
+    ["Rack"] = { { "RackFlyoutButton", 12 } },
+}
+
+for addon, built in pairs(CHROME_ADDON_SERIES) do
+    local into = CHROME_ADDONS[addon]
+    for i = 1, #built do
+        local made = series(built[i][1], built[i][2])
+        for j = 1, #made do into[#into + 1] = made[j] end
+    end
+end
+
+--- The named windows of the other addons that are loaded right now.
+--
+-- Loaded rather than installed: an addon the player switched off has no
+-- windows, and asking after them would cost a lookup per name for nothing.
+--
+-- @param globals table|nil the globals table; _G when absent
+-- @param loaded function|nil the client's "is this addon loaded"
+-- @return table array of names
+-- @return table array of objects
+-- @return table array of owning addon names, one per object
+function Compat.ResolveAddonChrome(globals, loaded)
+    local where = type(globals) == "table" and globals or _G
+    local names, objects, owners = {}, {}, {}
+
+    if type(loaded) ~= "function" then return names, objects, owners end
+
+    for addon, list in pairs(CHROME_ADDONS) do
+        local ok, yes = pcall(loaded, addon)
+        if ok and yes then
+            for i = 1, #list do
+                local object = Compat.Lookup(where, list[i])
+                if type(object) == "table" then
+                    names[#names + 1] = list[i]
+                    objects[#objects + 1] = object
+                    owners[#owners + 1] = addon
+                end
+            end
+        end
+    end
+
+    return names, objects, owners
+end
+
 -- The pieces that do not repeat: a part named inside one window and no
 -- other.
 --

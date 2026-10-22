@@ -1977,6 +1977,19 @@ local secureAsked = false
 -- @param name any the frame's name
 -- @return boolean
 function Darkness.Foreign(name)
+    return Darkness.OwnerOf(name) ~= nil
+end
+
+--- WHICH addon a frame belongs to, by name.
+--
+-- The same two roads as Darkness.Foreign and in the same order, but the
+-- answer is the addon rather than a yes. The player's list of exceptions
+-- needs the name: "darken other addons' windows, but leave this one alone"
+-- is a sentence about a particular addon, and a boolean cannot carry it.
+--
+-- @param name any the frame's name
+-- @return string|nil the addon that owns it
+function Darkness.OwnerOf(name)
     if not secureAsked then
         secureAsked = true
         if type(ns.Compat) == "table"
@@ -1986,8 +1999,19 @@ function Darkness.Foreign(name)
         end
     end
 
-    if Darkness.Owner(name, secureVariable) ~= nil then return true end
-    return Darkness.AddonWindow(name, Darkness.AddonNames())
+    local who = Darkness.Owner(name, secureVariable)
+    if who ~= nil then return who end
+
+    -- The older road: the frame's name begins with the addon's folder name.
+    -- It answers with the addon rather than with a yes for the same reason.
+    if type(name) ~= "string" or name == "" then return nil end
+    local names = Darkness.AddonNames()
+    for i = 1, #names do
+        local addon = names[i]
+        if #addon > 0 and name:sub(1, #addon) == addon then return addon end
+    end
+
+    return nil
 end
 
 --- Forget the client's answer about ownership.
@@ -4496,6 +4520,9 @@ function Darkness.PaintNamed()
         -- contributes twenty-odd pictures: asked per picture it showed up
         -- in the whole-cost measurement at once, which is what that
         -- measurement is for.
+        -- Which of the entries are another addon's window rather than the
+        -- game's, and whose.
+        local owner = {}
         local mineOrNot, skip = {}, {}
         if type(roots) == "table" then
             for i = 1, #roots do
@@ -4509,13 +4536,41 @@ function Darkness.PaintNamed()
             end
         end
 
+        -- And the windows of the other addons the player asked for.
+        --
+        -- They go into the plan under the "other addons' windows" area, so
+        -- the one switch that has always governed them governs these too: on
+        -- a fresh install it is "as in the game" and not one of them is
+        -- touched. An addon nobody named is still never reached from here -
+        -- this list is the whole of what we claim to know.
+        if type(ns.Compat.ResolveAddonChrome) == "function"
+            and type(ns.Compat.ResolveFunction) == "function" then
+            local got, isLoaded = pcall(ns.Compat.ResolveFunction,
+                "addon-loaded")
+            if got and type(isLoaded) == "function" then
+                local fine, theirs, mine, owners =
+                    pcall(ns.Compat.ResolveAddonChrome, nil, isLoaded)
+                if fine and type(mine) == "table" then
+                    for i = 1, #mine do
+                        local at = #objects + 1
+                        objects[at] = mine[i]
+                        roots[at] = owners[i]
+                        bases[at] = mine[i]
+                        skip[at] = false
+                        owner[at] = owners[i]
+                    end
+                end
+            end
+        end
+
         held = { paths = paths, objects = objects, roots = roots,
-            bases = bases, skip = skip }
+            bases = bases, skip = skip, owner = owner }
         chromeHeld = held
     end
 
     local objects, roots, bases = held.objects, held.roots, held.bases
     local skip = held.skip or {}
+    local owner = held.owner or {}
 
     -- A layer that answers with less than it promises costs the areas, not
     -- the painting: everything then lands in the general area under no name,
@@ -4545,7 +4600,18 @@ function Darkness.PaintNamed()
         local object = objects[i]
         local area = covered[bases[i]]
         local window = nil
-        if area == nil then window = roots[i] end
+        if area == nil then
+            if owner[i] ~= nil then
+                -- Another addon's window: the area the player has always
+                -- had for them, and the addon's own name beside it so that
+                -- a single addon can be kept out of it by name - the same
+                -- road a single window of the game's is kept out by.
+                area = "addons"
+                window = owner[i]
+            else
+                window = roots[i]
+            end
+        end
 
         -- Whose window this is, answered by the same rule the walk asks,
         -- decided once per root when the names were resolved.

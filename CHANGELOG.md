@@ -11,6 +11,19 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**Other addons can be darkened with the game, by name.** Bartender4,
+Rack, Hive and Leatrix Plus are known to the addon now: their windows
+are painted along with the game's when the player asks for it. The
+switch is the one that has always governed other addons' windows, and
+it stays "as in the game" until moved - a fresh install paints none of
+them.
+
+An addon nobody named is still left alone, and that is not a
+contradiction: an unknown addon goes untouched because we know nothing
+about it, and a named one is painted because the player asked and we
+do. The names were read out of each addon's own source and are cited
+where they are written down, one line each.
+
 **Windows are dark before they open.** Until now the darkening found
 its work by walking the interface, and the walk does not enter what is
 hidden - which is its largest saving and also why a window darkened at
