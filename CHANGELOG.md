@@ -25,11 +25,19 @@ to, the same two answers the walk gives: the chat, the bags, the
 tooltips and the map keep the settings the player set for them, and a
 window keeps its row in the list of exceptions.
 
-The names are the player's own: the windows this client really has,
-taken from the catalogue the walk built over past sessions, multiplied
-by the handful of paths the game keeps a window's framing in. The
+The names are the game's own, and the list covers far more of them
+now: the windows this client really has, taken from the catalogue the
+walk built over past sessions, plus the window names the game is known
+to use, multiplied by the handful of paths it keeps a window's framing
+in - and a short list of parts that belong to one window only. The
 report counts what was painted that way, so how far the naming has got
 is a number rather than an impression.
+
+No window of another addon is on that list, and the rule rather than
+the list is what guarantees it: before a named window is painted, the
+same question the walk asks - whose frame is this - is put about it,
+once per window. A name that should not be there is inert rather than
+harmful.
 
 **The minimap's icons stopped stuttering.** Questie writes to its pins
 as the player walks, and every such write made us climb up to six

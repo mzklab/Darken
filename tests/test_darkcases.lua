@@ -1495,6 +1495,10 @@ do
         end,
     }
 
+    -- The resolved names are kept between applications; a test that swaps
+    -- the layer underneath has to say so, as it does for the addon list.
+    Darkness.ForgetChrome()
+
     local painted = Darkness.PaintNamed()
     T.ok(painted >= 2, "the named framing went into the plan: " .. painted)
 
@@ -1516,6 +1520,7 @@ do
     end
     T.ok(found ~= nil, "the window's name went into the plan with its picture")
 
+    Darkness.ForgetChrome()
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
@@ -1552,6 +1557,8 @@ do
             return { "ABagWindow" }, { bag }, { "ABagWindow" }, { bag }
         end,
     }
+
+    Darkness.ForgetChrome()
 
     local before = Darkness.PlanSize()
     Darkness.PaintNamed()

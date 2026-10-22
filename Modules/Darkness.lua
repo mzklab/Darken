@@ -4431,6 +4431,19 @@ function adopt(texture)
     if plan.n >= from then applyPlan(settings, from) end
 end
 
+-- The named framing, resolved. Nil until the first painting asks for it.
+local chromeHeld = nil
+
+--- Forget what the names resolved to.
+--
+-- Called when the composition of the interface could have changed, which is
+-- exactly when an addon of the game's loads: the auction house, the
+-- professions, the collections all arrive that way, and a list resolved
+-- before they did does not know their windows.
+function Darkness.ForgetChrome()
+    chromeHeld = nil
+end
+
 --- Paint the framing the compatibility layer can name, without a walk.
 --
 -- WHY THIS EXISTS BESIDE THE WALK.
@@ -4465,8 +4478,44 @@ function Darkness.PaintNamed()
         return 0
     end
 
-    local ok, paths, objects, roots, bases = pcall(ns.Compat.ResolveChrome)
-    if not ok or type(objects) ~= "table" then return 0 end
+    -- The names are resolved once and kept.
+    --
+    -- Five hundred roots against twenty-odd paths is eleven thousand
+    -- lookups, and the settings are applied at every edit of every tick on
+    -- every page. The answer cannot change in between: what exists in the
+    -- interface changes when an addon of the game's loads, and that is where
+    -- the memory is dropped (Darkness.ForgetChrome).
+    local held = chromeHeld
+    if held == nil then
+        local ok, paths, objects, roots, bases = pcall(ns.Compat.ResolveChrome)
+        if not ok or type(objects) ~= "table" then return 0 end
+        -- Whose each root is, asked once per ROOT rather than once per
+        -- picture of it.
+        --
+        -- The question walks the list of installed addons, and a window
+        -- contributes twenty-odd pictures: asked per picture it showed up
+        -- in the whole-cost measurement at once, which is what that
+        -- measurement is for.
+        local mineOrNot, skip = {}, {}
+        if type(roots) == "table" then
+            for i = 1, #roots do
+                local root = roots[i]
+                local answer = mineOrNot[root]
+                if answer == nil then
+                    answer = Darkness.Foreign(root) and true or false
+                    mineOrNot[root] = answer
+                end
+                skip[i] = answer
+            end
+        end
+
+        held = { paths = paths, objects = objects, roots = roots,
+            bases = bases, skip = skip }
+        chromeHeld = held
+    end
+
+    local objects, roots, bases = held.objects, held.roots, held.bases
+    local skip = held.skip or {}
 
     -- A layer that answers with less than it promises costs the areas, not
     -- the painting: everything then lands in the general area under no name,
@@ -4498,7 +4547,19 @@ function Darkness.PaintNamed()
         local window = nil
         if area == nil then window = roots[i] end
 
-        if not ns.Skin.Forbidden(object) and not Darkness.IsOurs(object) then
+        -- Whose window this is, answered by the same rule the walk asks,
+        -- decided once per root when the names were resolved.
+        --
+        -- A list of names is only as clean as whoever wrote it, and this one
+        -- was seeded from a list that had other addons' frames mixed in with
+        -- the game's. Rather than trust the cleaning, the rule decides: a
+        -- root another addon owns is skipped here exactly as the walk skips
+        -- it, so a name that should not be on the list is inert rather than
+        -- harmful.
+        if skip[i] then object = nil end
+
+        if object ~= nil and not ns.Skin.Forbidden(object)
+            and not Darkness.IsOurs(object) then
             local kind = objectType(object)
 
             if kind == "Texture" then
@@ -6226,6 +6287,10 @@ function Darkness.Watch()
         end
 
         ns.Events.Subscribe("ADDON_LOADED", Darkness.name, function()
+            -- A new addon of the game's means new windows, and the names
+            -- were resolved without them.
+            Darkness.ForgetChrome()
+
             -- The interface's composition has changed, so the
             -- reconnaissance has to be done afresh. At the entry into the game
             -- a batch of such events arrives in a row, and the deferral merges
