@@ -1363,6 +1363,12 @@ ns.RegisterLocale("ukUA", {
     ["Another Addon's, Left Alone"] = "Чужих адонів не зайнято",
     ["Chat Left To Its Owner"] = "Чат залишено його власнику",
     ["Painted By Name"] = "Пофарбовано за іменем",
+    ["log out - the whole table will land in Darken.lua (SavedVariables), under DarkenDB.global.harvest"] =
+        "вийдіть з гри - уся таблиця ляже в Darken.lua (SavedVariables), у DarkenDB.global.harvest",
+    ["%d pictures examined, %d already covered, %d not"] =
+        "розглянуто зображень: %d, вже охоплено: %d, ні: %d",
+    ["%d more frames are not listed; the whole table is in the saved variables"] =
+        "ще %d фреймів не показано; повна таблиця в SavedVariables",
     ["Supported Addons' Windows"] = "Вікна підтриманих адонів",
     ["Icon Edges Trimmed"]         = "Кромок в іконок зрізано",
     ["Minimap Buttons Rounded"]    = "Кнопок мінімапи заокруглено",

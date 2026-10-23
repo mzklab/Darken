@@ -181,6 +181,8 @@ screenshot does:
                      name a frame to probe that one, or "mouse" to
                      probe what the cursor is on
 /dark scan <text>    frames whose names contain the text
+/dark harvest        framing the addon does not yet reach, by frame -
+                     name a frame to limit it to that one
 ```
 
 Those three only read: nothing on screen changes. A handful of lines

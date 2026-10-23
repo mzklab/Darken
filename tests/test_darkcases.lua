@@ -1637,3 +1637,53 @@ do
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: the harvest reports what the lists do not reach")
+
+-- The named lists paint before a window is shown; the walk covers the rest
+-- once it has been opened. The difference between them is what has to be
+-- measured for the lists to be extended from fact rather than from guesses.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedRoot = _G.UIParent
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local covered = newArt("framing already in the plan")
+    local missed  = newArt("framing nothing reaches")
+    local icon    = newRegion({ kind = "Texture", layer = "ARTWORK",
+        name = "SomeIcon" })
+
+    local known = newFrame("Frame", "KnownWindow", { covered })
+    -- Hidden, which is the case a name exists for: the walk will not enter
+    -- it, so the harvest must still see what is inside.
+    local unknown = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "UnknownWindow" end,
+        IsShown = function() return false end,
+        GetRegions = function() return missed, icon end,
+        GetChildren = function() return end,
+    }
+
+    _G.UIParent = newFrame("Frame", "UIParent", {}, { known, unknown })
+
+    -- One of the two windows is painted; the other is not.
+    Darkness.ApplyToWindow(known)
+
+    local found, seen, done = Darkness.Harvest(_G.UIParent)
+
+    T.eq(found["UnknownWindow"], 1,
+        "the picture nothing reached is reported under its frame")
+    T.eq(found["KnownWindow"], nil, "the one in the plan is not reported")
+    T.ok(done >= 1, "and is counted as covered: " .. done)
+    T.ok(seen >= 2, "both were examined: " .. seen)
+
+    -- A content picture is not framing and is no part of the gap.
+    T.eq(seen, done + 1, "the icon is not counted as missing framing")
+
+    local lines = Darkness.HarvestLines(found, seen, done, 5)
+    T.ok(#lines >= 2, "the report has a summary and at least one row")
+
+    _G.UIParent = savedRoot
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

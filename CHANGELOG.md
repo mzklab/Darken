@@ -38,6 +38,20 @@ is set to.
 The names were read out of each addon's own source and are cited where
 they are written down, one line each.
 
+**More of the interface is dark before it opens.** The list of window
+names the darkening paints without a walk now covers 740 windows and
+194 named parts inside them, and a named frame's direct children are
+painted with it. What the names do not cover the walk still finds when
+the window is opened.
+
+**`/dark harvest` reports what the names do not reach.** It examines
+the interface, hidden frames included, and lists every piece of
+framing that would be darkened if something reached it but is not yet
+covered - grouped by the frame it sits in, worst first, with the whole
+table written to the saved variables. The list of names is extended
+from that measurement rather than from guesses about which window is
+missing. It reads only; nothing on screen changes.
+
 **Windows are dark before they open.** Until now the darkening found
 its work by walking the interface, and the walk does not enter what is
 hidden - which is its largest saving and also why a window darkened at

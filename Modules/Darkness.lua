@@ -4717,6 +4717,53 @@ function Darkness.PaintNamed()
                         end
                     end
                 end
+
+                -- One level of children, and no deeper.
+                --
+                -- A frame's own regions are its backdrop and its edges; the
+                -- pieces drawn over them are frequently children of it. One
+                -- level reaches those at a fixed cost per named frame. A
+                -- second level does not: the number of frames below a window
+                -- grows without a bound the list can state, and the walk is
+                -- the mechanism for an unbounded tree.
+                local fine, kids = pcall(gather, object.GetChildren, object)
+                if fine then
+                    for j = 1, #kids do
+                        local child = kids[j]
+                        local childKind = objectType(child)
+
+                        if childKind == "Texture" then
+                            if not ns.Skin.Forbidden(child)
+                                and not Darkness.IsOurs(child)
+                                and chromeOf(child) then
+                                record(child, area or "window", window)
+                                counters.named = counters.named + 1
+                            end
+                        elseif childKind ~= nil
+                            and not SKIP_TYPES[childKind]
+                            and not ns.Skin.Forbidden(child)
+                            and not Darkness.IsOurs(child) then
+
+                            local got, inner =
+                                pcall(gather, child.GetRegions, child)
+                            if got then
+                                local held = contentRegions(child)
+                                for k = 1, #inner do
+                                    local region = inner[k]
+                                    if not held[region]
+                                        and not ns.Skin.Forbidden(region)
+                                        and not Darkness.IsOurs(region)
+                                        and objectType(region) == "Texture"
+                                        and chromeOf(region) then
+                                        record(region, area or "window",
+                                            window)
+                                        counters.named = counters.named + 1
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
             end
         end
     end
@@ -5960,7 +6007,137 @@ local function imageWord(object)
     return nil
 end
 
---- Probe one window: what will darken, what will not and why.
+--- How deep the harvest descends from a top-level frame.
+local HARVEST_DEPTH = 8
+
+--- The ceiling on what one harvest records.
+local HARVEST_MAX = 20000
+
+--- Collect the framing the named lists do not yet reach.
+--
+-- The list of names paints what it can before a window is shown; the walk
+-- covers the rest, but only once the window has been opened. The difference
+-- between the two is what this reports: every picture that would be darkened
+-- if it were reached, and whose path is not yet in the plan at the moment of
+-- asking.
+--
+-- The hidden is included deliberately. A frame that has never been shown is
+-- exactly the case a name exists for, and leaving it out would report the
+-- gap as smaller than it is.
+--
+-- A path is built from the chain of names down to the picture's owner, which
+-- is the form a list of names takes. A frame with no name of its own breaks
+-- the chain and its subtree is reported under the last name above it, with
+-- the depth that was reached - enough to find it by eye, and honest about
+-- not being addressable.
+--
+-- Nothing on the interface is changed: colours are read, never written.
+--
+-- @param root table|nil the frame to start from; the interface root if absent
+-- @return table path -> how many pictures under it are not covered
+-- @return number how many pictures were examined
+-- @return number how many were already covered
+function Darkness.Harvest(root)
+    local from = root
+    if type(from) ~= "table" then from = _G[ROOT] end
+    if type(from) ~= "table" then return {}, 0, 0 end
+
+    local found, seen, covered = {}, 0, 0
+
+    local function descend(object, path, depth)
+        if seen >= HARVEST_MAX then return end
+        if type(object) ~= "table" then return end
+        if depth > HARVEST_DEPTH then return end
+        if ns.Skin.Forbidden(object) then return end
+        if Darkness.IsOurs(object) then return end
+
+        local kind = objectType(object)
+        if kind == nil or SKIP_TYPES[kind] then return end
+
+        local said = stringFrom(object, "GetName")
+        local here = path
+        if said ~= nil and said ~= "" then here = said end
+
+        local ok, regions = pcall(gather, object.GetRegions, object)
+        if ok then
+            local content = contentRegions(object)
+            for i = 1, #regions do
+                local region = regions[i]
+                if objectType(region) == "Texture"
+                    and not content[region]
+                    and not ns.Skin.Forbidden(region)
+                    and not Darkness.IsOurs(region)
+                    and chromeOf(region) then
+
+                    seen = seen + 1
+                    if PLANNED[region] == generation then
+                        covered = covered + 1
+                    else
+                        found[here] = (found[here] or 0) + 1
+                    end
+                end
+            end
+        end
+
+        local fine, children = pcall(gather, object.GetChildren, object)
+        if fine then
+            for i = 1, #children do
+                descend(children[i], here, depth + 1)
+            end
+        end
+    end
+
+    local ok, children = pcall(gather, from.GetChildren, from)
+    if ok then
+        for i = 1, #children do
+            local child = children[i]
+            local said = stringFrom(child, "GetName")
+            if said ~= nil and said ~= "" then descend(child, said, 0) end
+        end
+    else
+        descend(from, stringFrom(from, "GetName") or "?", 0)
+    end
+
+    return found, seen, covered
+end
+
+--- The harvest as lines for chat, worst first.
+-- @param found table path -> count
+-- @param seen number
+-- @param covered number
+-- @param limit number|nil how many rows to print
+-- @return table array of strings
+function Darkness.HarvestLines(found, seen, covered, limit)
+    local rows, n = {}, 0
+    for path, count in pairs(found) do
+        n = n + 1
+        rows[n] = { path = path, count = count }
+    end
+    table.sort(rows, function(a, b)
+        if a.count ~= b.count then return a.count > b.count end
+        return a.path < b.path
+    end)
+
+    local out = {}
+    out[#out + 1] = string.format(
+        ns.Localize("%d pictures examined, %d already covered, %d not"),
+        seen, covered, seen - covered)
+
+    local top = tonumber(limit) or 20
+    for i = 1, (n < top and n or top) do
+        out[#out + 1] = string.format("%d  %s", rows[i].count, rows[i].path)
+    end
+
+    if n > top then
+        out[#out + 1] = string.format(
+            ns.Localize("%d more frames are not listed; the whole table is "
+                .. "in the saved variables"), n - top)
+    end
+
+    return out
+end
+
+--- Probe one window and say what the pass will do with every picture in it.
 --
 -- A pure function over an object: it needs the same methods as the walk, so it
 -- is tested with a fake made of tables, without a client.
@@ -5980,7 +6157,7 @@ end
 -- somebody typed /dark probe, which is a cost worth paying exactly then.
 local PROBE_LIMIT = 4000
 
---- Probe one window: what will darken, what will not and why.
+--- Probe one window and say what the pass will do with every picture in it.
 --
 -- A pure function over an object: it needs the same methods as the walk, so it
 -- is tested with a fake made of tables, without a client.

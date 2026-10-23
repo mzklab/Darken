@@ -588,6 +588,46 @@ function Addon:HandleCommand(input)
         return
     end
 
+    if cmd == "harvest" then
+        -- What the list of names does not yet reach.
+        --
+        -- The named lists paint before a window is shown; the walk covers
+        -- the rest once it has been opened. This reports the difference, so
+        -- the list is extended from a measurement rather than from guesses
+        -- about which window is missing.
+        --
+        -- It reads and writes nothing to the interface.
+        if not self.db then
+            self:Print(ns.Localize("the settings database is not ready yet"))
+            return
+        end
+
+        local dark = ns.Darkness
+        if type(dark) ~= "table" or type(dark.Harvest) ~= "function" then
+            self:Print(ns.Localize("the dimming subsystem is not loaded"))
+            return
+        end
+
+        local where = nil
+        if rest ~= "" then where = _G[rest] end
+
+        local found, seen, covered = dark.Harvest(where)
+
+        local lines = dark.HarvestLines(found, seen, covered, 20)
+        for i = 1, #lines do self:Print(lines[i]) end
+
+        self.db.global.harvest = {
+            frames = found,
+            seen = seen,
+            covered = covered,
+        }
+
+        self:Print(ns.Localize(
+            "log out - the whole table will land in Darken.lua "
+                .. "(SavedVariables), under DarkenDB.global.harvest"))
+        return
+    end
+
     if cmd == "scan" then
         if rest == "" then
             self:Print(ns.Localize(
