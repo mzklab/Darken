@@ -608,8 +608,60 @@ function Addon:HandleCommand(input)
             return
         end
 
+        -- Where to look. A frame by name, the frame under the cursor, or
+        -- the whole interface.
+        --
+        -- The cursor is the one a player can actually use: a frame's name is
+        -- not something he is obliged to know, and pointing at the piece
+        -- that stayed light is the natural way to ask about it. The call
+        -- behind it is named differently between builds, so both spellings
+        -- are tried.
         local where = nil
-        if rest ~= "" then where = _G[rest] end
+        if rest == "mouse" then
+            if type(_G.GetMouseFoci) == "function" then
+                local ok, list = pcall(_G.GetMouseFoci)
+                if ok and type(list) == "table" then where = list[1] end
+            end
+            if where == nil and type(_G.GetMouseFocus) == "function" then
+                local ok, found = pcall(_G.GetMouseFocus)
+                if ok then where = found end
+            end
+
+            if type(where) ~= "table" then
+                self:Print(ns.Localize(
+                    "point the cursor at it first, then type /dark harvest "
+                        .. "mouse"))
+                return
+            end
+
+            -- The piece under the cursor is usually a part of a window
+            -- rather than the window: the answer wanted is about the window
+            -- it belongs to, so the climb goes up to the top of its tree.
+            local top = where
+            for _ = 1, 10 do
+                if type(top.GetParent) ~= "function" then break end
+                local ok, above = pcall(top.GetParent, top)
+                if not ok or type(above) ~= "table" then break end
+                if above == _G.UIParent then break end
+                top = above
+            end
+            where = top
+
+            local said = type(top.GetName) == "function"
+                and select(1, pcall(top.GetName, top)) and top:GetName() or nil
+            if said then
+                self:Print(string.format(
+                    ns.Localize("the window under the cursor is %s"), said))
+            end
+        elseif rest ~= "" then
+            where = _G[rest]
+            if type(where) ~= "table" then
+                self:Print(string.format(
+                    ns.Localize("there is no frame named '%s' in this client"),
+                    rest))
+                return
+            end
+        end
 
         local found, seen, covered = dark.Harvest(where)
 

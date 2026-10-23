@@ -71,6 +71,12 @@ reconnaissance rather than before it. Before, it ran whole and in one
 frame, and it ran ahead of the step that clears the plan - so it cost
 its full time at login and left nothing behind.
 
+**`/dark harvest mouse` asks about the window under the cursor.** A
+frame's name is not something a player is obliged to know, and
+pointing at the piece that stayed light is the natural way to ask
+about it. The climb goes up to the window the piece belongs to and
+reports that.
+
 **`/dark harvest` reports what the names do not reach.** It examines
 the interface, hidden frames included, and lists every piece of
 framing that would be darkened if something reached it but is not yet

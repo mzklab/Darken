@@ -1363,6 +1363,12 @@ ns.RegisterLocale("ukUA", {
     ["Another Addon's, Left Alone"] = "Чужих адонів не зайнято",
     ["Chat Left To Its Owner"] = "Чат залишено його власнику",
     ["Painted By Name"] = "Пофарбовано за іменем",
+    ["point the cursor at it first, then type /dark harvest mouse"] =
+        "наведіть курсор, потім введіть /dark harvest mouse",
+    ["the window under the cursor is %s"] =
+        "під курсором вікно %s",
+    ["there is no frame named '%s' in this client"] =
+        "у цьому клієнті немає фрейма '%s'",
     ["log out - the whole table will land in Darken.lua (SavedVariables), under DarkenDB.global.harvest"] =
         "вийдіть з гри - уся таблиця ляже в Darken.lua (SavedVariables), у DarkenDB.global.harvest",
     ["%d pictures examined, %d already covered, %d not"] =

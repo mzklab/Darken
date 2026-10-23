@@ -181,8 +181,12 @@ screenshot does:
                      name a frame to probe that one, or "mouse" to
                      probe what the cursor is on
 /dark scan <text>    frames whose names contain the text
-/dark harvest        framing the addon does not yet reach, by frame -
-                     name a frame to limit it to that one
+/dark harvest        framing the addon does not yet reach, by frame.
+                     "mouse" asks about the window under the cursor,
+                     which is the way to point at a piece that stayed
+                     light without knowing its name; a frame name
+                     limits it to that frame; nothing asks about the
+                     whole interface
 ```
 
 Those three only read: nothing on screen changes. A handful of lines

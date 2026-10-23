@@ -1351,6 +1351,12 @@ ns.RegisterLocale("ruRU", {
     ["Another Addon's, Left Alone"] = "Чужих аддонов не тронуто",
     ["Chat Left To Its Owner"] = "Чат оставлен его хозяину",
     ["Painted By Name"] = "Покрашено по имени",
+    ["point the cursor at it first, then type /dark harvest mouse"] =
+        "наведите курсор, затем введите /dark harvest mouse",
+    ["the window under the cursor is %s"] =
+        "под курсором окно %s",
+    ["there is no frame named '%s' in this client"] =
+        "в этом клиенте нет фрейма '%s'",
     ["log out - the whole table will land in Darken.lua (SavedVariables), under DarkenDB.global.harvest"] =
         "выйдите из игры - вся таблица ляжет в Darken.lua (SavedVariables), в DarkenDB.global.harvest",
     ["%d pictures examined, %d already covered, %d not"] =
