@@ -820,10 +820,26 @@ local MAX_DEPTH = 10
 -- whole, together with their children, rather than to each texture
 -- separately.
 --
--- StatusBar — a bar of health, power or experience. A bar's fill shows a
--- magnitude, and darkening it is the same as dimming a gauge's needle. A unit
--- frame bar's colour belongs on top of that to the unit frames subsystem: two
--- owners of one colour would give a war of repaintings.
+-- StatusBar is NOT here, and that is a correction rather than an omission.
+--
+-- It was, with this reasoning: a bar's fill shows a magnitude, and darkening
+-- it is the same as dimming a gauge's needle. The reasoning holds for the
+-- FILL and was applied to the whole object, which is a different thing. A
+-- bar's bed, its border and the art around it belong to the bar object
+-- itself, not to the frame holding it - so the walk turned back at the
+-- threshold and never reached them.
+--
+-- The author sent the reputation window: every standing is a bar, every bar
+-- keeps a brown bed and a brown border, and the window around them is dark.
+-- The note further down this file already said these ought to darken ("a
+-- bar's bed, its frame and the header of the row it stands in are framing"),
+-- and named two earlier screenshots of exactly this. The rule was written;
+-- the skip above it made it unreachable.
+--
+-- The fill is spared where sparing it belongs - by asking the bar which of
+-- its pictures is the fill (GetStatusBarTexture), which the walk already
+-- does for every frame that has the method. A unit frame bar's colour stays
+-- the unit frames subsystem's: that is about the fill too.
 --
 -- Minimap — the map of the terrain itself. That is a picture of the world
 -- rather than the frame around it; the map's border lies in neighbouring
@@ -836,7 +852,6 @@ local MAX_DEPTH = 10
 -- a magnitude, and quenching it means taking a reading away from the
 -- player.
 local SKIP_TYPES = {
-    StatusBar       = true,
     Minimap         = true,
     Model           = true,
     PlayerModel     = true,
@@ -2607,9 +2622,29 @@ local function walk(object, depth, skip, sink, area, push)
     -- The marker is the one the map's canvas already uses, and for exactly
     -- the same reason: a frame the walk will not enter must turn the climb
     -- back at its threshold rather than let it pass through.
-    if SKIP_TYPES[objectType(object)] then
+    local kind = objectType(object)
+    if SKIP_TYPES[kind] then
         FRAME_AREA[object] = UNTOUCHED
         return
+    end
+
+    -- A bar that cannot say which of its pictures is the fill is not entered.
+    --
+    -- Going in is worth it for the bed and the border, and it is only safe
+    -- while the fill can be told apart from them. Every bar in the client
+    -- answers GetStatusBarTexture; one that does not is either not really a
+    -- bar or is somebody's own object wearing the type, and darkening a fill
+    -- - dimming the needle of a gauge - is the worse of the two mistakes.
+    if kind == "StatusBar" then
+        local told = false
+        if type(object.GetStatusBarTexture) == "function" then
+            local ok, found = pcall(object.GetStatusBarTexture, object)
+            told = ok and type(found) == "table"
+        end
+        if not told then
+            FRAME_AREA[object] = UNTOUCHED
+            return
+        end
     end
 
     -- The hidden is not walked.
@@ -2696,12 +2731,26 @@ local function walk(object, depth, skip, sink, area, push)
         -- it is the game's to name.
         local owner = Darkness.OwnerOf(said)
         if owner ~= nil then
-            if depth == 0 and Darkness.Known(owner) then
+            -- An addon we know is ours to paint at any depth of its own
+            -- tree, and that depth matters more than it looks.
+            --
+            -- The rule below used to answer "known" only at the top. Rack's
+            -- bar is a one-by-one anchor with no picture on it at all - the
+            -- artwork is on its buttons, which are children named
+            -- RackBar_main_1 and so belong to Rack too. So the pass entered
+            -- the empty frame and then refused every button inside it as
+            -- "another addon's picture on our window". From the player's
+            -- side: the addon he had just been told was supported did not
+            -- darken by one pixel. Bartender4 and Hive are built the same
+            -- way and were lost the same way.
+            if Darkness.Known(owner) then
+                if depth == 0 then
                 -- Another addon's window takes both itself and everything
                 -- inside it into its own area: the player's question is "how
                 -- dark are other addons' windows" rather than "how dark is
                 -- this particular frame inside somebody else's window".
-                area = "addons"
+                    area = "addons"
+                end
             else
                 -- Everything else of somebody else's is left alone
                 -- entirely, and there are two such cases.
@@ -6040,6 +6089,21 @@ function Darkness.Probe(object, limit)
         local kind = objectType(thing)
         if SKIP_TYPES[kind] then
             return say(depth, thing, "type is skipped whole", kind)
+        end
+
+        -- The same answer the walk gives about a bar, and it has to be the
+        -- same one: a probe that says "skipped whole" where the walk goes
+        -- inside lies about exactly the thing it is called for.
+        if kind == "StatusBar" then
+            local told = false
+            if type(thing.GetStatusBarTexture) == "function" then
+                local ok, found = pcall(thing.GetStatusBarTexture, thing)
+                told = ok and type(found) == "table"
+            end
+            if not told then
+                return say(depth, thing, "a bar that cannot name its fill",
+                    kind)
+            end
         end
 
         if depth > MAX_DEPTH then

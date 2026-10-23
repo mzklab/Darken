@@ -11,6 +11,24 @@ to the contract a module is written against.
 
 ## Unreleased
 
+**A bar's bed and border darken; its fill still does not.** Every
+standing in the reputation window was a brown plaque on a dark page,
+and so is every bar built the same way. The brown is the bar's own bed
+and border - pictures belonging to the bar object rather than to the
+frame holding it - and the pass turned back at the bar's threshold
+before reaching them. It goes in now and spares one thing: the fill,
+which the bar names itself. A bar that cannot name its fill is still
+left whole, because dimming a gauge's needle is the worse mistake.
+
+**A supported addon is darkened all the way through.** Rack did not
+darken at all, because its bar is a one-by-one anchor with no picture
+on it and all its artwork sits on buttons named after that same bar -
+which the rule that keeps other addons' pins off the game's map was
+reading as "somebody else's picture on our window". An addon we know
+is now ours to paint wherever its frames are. An addon we do not know
+is still left alone at every depth, which is what keeps those pins
+off the map.
+
 **Supported addons are darkened with the game, out of the box.**
 Bartender4, Rack, Hive and Leatrix Plus are known to the addon now,
 and their windows darken along with the game's on a fresh install.

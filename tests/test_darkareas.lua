@@ -483,3 +483,45 @@ do
     T.eq(Darkness.Owner("RXPG_MenuFrame", function() error("no") end), nil,
         "a client that throws is a no rather than a failure")
 end
+
+T.suite("darkness: a supported addon is painted all the way down")
+
+-- The author: I do not see my Rack darkened. He was right, and the reason
+-- was one word in the wrong place.
+--
+-- Rack's bar is a one-by-one anchor with no picture on it: Build.lua:66
+-- creates it, Build.lua:71 sizes it 1x1, and all the artwork is on the
+-- buttons it holds, which are named RackBar_<key>_<n> and therefore belong
+-- to Rack as well. The rule that keeps another addon's pins off the game's
+-- map was being asked about those buttons too - so the pass entered an empty
+-- frame and refused everything inside it.
+--
+-- An addon we know is ours to paint wherever its frames are. An addon we do
+-- not know is still left alone at every depth, which is what keeps Questie's
+-- pins off the map.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = { addons = "follow" } } } } }
+
+    ns.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveChrome = function() return {}, {}, {}, {} end,
+        ResolveFunction = function() return nil end,
+        KnownAddon = function(addon) return addon == "Rack" end,
+    }
+    Darkness.ForgetAddons()
+    Darkness.ForgetOwners()
+    Darkness.ForgetChrome()
+
+    T.eq(Darkness.Known("Rack"), true, "Rack is an addon we know")
+    T.eq(Darkness.Known("RXPGuides"), false, "RestedXP is not")
+
+    ns.Compat = savedCompat
+    Darkness.ForgetAddons()
+    Darkness.ForgetOwners()
+    Darkness.ForgetChrome()
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end
