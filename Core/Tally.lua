@@ -141,6 +141,13 @@ local COUNTERS = {
             .. "they are content, not chrome",
     },
     {
+        key = "watched", label = "Windows Listened For", kind = Tally.NEEDED,
+        means = "windows whose showing the addon is listening for. A zero "
+            .. "while windows open and appear in the game's own colours "
+            .. "means nothing is listening for them, and nothing will be "
+            .. "painted until a pass happens to reach them",
+    },
+    {
         key = "conceded", label = "Given Up To The Game",
         kind = Tally.NORMAL,
         means = "pictures the game rewrote so many times that answering was "

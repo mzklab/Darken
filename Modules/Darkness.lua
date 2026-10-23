@@ -148,6 +148,13 @@ counters.named = counters.named or 0
 -- where to look.
 counters.conceded = counters.conceded or 0
 
+--- The frames whose showing is being listened for.
+--
+-- A zero while windows open and appear in the game's colours means nothing
+-- is listening for them, which is the state this counter was added to make
+-- visible.
+counters.watched = counters.watched or 0
+
 -- The names of the game's functions whose subscription has already been
 -- counted.
 local counted = {}
@@ -5108,6 +5115,19 @@ local function build()
                 if ok then
                     for j = 1, #children do
                         local child = children[j]
+
+                        -- Listened for whether or not it is walked now.
+                        --
+                        -- The pass does not enter what is hidden, which is
+                        -- nearly every window before the player opens one,
+                        -- so a hook placed only on what was walked left the
+                        -- frames that most needed answering with nothing
+                        -- listening. Placed here because the children of
+                        -- the root are being enumerated anyway: a second
+                        -- enumeration is a second approach to the tree, and
+                        -- the cost measurements count those.
+                        Darkness.WatchShowing(child)
+
                         if Darkness.ShouldSweep(child, covered) then
                             -- The name has already been asked for by the
                             -- rule of reach, and it is asked a second time:
@@ -6144,6 +6164,67 @@ function Darkness.PaintShallow(frame, area, window)
     return plan.n - from + 1
 end
 
+--- Hear it when this frame is shown.
+--
+-- Placed once per frame and costing one call: we do not call Show ourselves,
+-- so the hook cannot answer itself.
+--
+-- @param frame table
+-- @return boolean whether a hook is in place
+function Darkness.WatchShowing(frame)
+    if type(frame) ~= "table" then return false end
+    if SHOWN_WATCH[frame] then return true end
+    if type(_G.hooksecurefunc) ~= "function" then return false end
+    if type(frame.Show) ~= "function" then return false end
+
+    if not pcall(_G.hooksecurefunc, frame, "Show", function(self)
+        pcall(Darkness.WindowShown, self)
+    end) then
+        return false
+    end
+
+    SHOWN_WATCH[frame] = true
+    counters.watched = counters.watched + 1
+    return true
+end
+
+--- Hear the showing of every window the interface holds, shown or not.
+--
+-- The hook above used to be placed only on a frame the pass had reached,
+-- and the pass does not enter what is hidden - which is nearly every window
+-- before the player opens it. So the frames that most needed answering when
+-- they appeared were the ones with nothing listening.
+--
+-- The children of the interface root are a few hundred frames and are asked
+-- once. A window the game builds later is picked up on the next pass over
+-- the root, which happens whenever the interface's composition changes.
+--
+-- @return number how many frames were newly hooked
+function Darkness.WatchAllShowing()
+    local root = _G[ROOT]
+    if type(root) ~= "table" or type(root.GetChildren) ~= "function" then
+        return 0
+    end
+
+    local ok, children = pcall(gather, root.GetChildren, root)
+    if not ok then return 0 end
+
+    local placed = 0
+    for i = 1, #children do
+        local child = children[i]
+        if type(child) == "table"
+            and not ns.Skin.Forbidden(child)
+            and not Darkness.IsOurs(child)
+            and stringFrom(child, "GetName") ~= nil then
+            if not SHOWN_WATCH[child] and Darkness.WatchShowing(child) then
+                placed = placed + 1
+            end
+        end
+    end
+
+    return placed
+end
+
 --- Answer the showing of a window without walking it.
 --
 -- Showing a window used to start a walk of its subtree. A window of any
@@ -6376,14 +6457,7 @@ function Darkness.ApplyToWindow(frame, force)
     --
     -- Placed once per window and costing one call: we do not call Show
     -- ourselves, and the watcher cannot answer itself.
-    if not SHOWN_WATCH[frame] and type(_G.hooksecurefunc) == "function"
-        and type(frame.Show) == "function" then
-        if pcall(_G.hooksecurefunc, frame, "Show", function(self)
-            pcall(Darkness.WindowShown, self)
-        end) then
-            SHOWN_WATCH[frame] = true
-        end
-    end
+    Darkness.WatchShowing(frame)
 
     -- A window opened for the first time gets into the catalogue exactly here:
     -- at the entry into the game it did not yet exist, and the reconnaissance

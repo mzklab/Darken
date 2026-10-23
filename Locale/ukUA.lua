@@ -1364,6 +1364,7 @@ ns.RegisterLocale("ukUA", {
     ["Chat Left To Its Owner"] = "Чат залишено його власнику",
     ["Painted By Name"] = "Пофарбовано за іменем",
     ["Given Up To The Game"] = "Віддано грі",
+    ["Windows Listened For"] = "Вікон під спостереженням",
     ["point the cursor at it first, then type /dark harvest mouse"] =
         "наведіть курсор, потім введіть /dark harvest mouse",
     ["the window under the cursor is %s"] =

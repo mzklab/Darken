@@ -1352,6 +1352,7 @@ ns.RegisterLocale("ruRU", {
     ["Chat Left To Its Owner"] = "Чат оставлен его хозяину",
     ["Painted By Name"] = "Покрашено по имени",
     ["Given Up To The Game"] = "Отдано игре",
+    ["Windows Listened For"] = "Окон под наблюдением",
     ["point the cursor at it first, then type /dark harvest mouse"] =
         "наведите курсор, затем введите /dark harvest mouse",
     ["the window under the cursor is %s"] =

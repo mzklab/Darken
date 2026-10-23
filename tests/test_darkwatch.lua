@@ -1416,3 +1416,71 @@ do
     _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: a window is listened for before it is ever shown")
+
+-- The hook that answers a showing used to be placed only on a frame the pass
+-- had reached, and the pass does not enter what is hidden - which is nearly
+-- every window before the player opens it. So the windows that most needed
+-- answering when they appeared had nothing listening, and nothing was
+-- painted until some later pass happened to reach them.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedHook, savedRoot = _G.hooksecurefunc, _G.UIParent
+    local hooked = {}
+    _G.hooksecurefunc = function(object, method, handler)
+        if type(object) == "table" and method == "Show" then
+            hooked[object] = handler
+        end
+    end
+
+    local art = {
+        r = 1, g = 1, b = 1, a = 1,
+        GetObjectType = function() return "Texture" end,
+        GetDrawLayer = function() return "ARTWORK" end,
+        GetTexture = function() return 909 end,
+    }
+    function art:GetVertexColor() return self.r, self.g, self.b, self.a end
+    function art:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+
+    -- A window that has never been shown, which is how every window starts.
+    local hiddenWindow = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "AWindowNeverShown" end,
+        IsShown = function() return false end,
+        GetRegions = function() return art end,
+        GetChildren = function() return end,
+        Show = function() end,
+    }
+
+    _G.UIParent = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "UIParent" end,
+        GetRegions = function() return end,
+        GetChildren = function() return hiddenWindow end,
+    }
+
+    Late:ApplySettings()
+
+    T.ok(hooked[hiddenWindow] ~= nil,
+        "a window that has never been shown is listened for")
+
+    -- And when it is shown, the answer paints it.
+    hooked[hiddenWindow](hiddenWindow)
+    T.ok(art.r < 1, "so it is dark in the call that shows it")
+
+    _G.hooksecurefunc, _G.UIParent = savedHook, savedRoot
+    fresh.Addon, fresh.flavor = nil, nil
+end

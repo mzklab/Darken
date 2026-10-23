@@ -63,6 +63,17 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**Every window is listened for, shown or not.** The addon answers a
+window by hearing it appear, and the hook that hears it was placed
+only on frames a pass had reached - while a pass does not enter what
+is hidden, which is nearly every window before the player opens it.
+The windows that most needed answering therefore had nothing
+listening, and whatever was done for them happened later, which is
+what the player saw as the default artwork changing colour. Every
+named window of the interface is listened for now, and the report
+counts them: a zero there while windows open in the game's colours
+names the cause exactly.
+
 **A window is dark as it appears, named or not.** The framing of a
 window is on the window itself and on the frames directly inside it -
 the backdrop, the border, the header, the insets - which is a few
