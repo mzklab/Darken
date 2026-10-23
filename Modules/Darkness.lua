@@ -141,6 +141,13 @@ counters.foreign = counters.foreign or 0
 -- darkens, and that share is the whole point of the list of names.
 counters.named = counters.named or 0
 
+--- The pictures given up to the game after too many repaintings.
+--
+-- A non-zero count says the darkening met something that rewrites its own
+-- pictures continuously. The report names the window beside it, which is
+-- where to look.
+counters.conceded = counters.conceded or 0
+
 -- The names of the game's functions whose subscription has already been
 -- counted.
 local counted = {}
@@ -2984,6 +2991,18 @@ local function nowMs()
     return nil
 end
 
+-- How many times a picture is repainted back after the game before it is
+-- left to the game.
+--
+-- Chosen high enough that ordinary work is unaffected: a window being filled
+-- rewrites its pictures a handful of times, a list row handed out of a pool
+-- a few more. A picture past this count is not being filled, it is being
+-- driven.
+local CONTESTED_MAX = 64
+
+-- How many times each picture has been repainted back: texture -> count.
+local CONTESTED = ns.Skin.Memory()
+
 -- Whether a continuation of the walk is already waiting for the next frame.
 local draining = false
 
@@ -4074,6 +4093,30 @@ local function gameRecolored(texture)
     local who = plan.win[at] or plan.group[at] or "(no window)"
     churnBy[who] = (churnBy[who] or 0) + 1
 
+    -- A picture the game keeps rewriting is the game's.
+    --
+    -- Answering a repainting is cheap once and ruinous in a loop: a single
+    -- window has been measured writing to its own pictures two hundred and
+    -- eighteen thousand times in one session, every one of them answered.
+    -- Whatever drives that - an animation, a handler on a frame of its own,
+    -- a state the client refreshes - we cannot win it by being quicker, and
+    -- the attempt is paid for in frames the player is looking at.
+    --
+    -- So each picture is given a fixed number of answers. Past that it is
+    -- left with whatever colour the game gives it, which is the right answer
+    -- to "whose picture is this" in any case.
+    --
+    -- The count is per picture rather than per window: one restless texture
+    -- must not cost its neighbours their darkening.
+    local fought = (CONTESTED[texture] or 0) + 1
+    CONTESTED[texture] = fought
+    if fought > CONTESTED_MAX then
+        if fought == CONTESTED_MAX + 1 then
+            counters.conceded = counters.conceded + 1
+        end
+        return
+    end
+
     -- Into the queue rather than at once: the game, handing a list row out of
     -- a pool, touches its picture several times in a row, and answering every
     -- touch would mean writing the colour ten times in one frame.
@@ -4107,6 +4150,24 @@ local function watchHandler(texture)
     -- of its own. A count taken past them would answer a different question
     -- than the one it exists for.
     counters.repainted = counters.repainted + 1
+
+    -- The two guards that cost nothing are put before the protected call.
+    --
+    -- This handler sits on the method table shared by every picture in the
+    -- interface, so it runs on every write any of them receives - four
+    -- hundred thousand times in a measured session. A protected call for
+    -- each is the largest single expense the watcher has, and almost all of
+    -- those writes are our own or concern a picture we never painted.
+    --
+    -- Our own write is recognised without touching the game at all, and a
+    -- picture already given up to the game needs no further answer. Both are
+    -- a table lookup.
+    if writing then return end
+    if type(texture) ~= "table" then return end
+
+    local fought = CONTESTED[texture]
+    if fought ~= nil and fought > CONTESTED_MAX then return end
+
     pcall(gameRecolored, texture)
 end
 
@@ -4698,8 +4759,16 @@ function Darkness.PaintNamed()
             end
         end
 
+        -- Which frames belong to a named area, computed with the names.
+        --
+        -- The answer costs a resolution of every group in the layer, and the
+        -- painting asks for it once per slice - that is once per frame while
+        -- it runs. It cannot change between slices: what belongs to which
+        -- area is a property of the interface, not of how far the painting
+        -- has got.
         held = { paths = paths, objects = objects, roots = roots,
-            bases = bases, skip = skip, owner = owner }
+            bases = bases, skip = skip, owner = owner,
+            covered = coveredFrames() }
         chromeHeld = held
     end
 
@@ -4728,7 +4797,7 @@ function Darkness.PaintNamed()
     -- The same two answers the walk gives: a frame of a named group carries
     -- that group's key, and everything else is the general area under its own
     -- name.
-    local covered = coveredFrames()
+    local covered = held.covered or coveredFrames()
     local from = plan.n + 1
 
     -- The pass is cut into slices, and its budget is smaller than the walk's.

@@ -1363,6 +1363,7 @@ ns.RegisterLocale("ukUA", {
     ["Another Addon's, Left Alone"] = "Чужих адонів не зайнято",
     ["Chat Left To Its Owner"] = "Чат залишено його власнику",
     ["Painted By Name"] = "Пофарбовано за іменем",
+    ["Given Up To The Game"] = "Віддано грі",
     ["point the cursor at it first, then type /dark harvest mouse"] =
         "наведіть курсор, потім введіть /dark harvest mouse",
     ["the window under the cursor is %s"] =

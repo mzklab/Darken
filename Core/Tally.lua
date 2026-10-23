@@ -141,6 +141,14 @@ local COUNTERS = {
             .. "they are content, not chrome",
     },
     {
+        key = "conceded", label = "Given Up To The Game",
+        kind = Tally.NORMAL,
+        means = "pictures the game rewrote so many times that answering was "
+            .. "abandoned. A non-zero count means something repaints its own "
+            .. "artwork continuously; the churn table in the saved variables "
+            .. "names the window it belongs to",
+    },
+    {
         key = "named", label = "Painted By Name", kind = Tally.NORMAL,
         means = "pictures painted because the compatibility layer could name "
             .. "them, before any window was shown - the share of the "

@@ -1251,3 +1251,83 @@ do
     _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: a picture the game keeps rewriting is left to the game")
+
+-- Answering a repainting is cheap once and ruinous in a loop. One window has
+-- been measured writing to its own pictures two hundred and eighteen
+-- thousand times in a single session, every one of them answered. A race
+-- over one picture is not won by being quicker, and the attempt is paid for
+-- in frames the player is looking at.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedTimer, savedHook, savedShow, savedCreate =
+        _G.C_Timer, _G.hooksecurefunc, _G.ShowUIPanel, _G.CreateFrame
+    _G.C_Timer = { After = function() end }
+    _G.ShowUIPanel = function() end
+
+    local methods = {
+        SetVertexColor = function() end,
+        SetAtlas = function() end,
+        SetTexture = function() end,
+    }
+    local installed = {}
+    _G.hooksecurefunc = function(object, method, handler)
+        if object == methods then installed[method] = handler end
+    end
+    _G.CreateFrame = function()
+        return {
+            CreateTexture = function()
+                return setmetatable({}, { __index = methods })
+            end,
+        }
+    end
+
+    Late.Watch()
+
+    local restless = { r = 1, g = 1, b = 1, a = 1, writes = 0 }
+    restless.GetObjectType = function() return "Texture" end
+    restless.GetDrawLayer = function() return "ARTWORK" end
+    restless.GetTexture = function() return 31337 end
+    function restless:GetVertexColor() return self.r, self.g, self.b, self.a end
+    function restless:SetVertexColor(cr, cg, cb)
+        self.r, self.g, self.b = cr, cg, cb
+        self.writes = self.writes + 1
+    end
+
+    Late.ApplyToWindow({
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "ARestlessWindow" end,
+        GetRegions = function() return restless end,
+        GetChildren = function() return end,
+    })
+
+    -- The game writes to it without stopping, and each write is answered -
+    -- until the answers run out.
+    local answered = 0
+    for _ = 1, 500 do
+        restless.r, restless.g, restless.b = 1, 1, 1
+        installed["SetVertexColor"](restless)
+        answered = answered + Late.Repaint()
+    end
+
+    T.ok(answered > 0, "the first repaintings were answered: " .. answered)
+    T.ok(answered < 500,
+        "and the answering stopped rather than running for ever: " .. answered)
+
+    _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
+    _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
+    fresh.Addon, fresh.flavor = nil, nil
+end

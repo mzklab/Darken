@@ -38,6 +38,27 @@ is set to.
 The names were read out of each addon's own source and are cited where
 they are written down, one line each.
 
+**A picture the game keeps rewriting is left to the game.** One
+window was measured writing to its own artwork two hundred and
+eighteen thousand times in a single session, and every one of those
+was answered with a repainting of ours. A race over one picture is not
+won by being quicker. Each picture is given a fixed number of answers
+now and is then left with whatever colour the game gives it; the
+report counts how many were given up that way, and the saved
+variables name the window.
+
+**The watcher on repainting costs less per write.** It sits on the
+method table shared by every picture in the interface, so it runs on
+every write any of them receives - four hundred thousand times in a
+measured session - and it opened a protected call for each. The two
+cases that need no answer at all, our own write and a picture already
+given up, are now recognised by a table lookup before that call.
+
+**The areas are resolved once per pass rather than once per frame.**
+Deciding which frames belong to a named area costs a resolution of
+every group the compatibility layer holds, and the painting asked for
+it on every slice.
+
 **Opening a window costs nothing, this time including the answer to
 it.** Showing one window is not one event - a window of any size shows
 many frames as it opens, and each reached the answer and took a slice
