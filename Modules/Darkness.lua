@@ -4048,7 +4048,47 @@ local DIRTY = ns.Skin.Memory()
 local REPAINT_AFTER = 0
 
 -- The calls of others our colour may not survive.
-local WATCHED_METHODS = { "SetVertexColor", "SetAtlas", "SetTexture" }
+-- The answer to somebody else's write, declared in advance: it stands
+-- further down the file, and the per-picture hook below calls it.
+local watchHandler
+
+-- The methods watched on the table shared by every picture in the interface.
+--
+-- These two are how a picture is ASSIGNED one: a frame handed out of a pool
+-- gets its atlas or its file at that moment, and that is the one moment the
+-- addon can learn a picture exists without walking anything. They are rare
+-- compared with the third.
+--
+-- SetVertexColor is not here. It is the common write - animations, flashes,
+-- highlights, every fade in the interface - and watching it on the shared
+-- table meant hearing every one of them: four hundred thousand in a
+-- measured session, of which the pictures we had painted were a fraction.
+-- A colour written over ours is heard on the picture itself instead, by a
+-- hook placed when we paint it, so the cost belongs to what we painted
+-- rather than to the interface at large.
+local WATCHED_METHODS = { "SetAtlas", "SetTexture" }
+
+-- The pictures already carrying a hook of ours: texture -> true.
+local COLOUR_HOOKED = ns.Skin.Memory()
+
+--- Hear it when the game writes a colour over ours, on this picture alone.
+--
+-- Placed once per picture, at the moment it enters the plan. A picture we
+-- never painted costs nothing, which is the whole point: the shared table
+-- carries the two assignments above and no more.
+--
+-- @param texture table
+local function watchColourOf(texture)
+    if COLOUR_HOOKED[texture] then return end
+    if type(_G.hooksecurefunc) ~= "function" then return end
+    if type(texture) ~= "table" then return end
+    if type(texture.SetVertexColor) ~= "function" then return end
+
+    COLOUR_HOOKED[texture] = true
+    pcall(_G.hooksecurefunc, texture, "SetVertexColor", function(self)
+        watchHandler(self)
+    end)
+end
 
 -- The adoption of a picture created by the game is declared in advance: it
 -- stands further down the file (it needs the write into the plan) while it is
@@ -4171,7 +4211,7 @@ end
 -- that is none of ours, and the player sees a failure of an addon of the game's
 -- rather than ours. So everything we do in answer to somebody else's repainting
 -- goes through a protected call.
-local function watchHandler(texture)
+function watchHandler(texture)
     -- Counted here rather than inside gameRecolored: what is asked is whether
     -- the watcher HEARS at all, and gameRecolored turns away early on guards
     -- of its own. A count taken past them would answer a different question
@@ -4294,6 +4334,11 @@ local function record(region, group, window)
     end
 
     PLANNED[region] = generation
+
+    -- From this moment a colour written over ours on this picture is heard,
+    -- and on this picture only. The hook costs one installation per picture
+    -- we paint and nothing at all for the rest of the interface.
+    watchColourOf(region)
 
     local n = plan.n + 1
     plan.n = n

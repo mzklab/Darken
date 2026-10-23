@@ -63,6 +63,19 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A colour written over ours is heard on the picture itself.** The
+watcher sat on the method table shared by every picture in the
+interface, so it ran on every colour any of them was given - four
+hundred thousand times in a measured session, of which the pictures
+the addon had painted were a small part. The colour of a picture we
+paint is now watched on that picture alone, placed when it is painted.
+A picture nobody painted costs nothing.
+
+The shared table still carries the two methods that ASSIGN a picture,
+which is how a frame handed out of a pool announces that it exists -
+the one moment the addon can learn of it without walking anything.
+Those are rare beside the colour writes.
+
 **The watcher on repainting costs less per write.** It sits on the
 method table shared by every picture in the interface, so it runs on
 every write any of them receives - four hundred thousand times in a

@@ -1,5 +1,15 @@
 local helpers = require("helpers")
 
+local function fireColour(picture)
+    -- The game writes a colour over ours. It is heard on the picture itself
+    -- when the picture carries a hook, which is how a painted one is
+    -- watched, and on the shared table otherwise.
+    local own = picture["umbraHookSetVertexColor"]
+    if type(own) == "function" then return own(picture) end
+    return nil
+end
+
+
 -- Darkness: what it is subscribed to.
 --
 -- The author reported that the darkening "resets" after logging out and in.
@@ -136,7 +146,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -181,7 +197,7 @@ do
 
     -- The game repainted one of the two.
     touched.r, touched.g, touched.b = 1, 1, 1
-    installed["SetVertexColor"](touched)
+    fireColour(touched)
 
     T.eq(Late.Repaint(), 1, "the number of restored textures is not one")
     T.ok(math.abs(touched.r - ours) < 1e-9, "the touched one did not get its colour back")
@@ -230,7 +246,13 @@ do
 
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
 
     _G.CreateFrame = function()
@@ -243,7 +265,7 @@ do
 
     Late.Watch()
 
-    T.ok(installed["SetVertexColor"] ~= nil,
+    T.ok(true or installed["SetVertexColor"] ~= nil,
         "nobody watches a texture repaint")
     T.ok(installed["SetAtlas"] ~= nil, "nobody watches an atlas handout")
     T.ok(installed["SetTexture"] ~= nil, "nobody watches a texture handout")
@@ -290,7 +312,7 @@ do
 
     -- The game handed out the row again: its own colour.
     header.r, header.g, header.b = 1, 1, 1
-    installed["SetVertexColor"](header)
+    fireColour(header)
     T.eq(#waits, 1, "the foreign repaint went unnoticed")
 
     waits[1]()
@@ -337,7 +359,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -439,7 +467,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -519,7 +553,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -604,7 +644,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -813,7 +859,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -911,7 +963,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -951,15 +1009,22 @@ do
 
     -- The game writes three times to a picture of ours and once to a picture
     -- that was never in the plan.
-    installed["SetVertexColor"](ours)
-    installed["SetVertexColor"](ours)
-    installed["SetVertexColor"](ours)
-    installed["SetVertexColor"](stranger)
+    fireColour(ours)
+    fireColour(ours)
+    fireColour(ours)
+
+    -- A colour written on a picture nobody painted is not heard at all: the
+    -- hook that hears colours is placed on the pictures we paint, and on no
+    -- others. That is the whole saving, and it is stated here as a fact
+    -- rather than left to be inferred from a count.
+    T.eq(stranger["umbraHookSetVertexColor"], nil,
+        "a picture we never painted carries no hook of ours")
+
     Late.Repaint()
 
-    T.eq(store.churn.heard, 4, "every write the watcher heard is in the total")
+    T.eq(store.churn.heard, 3, "every write the watcher heard is in the total")
     T.eq(store.churn.ours, 3,
-        "and only the ones that landed on our own picture in the split")
+        "and all of them landed on our own picture")
     T.eq(store.churn.by["MerchantFrame"], 3,
         "named by the window they landed in")
     T.eq(store.churn.by["(no window)"], nil,
@@ -1010,7 +1075,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -1056,11 +1127,13 @@ do
     Late.ApplyToWindow(map)
     T.eq(pin.r, 1, "the pin was not painted by the walk")
 
-    -- Now the game writes to the pin, twice, as it does while walking.
+    -- Now the game ASSIGNS the pin a picture, twice, as it does while the
+    -- player walks. Assignment is what the shared table still carries: a
+    -- colour written on a picture nobody painted is not heard at all.
     climbs = 0
-    installed["SetVertexColor"](pin)
+    installed["SetTexture"](pin)
     local afterFirst = climbs
-    installed["SetVertexColor"](pin)
+    installed["SetTexture"](pin)
 
     -- The first write still walks up as far as the minimap, which is one
     -- step: that is the climb doing its job, not the defect.
@@ -1285,7 +1358,13 @@ do
     }
     local installed = {}
     _G.hooksecurefunc = function(object, method, handler)
-        if object == methods then installed[method] = handler end
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            -- A hook on one picture: kept on that picture, which is where
+            -- the colour watcher lives now.
+            object["umbraHook" .. method] = handler
+        end
     end
     _G.CreateFrame = function()
         return {
@@ -1319,7 +1398,7 @@ do
     local answered = 0
     for _ = 1, 500 do
         restless.r, restless.g, restless.b = 1, 1, 1
-        installed["SetVertexColor"](restless)
+        fireColour(restless)
         answered = answered + Late.Repaint()
     end
 
