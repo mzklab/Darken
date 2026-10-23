@@ -1687,3 +1687,46 @@ do
     _G.UIParent = savedRoot
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: the named painting survives the reconnaissance")
+
+-- The plan is cleared at the start of every reconnaissance, so anything
+-- recorded before that call is discarded with it. The named painting records
+-- into the plan and therefore has to run after the clearing, not before.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    local savedRoot = _G.UIParent
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local art = newArt("a named window's backdrop")
+    local named = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "NamedWindow" end,
+        IsShown = function() return false end,
+        GetRegions = function() return art end,
+        GetChildren = function() return end,
+    }
+
+    _G.UIParent = newFrame("Frame", "UIParent", {}, {})
+    ns.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveChrome = function()
+            return { "NamedWindow" }, { named }, { "NamedWindow" }, { named }
+        end,
+    }
+    Darkness.ForgetChrome()
+
+    -- The whole path a setting takes: reconnaissance and named painting in
+    -- whatever order the module has chosen.
+    Darkness:ApplySettings()
+
+    T.ok(close(art.r, helpers.whiteAt(Darkness.Factor(64))),
+        "the named framing is dark after the pass, not cleared by it")
+
+    Darkness.ForgetChrome()
+    ns.Compat = savedCompat
+    _G.UIParent = savedRoot
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

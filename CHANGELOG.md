@@ -40,9 +40,14 @@ they are written down, one line each.
 
 **More of the interface is dark before it opens.** The list of window
 names the darkening paints without a walk now covers 740 windows and
-194 named parts inside them, and a named frame's direct children are
-painted with it. What the names do not cover the walk still finds when
-the window is opened.
+194 named parts inside them - the backdrops, headers, insets and
+borders a window is built from. What the names do not cover the walk
+still finds when the window is opened.
+
+The painting runs in slices with a budget of its own, after the
+reconnaissance rather than before it. Before, it ran whole and in one
+frame, and it ran ahead of the step that clears the plan - so it cost
+its full time at login and left nothing behind.
 
 **`/dark harvest` reports what the names do not reach.** It examines
 the interface, hidden frames included, and lists every piece of

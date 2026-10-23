@@ -3899,6 +3899,12 @@ local churnClimbs = 0
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
 
+-- How far through the resolved list of names the painting has got.
+--
+-- Declared here rather than beside the painting itself: clearing the plan
+-- has to reset it, and the clearing is written below.
+local chromeAt = 0
+
 --- Forget what was found.
 -- After a clearing the next application will reconnoitre the interface afresh.
 -- The arrays are zeroed entirely: the plan has nothing to grow endlessly with,
@@ -3906,6 +3912,11 @@ local generation = 1
 -- hands the former arrays to the collector.
 function Darkness.Invalidate()
     generation = generation + 1
+
+    -- The named painting records into the plan, so a cleared plan means it
+    -- has to run again from the beginning. The resolved names themselves are
+    -- still good: what exists in the interface has not changed.
+    chromeAt = 0
 
     -- The rule of selection's ready answers were gathered for the former
     -- composition of the interface and no longer mean anything.
@@ -4526,6 +4537,13 @@ end
 -- The named framing, resolved. Nil until the first painting asks for it.
 local chromeHeld = nil
 
+-- How many milliseconds of the named painting are allotted to one frame.
+--
+-- Smaller than the walk's share: the walk paints what the player is looking
+-- at, this paints what he is not, and the two must not compete for the same
+-- frame at the moment the interface appears.
+local NAMED_SLICE_MS = 1
+
 --- Forget what the names resolved to.
 --
 -- Called when the composition of the interface could have changed, which is
@@ -4534,6 +4552,7 @@ local chromeHeld = nil
 -- before they did does not know their windows.
 function Darkness.ForgetChrome()
     chromeHeld = nil
+    chromeAt = 0
 end
 
 --- Paint the framing the compatibility layer can name, without a walk.
@@ -4664,7 +4683,21 @@ function Darkness.PaintNamed()
     local covered = coveredFrames()
     local from = plan.n + 1
 
-    for i = 1, #objects do
+    -- The pass is cut into slices, and its budget is smaller than the walk's.
+    --
+    -- The list covers every window this client has, including the ones a
+    -- given player never opens; painting it whole costs several hundred
+    -- milliseconds, and spending them in one frame is a visible hitch at the
+    -- moment the interface appears. The work is not urgent in the way the
+    -- walk is: the walk paints what is on screen, this paints what is not
+    -- yet. So it is spread, and what is left over continues on the frames
+    -- that follow.
+    local started = nowMs()
+    local at = chromeAt
+
+    while at < #objects do
+        at = at + 1
+        local i = at
         local object = objects[i]
         local area = covered[bases[i]]
         local window = nil
@@ -4717,58 +4750,31 @@ function Darkness.PaintNamed()
                         end
                     end
                 end
-
-                -- One level of children, and no deeper.
-                --
-                -- A frame's own regions are its backdrop and its edges; the
-                -- pieces drawn over them are frequently children of it. One
-                -- level reaches those at a fixed cost per named frame. A
-                -- second level does not: the number of frames below a window
-                -- grows without a bound the list can state, and the walk is
-                -- the mechanism for an unbounded tree.
-                local fine, kids = pcall(gather, object.GetChildren, object)
-                if fine then
-                    for j = 1, #kids do
-                        local child = kids[j]
-                        local childKind = objectType(child)
-
-                        if childKind == "Texture" then
-                            if not ns.Skin.Forbidden(child)
-                                and not Darkness.IsOurs(child)
-                                and chromeOf(child) then
-                                record(child, area or "window", window)
-                                counters.named = counters.named + 1
-                            end
-                        elseif childKind ~= nil
-                            and not SKIP_TYPES[childKind]
-                            and not ns.Skin.Forbidden(child)
-                            and not Darkness.IsOurs(child) then
-
-                            local got, inner =
-                                pcall(gather, child.GetRegions, child)
-                            if got then
-                                local held = contentRegions(child)
-                                for k = 1, #inner do
-                                    local region = inner[k]
-                                    if not held[region]
-                                        and not ns.Skin.Forbidden(region)
-                                        and not Darkness.IsOurs(region)
-                                        and objectType(region) == "Texture"
-                                        and chromeOf(region) then
-                                        record(region, area or "window",
-                                            window)
-                                        counters.named = counters.named + 1
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
             end
+        end
+
+        if started ~= nil and (nowMs() - started) >= NAMED_SLICE_MS then
+            break
         end
     end
 
+    chromeAt = at
+
     if plan.n >= from then applyPlan(settings, from) end
+
+    if at < #objects then
+        -- More to do. The next frame carries on from where this one stopped.
+        local timer = _G.C_Timer
+        if type(timer) == "table" and type(timer.After) == "function" then
+            pcall(timer.After, 0, function() pcall(Darkness.PaintNamed) end)
+        else
+            -- No clock, which is the case outside the game: the pass is
+            -- finished here and whole, because a test needs a finished
+            -- answer rather than half of one.
+            return (plan.n - from + 1) + Darkness.PaintNamed()
+        end
+    end
+
     return plan.n - from + 1
 end
 
@@ -5544,19 +5550,20 @@ function Darkness:ApplySettings()
         Darkness.ShowGryphons(wanted)
     end
 
-    -- The framing we can name is painted first, and whole.
-    --
-    -- Before the walk rather than after it, and that order is the point: a
-    -- picture already in the plan is not looked at twice, so naming what we
-    -- can means the walk arrives to find the work done. What the names do
-    -- not cover the walk still finds, exactly as before.
-    Darkness.PaintNamed()
-
     -- The application goes on inside the reconnaissance, in slices: each slice
     -- paints what was found in it (Darkness.Drain). There is deliberately no
     -- second application here — it would write a colour over one just written
     -- and would count one and the same texture twice.
     build()
+
+    -- The framing that can be named is painted after the reconnaissance has
+    -- begun, and the order is not free: build() clears the plan before it
+    -- walks anything, so whatever was recorded before that call is discarded
+    -- with it. Named painting placed ahead of the walk cost its full time
+    -- and left nothing behind.
+    --
+    -- It runs in slices of its own and finishes over the following frames.
+    Darkness.PaintNamed()
 end
 
 --- Apply the current value to what has already been reconnoitred.
