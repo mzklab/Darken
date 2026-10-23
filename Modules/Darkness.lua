@@ -3955,6 +3955,16 @@ local churnClimbs = 0
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
 
+-- The frames of the list already painted: frame -> true.
+--
+-- An entry is painted once and not returned to. The list is worked through
+-- more than once - every addon of the game's that loads makes names resolve
+-- that did not resolve before - and without this each of those passes would
+-- repeat the whole of the work already done.
+--
+-- Declared beside the cursor because the clearing of the plan resets both.
+local NAMED_DONE = ns.Skin.Memory()
+
 -- How far through the resolved list of names the painting has got.
 --
 -- Declared here rather than beside the painting itself: clearing the plan
@@ -3979,10 +3989,12 @@ local chromePending = false
 function Darkness.Invalidate()
     generation = generation + 1
 
-    -- The named painting records into the plan, so a cleared plan means it
-    -- has to run again from the beginning. The resolved names themselves are
-    -- still good: what exists in the interface has not changed.
+    -- The named painting starts over, because the plan it records into has
+    -- been cleared and the colours have to be written again. What it has
+    -- already decided about each frame is kept: deciding is the expensive
+    -- half, and nothing about a frame has changed.
     chromeAt = 0
+    NAMED_DONE = ns.Skin.Memory()
 
     -- The rule of selection's ready answers were gathered for the former
     -- composition of the interface and no longer mean anything.
@@ -4726,6 +4738,14 @@ end
 -- The named framing, resolved. Nil until the first painting asks for it.
 local chromeHeld = nil
 
+-- How many entries of the list are painted in one frame.
+--
+-- A count rather than a budget in milliseconds. A budget is spent by
+-- whatever it meets first, so a single large window can consume the frame's
+-- whole share and the pass makes no progress through the list; a count
+-- advances through the list at a rate that does not depend on what is in it.
+local NAMED_PER_FRAME = 200
+
 -- How many milliseconds of the named painting are allotted to one frame.
 --
 -- The whole list is several hundred milliseconds of work. At one
@@ -4858,6 +4878,9 @@ end
 -- @param settings table the subsystem's settings
 local function paintNamedAt(held, i, settings)
     local objects, roots, bases = held.objects, held.roots, held.bases
+    local already = objects[i]
+    if already ~= nil and NAMED_DONE[already] then return end
+    if already ~= nil then NAMED_DONE[already] = true end
     local skip, owner = held.skip or {}, held.owner or {}
     local covered = held.covered or {}
 
@@ -5001,9 +5024,12 @@ function Darkness.PaintNamed()
     local started = nowMs()
     local at = chromeAt
 
+    local did = 0
     while at < #objects do
         at = at + 1
         paintNamedAt(held, at, settings)
+        did = did + 1
+        if did >= NAMED_PER_FRAME then break end
 
         if started ~= nil and (nowMs() - started) >= NAMED_SLICE_MS then
             break

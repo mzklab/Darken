@@ -1846,3 +1846,53 @@ do
 
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: an entry of the list is painted once per plan")
+
+-- The list is worked through more than once: every addon of the game's that
+-- loads makes names resolve that did not resolve before, and each of those
+-- passes would otherwise repeat the whole of the work already done.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local asked = 0
+    local art = newArt("a backdrop")
+    local window = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "ACountedWindow" end,
+        GetRegions = function() asked = asked + 1 return art end,
+        GetChildren = function() return end,
+    }
+
+    ns.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveChrome = function()
+            return { "ACountedWindow" }, { window },
+                   { "ACountedWindow" }, { window }
+        end,
+    }
+    Darkness.ForgetChrome()
+
+    Darkness.PaintNamed()
+    local afterFirst = asked
+    T.ok(afterFirst >= 1, "the entry was painted: " .. afterFirst)
+
+    -- A second and a third pass over the same list do the work again only if
+    -- nothing remembers that it was done.
+    Darkness.PaintNamed()
+    Darkness.PaintNamed()
+    T.eq(asked, afterFirst, "and was not painted again: " .. asked)
+
+    -- Clearing the plan is the one thing that brings it back, because the
+    -- colours have to be written into a new plan.
+    Darkness.Invalidate()
+    Darkness.PaintNamed()
+    T.ok(asked > afterFirst, "a cleared plan paints it afresh: " .. asked)
+
+    Darkness.ForgetChrome()
+    ns.Compat = savedCompat
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

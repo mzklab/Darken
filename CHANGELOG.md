@@ -63,6 +63,19 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**The list of names is worked through once, not once per event.**
+Every addon of the game's that loads makes names resolve that did not
+resolve before, so the list is gone over again - and each of those
+passes repeated the whole of the work already done. An entry painted
+is remembered as painted and not returned to until the plan is
+cleared, which is the one thing that makes the colours need writing
+again.
+
+The pass also advances by a count of entries rather than a budget of
+milliseconds. A budget is spent by whatever it meets first, so one
+large window could take the whole of a frame's share and the pass make
+no progress through the list.
+
 **Every window is listened for, shown or not.** The addon answers a
 window by hearing it appear, and the hook that hears it was placed
 only on frames a pass had reached - while a pass does not enter what
