@@ -4744,6 +4744,172 @@ function Darkness.ForgetChrome()
     chromeAt = 0
 end
 
+--- The resolved list of names, resolving it if that has not happened.
+--
+-- Shared by the background pass and by the painting of one window as it
+-- is shown: whichever asks first pays for the resolution, and the answer
+-- stands until the composition of the interface changes.
+--
+-- @return table|nil
+local function chromeList()
+    local held = chromeHeld
+    if held ~= nil then return held end
+
+    local ok, paths, objects, roots, bases = pcall(ns.Compat.ResolveChrome)
+    if not ok or type(objects) ~= "table" then return 0 end
+    -- Whose each root is, asked once per ROOT rather than once per
+    -- picture of it.
+    --
+    -- The question walks the list of installed addons, and a window
+    -- contributes twenty-odd pictures: asked per picture it showed up
+    -- in the whole-cost measurement at once, which is what that
+    -- measurement is for.
+    -- Which of the entries are another addon's window rather than the
+    -- game's, and whose.
+    local owner = {}
+    local mineOrNot, skip = {}, {}
+    if type(roots) == "table" then
+        for i = 1, #roots do
+            local root = roots[i]
+            local answer = mineOrNot[root]
+            if answer == nil then
+                answer = Darkness.Foreign(root) and true or false
+                mineOrNot[root] = answer
+            end
+            skip[i] = answer
+        end
+    end
+
+    -- And the windows of the other addons the player asked for.
+    --
+    -- They go into the plan under the "other addons' windows" area, so
+    -- the one switch that has always governed them governs these too: on
+    -- a fresh install it is "as in the game" and not one of them is
+    -- touched. An addon nobody named is still never reached from here -
+    -- this list is the whole of what we claim to know.
+    if type(ns.Compat.ResolveAddonChrome) == "function"
+        and type(ns.Compat.ResolveFunction) == "function" then
+        local got, isLoaded = pcall(ns.Compat.ResolveFunction,
+            "addon-loaded")
+        if got and type(isLoaded) == "function" then
+            local fine, theirs, mine, owners =
+                pcall(ns.Compat.ResolveAddonChrome, nil, isLoaded)
+            if fine and type(mine) == "table" then
+                for i = 1, #mine do
+                    local at = #objects + 1
+                    objects[at] = mine[i]
+                    roots[at] = owners[i]
+                    bases[at] = mine[i]
+                    skip[at] = false
+                    owner[at] = owners[i]
+                end
+            end
+        end
+    end
+
+    -- Which frames belong to a named area, computed with the names.
+    --
+    -- The answer costs a resolution of every group in the layer, and the
+    -- painting asks for it once per slice - that is once per frame while
+    -- it runs. It cannot change between slices: what belongs to which
+    -- area is a property of the interface, not of how far the painting
+    -- has got.
+    -- The entries of each root, by the root's name.
+    --
+    -- Showing a window says exactly which names matter at that instant.
+    -- Painting those alone is a few dozen pictures and can be done
+    -- before the frame is drawn; the rest of the list goes on in the
+    -- background as it did.
+    local byRoot = {}
+    if type(roots) == "table" then
+        for i = 1, #roots do
+            local root = roots[i]
+            if root ~= nil then
+                local list = byRoot[root]
+                if list == nil then list = {} byRoot[root] = list end
+                list[#list + 1] = i
+            end
+        end
+    end
+
+    held = { paths = paths, objects = objects, roots = roots,
+        bases = bases, skip = skip, owner = owner, byRoot = byRoot,
+        covered = coveredFrames() }
+    chromeHeld = held
+
+    return chromeHeld
+end
+
+--- Paint one entry of the resolved list of names.
+--
+-- Shared by the two callers: the background pass, which works through
+-- the list a slice at a time, and the showing of a window, which paints
+-- that window's own entries at once.
+--
+-- @param held table the resolved list
+-- @param i number which entry
+-- @param settings table the subsystem's settings
+local function paintNamedAt(held, i, settings)
+    local objects, roots, bases = held.objects, held.roots, held.bases
+    local skip, owner = held.skip or {}, held.owner or {}
+    local covered = held.covered or {}
+
+    local object = objects[i]
+    local area = covered[bases[i]]
+    local window = nil
+    if area == nil then
+        if owner[i] ~= nil then
+            -- Another addon's window: the area the player has always
+            -- had for them, and the addon's own name beside it so that
+            -- a single addon can be kept out of it by name - the same
+            -- road a single window of the game's is kept out by.
+            area = "addons"
+            window = owner[i]
+        else
+            window = roots[i]
+        end
+    end
+
+    -- Whose window this is, answered by the same rule the walk asks,
+    -- decided once per root when the names were resolved.
+    --
+    -- A list of names is only as clean as whoever wrote it, and this one
+    -- was seeded from a list that had other addons' frames mixed in with
+    -- the game's. Rather than trust the cleaning, the rule decides: a
+    -- root another addon owns is skipped here exactly as the walk skips
+    -- it, so a name that should not be on the list is inert rather than
+    -- harmful.
+    if skip[i] then object = nil end
+
+    if object ~= nil and not ns.Skin.Forbidden(object)
+        and not Darkness.IsOurs(object) then
+        local kind = objectType(object)
+
+        if kind == "Texture" then
+            if chromeOf(object) then
+                record(object, area or "window", window)
+                counters.named = counters.named + 1
+            end
+        elseif kind ~= nil and not SKIP_TYPES[kind] then
+            local fine, regions = pcall(gather, object.GetRegions, object)
+            if fine then
+                local content = contentRegions(object)
+                for j = 1, #regions do
+                    local region = regions[j]
+                    if not content[region]
+                        and not ns.Skin.Forbidden(region)
+                        and not Darkness.IsOurs(region)
+                        and objectType(region) == "Texture"
+                        and chromeOf(region) then
+                        record(region, area or "window", window)
+                        counters.named = counters.named + 1
+                    end
+                end
+            end
+        end
+    end
+end
+
 --- Paint the framing the compatibility layer can name, without a walk.
 --
 -- WHY THIS EXISTS BESIDE THE WALK.
@@ -4785,72 +4951,8 @@ function Darkness.PaintNamed()
     -- every page. The answer cannot change in between: what exists in the
     -- interface changes when an addon of the game's loads, and that is where
     -- the memory is dropped (Darkness.ForgetChrome).
-    local held = chromeHeld
-    if held == nil then
-        local ok, paths, objects, roots, bases = pcall(ns.Compat.ResolveChrome)
-        if not ok or type(objects) ~= "table" then return 0 end
-        -- Whose each root is, asked once per ROOT rather than once per
-        -- picture of it.
-        --
-        -- The question walks the list of installed addons, and a window
-        -- contributes twenty-odd pictures: asked per picture it showed up
-        -- in the whole-cost measurement at once, which is what that
-        -- measurement is for.
-        -- Which of the entries are another addon's window rather than the
-        -- game's, and whose.
-        local owner = {}
-        local mineOrNot, skip = {}, {}
-        if type(roots) == "table" then
-            for i = 1, #roots do
-                local root = roots[i]
-                local answer = mineOrNot[root]
-                if answer == nil then
-                    answer = Darkness.Foreign(root) and true or false
-                    mineOrNot[root] = answer
-                end
-                skip[i] = answer
-            end
-        end
-
-        -- And the windows of the other addons the player asked for.
-        --
-        -- They go into the plan under the "other addons' windows" area, so
-        -- the one switch that has always governed them governs these too: on
-        -- a fresh install it is "as in the game" and not one of them is
-        -- touched. An addon nobody named is still never reached from here -
-        -- this list is the whole of what we claim to know.
-        if type(ns.Compat.ResolveAddonChrome) == "function"
-            and type(ns.Compat.ResolveFunction) == "function" then
-            local got, isLoaded = pcall(ns.Compat.ResolveFunction,
-                "addon-loaded")
-            if got and type(isLoaded) == "function" then
-                local fine, theirs, mine, owners =
-                    pcall(ns.Compat.ResolveAddonChrome, nil, isLoaded)
-                if fine and type(mine) == "table" then
-                    for i = 1, #mine do
-                        local at = #objects + 1
-                        objects[at] = mine[i]
-                        roots[at] = owners[i]
-                        bases[at] = mine[i]
-                        skip[at] = false
-                        owner[at] = owners[i]
-                    end
-                end
-            end
-        end
-
-        -- Which frames belong to a named area, computed with the names.
-        --
-        -- The answer costs a resolution of every group in the layer, and the
-        -- painting asks for it once per slice - that is once per frame while
-        -- it runs. It cannot change between slices: what belongs to which
-        -- area is a property of the interface, not of how far the painting
-        -- has got.
-        held = { paths = paths, objects = objects, roots = roots,
-            bases = bases, skip = skip, owner = owner,
-            covered = coveredFrames() }
-        chromeHeld = held
-    end
+    local held = chromeList()
+    if held == nil then return 0 end
 
     local objects, roots, bases = held.objects, held.roots, held.bases
     local skip = held.skip or {}
@@ -4894,61 +4996,7 @@ function Darkness.PaintNamed()
 
     while at < #objects do
         at = at + 1
-        local i = at
-        local object = objects[i]
-        local area = covered[bases[i]]
-        local window = nil
-        if area == nil then
-            if owner[i] ~= nil then
-                -- Another addon's window: the area the player has always
-                -- had for them, and the addon's own name beside it so that
-                -- a single addon can be kept out of it by name - the same
-                -- road a single window of the game's is kept out by.
-                area = "addons"
-                window = owner[i]
-            else
-                window = roots[i]
-            end
-        end
-
-        -- Whose window this is, answered by the same rule the walk asks,
-        -- decided once per root when the names were resolved.
-        --
-        -- A list of names is only as clean as whoever wrote it, and this one
-        -- was seeded from a list that had other addons' frames mixed in with
-        -- the game's. Rather than trust the cleaning, the rule decides: a
-        -- root another addon owns is skipped here exactly as the walk skips
-        -- it, so a name that should not be on the list is inert rather than
-        -- harmful.
-        if skip[i] then object = nil end
-
-        if object ~= nil and not ns.Skin.Forbidden(object)
-            and not Darkness.IsOurs(object) then
-            local kind = objectType(object)
-
-            if kind == "Texture" then
-                if chromeOf(object) then
-                    record(object, area or "window", window)
-                    counters.named = counters.named + 1
-                end
-            elseif kind ~= nil and not SKIP_TYPES[kind] then
-                local fine, regions = pcall(gather, object.GetRegions, object)
-                if fine then
-                    local content = contentRegions(object)
-                    for j = 1, #regions do
-                        local region = regions[j]
-                        if not content[region]
-                            and not ns.Skin.Forbidden(region)
-                            and not Darkness.IsOurs(region)
-                            and objectType(region) == "Texture"
-                            and chromeOf(region) then
-                            record(region, area or "window", window)
-                            counters.named = counters.named + 1
-                        end
-                    end
-                end
-            end
-        end
+        paintNamedAt(held, at, settings)
 
         if started ~= nil and (nowMs() - started) >= NAMED_SLICE_MS then
             break
@@ -5958,6 +6006,40 @@ end
 --
 -- @param frame table
 -- @return number how many textures were processed
+--- Paint the named framing of one window, now.
+--
+-- Showing a window names the work: its own entries are a few dozen pictures
+-- at most, and doing them in the same call means the window is dark when it
+-- is drawn rather than a moment afterwards. The rest of the list is not
+-- touched here - that is what the background pass is for.
+--
+-- A frame that is not a root of the list costs one lookup.
+--
+-- @param frame table the window that appeared
+-- @return number how many pictures were painted
+function Darkness.PaintNamedFor(frame)
+    local held = chromeList()
+    if held == nil or type(held.byRoot) ~= "table" then return 0 end
+    if type(frame) ~= "table" then return 0 end
+
+    local said = stringFrom(frame, "GetName")
+    if said == nil then return 0 end
+
+    local list = held.byRoot[said]
+    if list == nil then return 0 end
+
+    local settings = Settings()
+    if settings == nil then return 0 end
+
+    local from = plan.n + 1
+    for i = 1, #list do
+        paintNamedAt(held, list[i], settings)
+    end
+    if plan.n >= from then applyPlan(settings, from) end
+
+    return plan.n - from + 1
+end
+
 --- Ask for the named painting to go on, without doing any of it now.
 --
 -- Showing a window is not one event: a window of any size shows many frames
@@ -6006,6 +6088,11 @@ end
 -- @param frame table the window that appeared
 function Darkness.WindowShown(frame)
     if type(frame) ~= "table" then return end
+
+    -- This window's own names first, and in this call: it is about to be
+    -- drawn, and a handful of pictures is the difference between a window
+    -- that appears dark and one that appears and then changes colour.
+    Darkness.PaintNamedFor(frame)
 
     Darkness.PaintNamedSoon()
 

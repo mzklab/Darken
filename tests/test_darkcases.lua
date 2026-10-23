@@ -1763,3 +1763,54 @@ do
 
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: a window's own names are painted as it is shown")
+
+-- A window used to appear in the game's colours and change a moment later,
+-- because the painting worked through the whole list in the background and
+-- had not reached that window yet. Showing a window says exactly which names
+-- matter at that instant: its own are a few dozen pictures and are painted
+-- in the same call, before the frame is drawn.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local early = newArt("the backdrop of the window being shown")
+    local late  = newArt("the backdrop of a window further down the list")
+
+    local shown = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "AShownWindow" end,
+        GetRegions = function() return early end,
+        GetChildren = function() return end,
+    }
+    local other = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "AnotherWindow" end,
+        GetRegions = function() return late end,
+        GetChildren = function() return end,
+    }
+
+    ns.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveChrome = function()
+            return { "AnotherWindow", "AShownWindow" },
+                   { other, shown },
+                   { "AnotherWindow", "AShownWindow" },
+                   { other, shown }
+        end,
+    }
+    Darkness.ForgetChrome()
+
+    -- The resolution happens here; nothing has been painted yet.
+    Darkness.PaintNamedFor(shown)
+
+    T.ok(close(early.r, helpers.whiteAt(Darkness.Factor(64))),
+        "the window being shown is dark in the same call")
+
+    Darkness.ForgetChrome()
+    ns.Compat = savedCompat
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

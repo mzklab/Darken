@@ -63,6 +63,14 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A window is dark as it appears, not a moment later.** The painting
+by name works through the list in the background, and a window could
+be shown before its turn came - so it appeared in the game's own
+colours and changed colour afterwards. Showing a window says exactly
+which names matter at that instant: its own are a few dozen pictures,
+and they are painted in the same call, before the frame is drawn. The
+rest of the list goes on in the background as before.
+
 **A colour written over ours is heard on the picture itself.** The
 watcher sat on the method table shared by every picture in the
 interface, so it ran on every colour any of them was given - four
