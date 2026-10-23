@@ -38,6 +38,15 @@ is set to.
 The names were read out of each addon's own source and are cited where
 they are written down, one line each.
 
+**Opening a large window no longer stalls the game.** A window shows
+dozens of frames as it opens, and each one asked for a walk of what
+had appeared. That request replaced the queue instead of joining it,
+so the walk restarted from the beginning dozens of times per window
+and never reached the end of a large one, while the deferred
+continuations of the discarded walks went on running beside it. New
+work joins the queue now, and only one continuation is ever
+outstanding - for the walk and for the painting by name alike.
+
 **More of the interface is dark before it opens.** The list of window
 names the darkening paints without a walk now covers 740 windows and
 194 named parts inside them - the backdrops, headers, insets and

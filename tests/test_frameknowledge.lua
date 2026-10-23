@@ -489,3 +489,39 @@ do
     T.eq(#missing, 0, "the document names every group, not named: "
         .. table.concat(missing, " | "))
 end
+
+T.suite("frame groups: the named lists hold the game's frames only")
+
+-- The list of names the darkening paints without a walk describes the game's
+-- interface. Frames belonging to other addons are described separately, by
+-- the addon that owns them, and are reached only while that addon is both
+-- loaded and named there. A name in the wrong list would be consulted under
+-- the wrong rule.
+do
+    local names = Compat.GetFrameNames("vanilla", "chrome")
+    T.ok(#names > 100, "the list is there: " .. #names .. " names")
+
+    -- Prefixes of addons rather than of the game. The game's own names are
+    -- older than any addon, so a frame beginning with one of these was not
+    -- made by the client.
+    local addons = {
+        "BT4", "Dominos", "ElvUI", "Bartender", "Masque", "WeakAuras",
+        "TitanPanel", "Details", "Plater", "OmniCC", "Questie", "Prat",
+        "Leatrix", "LeaPlus", "RXP", "Rack", "Hive", "DragonflightUI",
+        "Outfitter", "TrinketMenu", "ItemRack", "ClassicUIForever",
+        "ArenaAnalytics", "SwingTimer",
+    }
+
+    local wrong = {}
+    for i = 1, #names do
+        for j = 1, #addons do
+            if names[i]:sub(1, #addons[j]) == addons[j] then
+                wrong[#wrong + 1] = names[i]
+                break
+            end
+        end
+    end
+
+    T.eq(#wrong, 0, "no addon's frame is in the game's list: "
+        .. table.concat(wrong, " "))
+end

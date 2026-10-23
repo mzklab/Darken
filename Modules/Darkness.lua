@@ -2984,6 +2984,9 @@ local function nowMs()
     return nil
 end
 
+-- Whether a continuation of the walk is already waiting for the next frame.
+local draining = false
+
 -- An unfinished walk: the queue of subtrees and everything it needs.
 --
 -- One for the whole addon: windows are opened one at a time, and if a second one
@@ -3905,6 +3908,16 @@ local generation = 1
 -- has to reset it, and the clearing is written below.
 local chromeAt = 0
 
+-- Whether a continuation of the named painting is already waiting.
+--
+-- The painting is cut into slices and each unfinished slice asks for the
+-- next frame. Without this there may be more than one such chain at a time:
+-- showing a window leads to a fresh application, which clears the plan and
+-- starts the painting again from the beginning, while the chains already
+-- running keep asking for frames of their own. They multiply, and every one
+-- of them walks the whole list.
+local chromePending = false
+
 --- Forget what was found.
 -- After a clearing the next application will reconnoitre the interface afresh.
 -- The arrays are zeroed entirely: the plan has nothing to grow endlessly with,
@@ -4220,6 +4233,26 @@ end
 -- @return boolean|nil whether the plan's tree grew; nil means the walk is
 --   unfinished
 local function startSlice(items, count, skip, former, formerN)
+    -- A walk already in flight takes the new work into its own queue.
+    --
+    -- Replacing the queue throws away everything the walk has not reached
+    -- yet and starts it over. Showing a window is not one event but many -
+    -- a window of any size shows dozens of frames as it opens, and each
+    -- showing asks for a walk - so a replacement means the walk restarting
+    -- dozens of times, each time from the beginning, while the deferred
+    -- continuations of the discarded walks keep running beside it.
+    --
+    -- The queue is appended to instead. A walk in flight has a restoration
+    -- of its own pending (former), and that belongs to the walk that began
+    -- it; new work joining in carries none.
+    if slice ~= nil and former == nil then
+        for i = 1, count do
+            slice.n = slice.n + 1
+            slice.items[slice.n] = items[i]
+        end
+        return
+    end
+
     slice = {
         items = items,
         n = count,
@@ -4265,6 +4298,13 @@ local function startSlice(items, count, skip, former, formerN)
     end
 
     return Darkness.Drain()
+end
+
+--- The same, by a name the tests can reach.
+-- @param frame table
+-- @param area string|nil
+function Darkness.SweepShown(frame, area)
+    return sweepShown(frame, area)
 end
 
 --- Walk the next piece of an unfinished walk.
@@ -4356,10 +4396,18 @@ function Darkness.Drain()
         return grew
     end
 
-    -- The queue is not empty: the next slice goes on the next frame.
+    -- The queue is not empty: the next slice goes on the next frame, and
+    -- only one such request is outstanding at a time. Two chains draining
+    -- one queue halve the frame budget each of them was given.
     local timer = _G.C_Timer
     if type(timer) == "table" and type(timer.After) == "function" then
-        pcall(timer.After, 0, function() pcall(Darkness.Drain) end)
+        if not draining then
+            draining = true
+            pcall(timer.After, 0, function()
+                draining = false
+                pcall(Darkness.Drain)
+            end)
+        end
     else
         -- There is no clock (outside the game) — we finish it right here: a
         -- test needs a finished walk rather than half of one.
@@ -4763,10 +4811,17 @@ function Darkness.PaintNamed()
     if plan.n >= from then applyPlan(settings, from) end
 
     if at < #objects then
-        -- More to do. The next frame carries on from where this one stopped.
+        -- More to do. The next frame carries on from where this one stopped,
+        -- and only one such request is outstanding at a time.
         local timer = _G.C_Timer
         if type(timer) == "table" and type(timer.After) == "function" then
-            pcall(timer.After, 0, function() pcall(Darkness.PaintNamed) end)
+            if not chromePending then
+                chromePending = true
+                pcall(timer.After, 0, function()
+                    chromePending = false
+                    pcall(Darkness.PaintNamed)
+                end)
+            end
         else
             -- No clock, which is the case outside the game: the pass is
             -- finished here and whole, because a test needs a finished

@@ -1319,3 +1319,59 @@ do
     _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
     _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
 end
+
+T.suite("darkness: showing many frames does not restart the walk")
+
+-- A window of any size shows dozens of frames as it opens, and each showing
+-- asks for a walk of what appeared. If that request replaced the queue, the
+-- walk would restart from the beginning dozens of times per window and never
+-- reach the end of a large one.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local function art()
+        local region = {
+            r = 1, g = 1, b = 1, a = 1,
+            GetObjectType = function() return "Texture" end,
+            GetDrawLayer = function() return "ARTWORK" end,
+            GetTexture = function() return 4242 end,
+        }
+        function region:GetVertexColor() return self.r, self.g, self.b, self.a end
+        function region:SetVertexColor(cr, cg, cb)
+            self.r, self.g, self.b = cr, cg, cb
+        end
+        return region
+    end
+
+    local pieces = {}
+    for i = 1, 5 do
+        local picture = art()
+        pieces[i] = picture
+        Late.SweepShown({
+            GetObjectType = function() return "Frame" end,
+            GetName = function() return "PanelPart" .. i end,
+            GetRegions = function() return picture end,
+            GetChildren = function() return end,
+        }, nil)
+    end
+
+    -- Every one of the five was walked, not only the last to ask.
+    local painted = 0
+    for i = 1, 5 do
+        if pieces[i].r < 1 then painted = painted + 1 end
+    end
+    T.eq(painted, 5, "each frame that appeared was reached: " .. painted)
+
+    fresh.Addon, fresh.flavor = nil, nil
+end
