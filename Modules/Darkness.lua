@@ -820,26 +820,15 @@ local MAX_DEPTH = 10
 -- whole, together with their children, rather than to each texture
 -- separately.
 --
--- StatusBar is NOT here, and that is a correction rather than an omission.
+-- StatusBar — a bar of health, power or experience. A bar's fill shows a
+-- magnitude, and darkening it is the same as dimming a gauge's needle. A unit
+-- frame bar's colour belongs on top of that to the unit frames subsystem: two
+-- owners of one colour would give a war of repaintings.
 --
--- It was, with this reasoning: a bar's fill shows a magnitude, and darkening
--- it is the same as dimming a gauge's needle. The reasoning holds for the
--- FILL and was applied to the whole object, which is a different thing. A
--- bar's bed, its border and the art around it belong to the bar object
--- itself, not to the frame holding it - so the walk turned back at the
--- threshold and never reached them.
---
--- The author sent the reputation window: every standing is a bar, every bar
--- keeps a brown bed and a brown border, and the window around them is dark.
--- The note further down this file already said these ought to darken ("a
--- bar's bed, its frame and the header of the row it stands in are framing"),
--- and named two earlier screenshots of exactly this. The rule was written;
--- the skip above it made it unreachable.
---
--- The fill is spared where sparing it belongs - by asking the bar which of
--- its pictures is the fill (GetStatusBarTexture), which the walk already
--- does for every frame that has the method. A unit frame bar's colour stays
--- the unit frames subsystem's: that is about the fill too.
+-- It left this list for one build and came back. Entering a bar for the sake
+-- of its bed and border greyed the fill of the professions window's skill
+-- bars, which the author saw at once - and nobody had asked for the change.
+-- Whatever is right about a bar's bed, it is not worth a greyed gauge.
 --
 -- Minimap — the map of the terrain itself. That is a picture of the world
 -- rather than the frame around it; the map's border lies in neighbouring
@@ -852,6 +841,7 @@ local MAX_DEPTH = 10
 -- a magnitude, and quenching it means taking a reading away from the
 -- player.
 local SKIP_TYPES = {
+    StatusBar       = true,
     Minimap         = true,
     Model           = true,
     PlayerModel     = true,
@@ -2626,25 +2616,6 @@ local function walk(object, depth, skip, sink, area, push)
     if SKIP_TYPES[kind] then
         FRAME_AREA[object] = UNTOUCHED
         return
-    end
-
-    -- A bar that cannot say which of its pictures is the fill is not entered.
-    --
-    -- Going in is worth it for the bed and the border, and it is only safe
-    -- while the fill can be told apart from them. Every bar in the client
-    -- answers GetStatusBarTexture; one that does not is either not really a
-    -- bar or is somebody's own object wearing the type, and darkening a fill
-    -- - dimming the needle of a gauge - is the worse of the two mistakes.
-    if kind == "StatusBar" then
-        local told = false
-        if type(object.GetStatusBarTexture) == "function" then
-            local ok, found = pcall(object.GetStatusBarTexture, object)
-            told = ok and type(found) == "table"
-        end
-        if not told then
-            FRAME_AREA[object] = UNTOUCHED
-            return
-        end
     end
 
     -- The hidden is not walked.
@@ -6089,21 +6060,6 @@ function Darkness.Probe(object, limit)
         local kind = objectType(thing)
         if SKIP_TYPES[kind] then
             return say(depth, thing, "type is skipped whole", kind)
-        end
-
-        -- The same answer the walk gives about a bar, and it has to be the
-        -- same one: a probe that says "skipped whole" where the walk goes
-        -- inside lies about exactly the thing it is called for.
-        if kind == "StatusBar" then
-            local told = false
-            if type(thing.GetStatusBarTexture) == "function" then
-                local ok, found = pcall(thing.GetStatusBarTexture, thing)
-                told = ok and type(found) == "table"
-            end
-            if not told then
-                return say(depth, thing, "a bar that cannot name its fill",
-                    kind)
-            end
         end
 
         if depth > MAX_DEPTH then

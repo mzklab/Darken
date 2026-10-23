@@ -495,11 +495,8 @@ do
     T.eq(tally[Darkness.PROBE_DIMS], 2,
         "two textures will darken: the window border and the tree backdrop")
     T.eq(tally["content: path"], 1, "the icon is named content by its path")
-    -- A bar is entered now, for the sake of its bed and its border, but only
-    -- when it can say which of its pictures is the fill. This one cannot, so
-    -- it is left whole and the probe says which of the two reasons it was.
-    T.eq(tally["a bar that cannot name its fill"], 1,
-        "the bar is named, and named for the right reason")
+    T.eq(tally["type is skipped whole"], 1,
+        "the bar is named skipped by type")
 
     --- Find a record by object name.
     local function recordOf(name)
