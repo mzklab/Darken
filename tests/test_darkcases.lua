@@ -1730,3 +1730,36 @@ do
     _G.UIParent = savedRoot
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: a fill is a reading whatever it is drawn from")
+
+-- A bar's fill shows a magnitude. The test that tells framing from contents
+-- inside a content field asks whether the picture came from an atlas,
+-- because today's templates keep a slot's border in a field called icon and
+-- framing arrives as an atlas. That question is about icons and portraits.
+-- Asked about a fill it painted the fill of every bar whose artwork is an
+-- atlas.
+do
+    local fill = newRegion({ kind = "Texture", layer = "ARTWORK",
+        atlas = "ui-frame-bar-fill-blue" })
+    fill.r, fill.g, fill.b = 1, 1, 1
+
+    local bed = newRegion({ kind = "Texture", layer = "ARTWORK",
+        atlas = "ui-frame-bar-background" })
+
+    local bar = newFrame("Frame", "ASkillRank", { fill, bed })
+    bar.Fill = fill
+
+    local window = newFrame("Frame", "ASkillWindow", {}, { bar })
+
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    Darkness.ApplyToWindow(window)
+
+    T.eq(fill.r, 1, "the fill is untouched although it is an atlas")
+    T.ok(bed.r < 1, "while the bed beside it darkens")
+
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

@@ -1672,7 +1672,33 @@ end
 --
 -- @param region table
 -- @return boolean
-local function fieldIsContent(region)
+-- The fields that hold a reading rather than a picture of a thing.
+--
+-- A bar's fill shows a magnitude. What file or atlas it is drawn from does
+-- not change that, so the test below does not apply to these: whatever is in
+-- such a field is a reading and is not painted.
+local FILL_FIELDS = {
+    fill = true, Fill = true, BarFill = true, barFill = true,
+}
+
+--- Whether what lies in a content field is really contents.
+--
+-- The question exists because a field's name is not proof. Today's templates
+-- keep their own framing in a field called icon - a slot's border, a stat
+-- bar, a model's turn buttons - and framing arrives as an atlas while an
+-- item's icon and a portrait arrive as a file. So an atlas in such a field
+-- is framing.
+--
+-- That test is about icons and portraits only. A fill is a reading whatever
+-- it is drawn from, and running the test over fill fields painted the fills
+-- of every bar whose artwork happens to be an atlas.
+--
+-- @param region table
+-- @param field string|nil the field it was found in
+-- @return boolean
+local function fieldIsContent(region, field)
+    if field ~= nil and FILL_FIELDS[field] then return true end
+
     local atlas = stringFrom(region, "GetAtlas")
     if atlas == nil then return true end
     return containsAny(atlas:lower(), CONTENT_ATLASES)
@@ -1681,8 +1707,9 @@ end
 local function contentRegions(frame)
     local set = {}
     for i = 1, #CONTENT_FIELDS do
-        local region = frame[CONTENT_FIELDS[i]]
-        if type(region) == "table" and fieldIsContent(region) then
+        local field = CONTENT_FIELDS[i]
+        local region = frame[field]
+        if type(region) == "table" and fieldIsContent(region, field) then
             set[region] = true
         end
     end
@@ -4623,7 +4650,8 @@ function adopt(texture)
     -- turned black: the author sent in a screenshot saying he had asked for
     -- such things not to be painted.
     for i = 1, #CONTENT_FIELDS do
-        if parent[CONTENT_FIELDS[i]] == texture and fieldIsContent(texture) then
+        local field = CONTENT_FIELDS[i]
+        if parent[field] == texture and fieldIsContent(texture, field) then
             return
         end
     end
@@ -4648,10 +4676,17 @@ local chromeHeld = nil
 
 -- How many milliseconds of the named painting are allotted to one frame.
 --
--- Smaller than the walk's share: the walk paints what the player is looking
--- at, this paints what he is not, and the two must not compete for the same
--- frame at the moment the interface appears.
-local NAMED_SLICE_MS = 1
+-- The whole list is several hundred milliseconds of work. At one
+-- millisecond a frame it takes several hundred frames to finish, and it does
+-- not get them: the plan is cleared and the painting restarted on every
+-- fresh reconnaissance, which happens at every entry into the world, every
+-- load-on-demand addon and every change of a setting. A pass that never
+-- reaches the end paints nothing at all.
+--
+-- Three is the walk's own share and the same reasoning stands behind it: a
+-- fifth of a frame at sixty a second, which the eye does not read as a
+-- hitch.
+local NAMED_SLICE_MS = 3
 
 --- Forget what the names resolved to.
 --

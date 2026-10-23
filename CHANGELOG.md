@@ -38,6 +38,22 @@ is set to.
 The names were read out of each addon's own source and are cited where
 they are written down, one line each.
 
+**A bar's fill is never painted, whatever it is drawn from.** The
+test that tells framing from contents inside a content field asks
+whether the picture came from an atlas - today's templates keep a
+slot's border in a field named for an icon, and framing arrives as an
+atlas while an icon arrives as a file. That question is about icons
+and portraits. It was being asked about fills as well, so the fill of
+any bar whose artwork happens to be an atlas was painted. A fill shows
+a magnitude; what it is drawn from does not change that.
+
+**The painting by name gets the frame budget it needs to finish.** At
+a millisecond a frame the whole list takes several hundred frames, and
+it does not get them: the plan is cleared and the painting restarted
+at every fresh reconnaissance. A pass that never reaches the end
+paints nothing, which is why windows kept appearing in the game's own
+colours.
+
 **A picture the game keeps rewriting is left to the game.** One
 window was measured writing to its own artwork two hundred and
 eighteen thousand times in a single session, and every one of those
