@@ -926,6 +926,28 @@ distribute({
     ["inspect-window"] = { "InspectFrame" },
 })
 
+-- The frames and pictures that are never painted, by exact name.
+--
+-- The rules that tell framing from contents decide from what a picture is:
+-- its layer, its name, its atlas, the file behind it. They are general, and
+-- a general rule is wrong somewhere. These are the places where it is known
+-- to be wrong and the answer is not in doubt - a portrait, an icon, a header
+-- that reads as framing by every mark and is not.
+--
+-- An exact name rather than a piece of one: this list exists to be certain,
+-- and a substring is the opposite of certain.
+--
+-- A name absent from this client costs nothing: nothing ever asks about it.
+local NEVER_PAINT = {
+    "CollectionsJournalPortrait", "CollectionsJournalPortraitFrame",
+    "ContainerFrame1Portrait", "FocusFrameToTPortrait",
+    "FriendsFrameIcon", "FriendsFramePortrait", "FriendsFramePortraitFrame",
+    "FriendsListFrame", "FriendsTabHeader", "HonorFramePvPIcon",
+    "Portrait2", "RTPortrait1", "TargetFrameToTPortrait",
+}
+
+distribute({ ["never-paint"] = NEVER_PAINT })
+
 -- The windows whose framing the darkening paints by name.
 --
 -- The general pass finds its work by walking the interface tree, and it does

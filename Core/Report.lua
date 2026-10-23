@@ -177,6 +177,9 @@ local CONSEQUENCE = {
     ["secure-variable"] = {
         label = "Other Addons' Windows", kind = Report.ALTERNATIVES,
     },
+    ["never-paint"] = {
+        label = "Interface Darkness", kind = Report.ALTERNATIVES,
+    },
     ["chrome"] = {
         label = "Interface Darkness", kind = Report.SERIES,
         later = "the windows the darkening paints by name: a window the "

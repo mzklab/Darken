@@ -1896,3 +1896,43 @@ do
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: a named exception is never painted")
+
+-- The rules that tell framing from contents decide from what a picture is,
+-- and a general rule is wrong somewhere. The exceptions name the places
+-- where it is known to be wrong and the answer is not in doubt, and they are
+-- asked before any rule that reasons.
+do
+    local savedFlavor = ns.flavor
+    local savedCompat = ns.Compat
+    ns.flavor = "vanilla"
+    ns.Compat = {
+        GetFrameNames = function(_, group)
+            if group == "never-paint" then
+                return { "AFrameNeverPainted", "APortraitNeverPainted" }
+            end
+            return {}
+        end,
+    }
+    Darkness.ForgetNever()
+
+    local function named(name, atlas)
+        return newRegion({ kind = "Texture", layer = "ARTWORK",
+            name = name, atlas = atlas })
+    end
+
+    -- An atlas is framing by the general rule, and these are spared anyway.
+    T.eq(Darkness.ContentReason(named("AFrameNeverPainted", "ui-frame-edge")),
+        "named", "the exception wins over the rule about atlases")
+    T.eq(Darkness.ContentReason(named("APortraitNeverPainted", "ui-frame")),
+        "named", "and over the same rule for the second name")
+
+    -- Everything else is decided as before.
+    T.eq(Darkness.ContentReason(named("AnOrdinaryBorder", "ui-frame-edge")),
+        nil, "a name not on the list is framing as it was")
+
+    Darkness.ForgetNever()
+    ns.Compat = savedCompat
+    ns.flavor = savedFlavor
+end

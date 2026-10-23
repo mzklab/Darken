@@ -1380,6 +1380,40 @@ local function isColorFill(region)
     return (high - low) >= FILL_CHROMA
 end
 
+-- The names that are never painted, asked of the layer once.
+local neverNames = nil
+
+--- The set of names the darkening never paints.
+--
+-- Asked of the compatibility layer, which is where the game's names live,
+-- and kept for the session: the list does not change while the player is
+-- logged in. Before the client is determined the layer refuses, and an empty
+-- answer is not remembered - it would stand for the whole session.
+--
+-- @return table name -> true
+function Darkness.NeverNames()
+    if neverNames ~= nil then return neverNames end
+
+    if type(ns.Compat) ~= "table"
+        or type(ns.Compat.GetFrameNames) ~= "function"
+        or ns.flavor == nil then
+        return {}
+    end
+
+    local ok, names = pcall(ns.Compat.GetFrameNames, ns.flavor, "never-paint")
+    if not ok or type(names) ~= "table" then return {} end
+
+    local set = {}
+    for i = 1, #names do set[names[i]] = true end
+    neverNames = set
+    return set
+end
+
+--- Forget the set, for the tests.
+function Darkness.ForgetNever()
+    neverNames = nil
+end
+
 --- Why this texture is contents rather than framing. A nil means "framing".
 --
 -- The only place where the decision "to darken or not" is made.
@@ -1427,6 +1461,16 @@ function Darkness.ContentReason(region)
     if stringFrom(region, "GetDrawLayer") == SKIP_LAYER then return "layer" end
 
     local name = stringFrom(region, "GetName")
+
+    -- The named exceptions come before every rule that reasons.
+    --
+    -- The rules below decide from what a picture is - its layer, its name,
+    -- its atlas, the file behind it - and a general rule is wrong somewhere.
+    -- This list is the places where it is known to be wrong and the answer
+    -- is not in doubt, so it is asked first and nothing after it can
+    -- overturn it.
+    if name ~= nil and Darkness.NeverNames()[name] then return "named" end
+
     if name and containsAny(name:lower(), CONTENT_NAMES) then return "name" end
 
     -- The owner's name. A coin has none of its own and sits in no field: it is

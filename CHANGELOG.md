@@ -63,6 +63,15 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A list of frames the darkening never touches.** The rules that tell
+framing from contents decide from what a picture is - its layer, its
+name, its atlas, the file behind it - and a general rule is wrong
+somewhere. Thirteen frames and pictures are now named as exceptions:
+portraits and icons that read as framing by every mark and are not.
+The list is asked before any rule that reasons, and nothing after it
+can overturn it. Exact names, because a list that exists to be certain
+cannot be built out of substrings.
+
 **The list of names is worked through once, not once per event.**
 Every addon of the game's that loads makes names resolve that did not
 resolve before, so the list is gone over again - and each of those
