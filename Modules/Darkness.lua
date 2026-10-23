@@ -5158,12 +5158,31 @@ function Darkness.RefillSoon()
     end)
 end
 
+-- Whether a raising of the pages is already waiting.
+local liftPending = false
+
+--- Forget that a raising was asked for.
+-- Needed by the tests, for the reason Darkness.ForgetChrome exists: a fake
+-- clock collects the deferred work without running it, so the flag would
+-- stay set from one case into the next.
+function Darkness.ForgetLift()
+    liftPending = false
+end
+
 function Darkness.LiftPagesLater()
     local timer = _G.C_Timer
     if type(timer) ~= "table" or type(timer.After) ~= "function" then return end
 
+    -- One request at a time. This is asked for on every showing of a frame,
+    -- and a window of any size shows many; without the guard a single
+    -- opening would queue hundreds of raisings, each walking every page the
+    -- addon remembers.
+    if liftPending then return end
+    liftPending = true
+
     for i = 1, #LIFT_LATER do
         pcall(timer.After, LIFT_LATER[i], function()
+            if i == #LIFT_LATER then liftPending = false end
             pcall(Darkness.LiftPages)
         end)
     end
@@ -5790,6 +5809,34 @@ end
 --
 -- @param frame table
 -- @return number how many textures were processed
+--- Ask for the named painting to go on, without doing any of it now.
+--
+-- Showing a window is not one event: a window of any size shows many frames
+-- as it opens, and each of them arrives here. Doing even a slice of work per
+-- arrival multiplies that slice by the number of frames and spends it all in
+-- the one frame the player is waiting through - which is the cost the walk
+-- used to have, in a smaller unit.
+--
+-- So nothing is painted here. A single continuation is asked for, and the
+-- frames that follow carry it at the budget it already has.
+function Darkness.PaintNamedSoon()
+    if chromePending then return end
+
+    local timer = _G.C_Timer
+    if type(timer) ~= "table" or type(timer.After) ~= "function" then
+        -- No clock, which is the case outside the game: the painting is
+        -- done here and whole, because a test needs a finished answer.
+        Darkness.PaintNamed()
+        return
+    end
+
+    chromePending = true
+    pcall(timer.After, 0, function()
+        chromePending = false
+        pcall(Darkness.PaintNamed)
+    end)
+end
+
 --- Answer the showing of a window without walking it.
 --
 -- Showing a window used to start a walk of its subtree. A window of any
@@ -5811,7 +5858,7 @@ end
 function Darkness.WindowShown(frame)
     if type(frame) ~= "table" then return end
 
-    Darkness.PaintNamed()
+    Darkness.PaintNamedSoon()
 
     if type(Darkness.LiftPagesLater) == "function" then
         Darkness.LiftPagesLater()

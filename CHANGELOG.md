@@ -38,6 +38,15 @@ is set to.
 The names were read out of each addon's own source and are cited where
 they are written down, one line each.
 
+**Opening a window costs nothing, this time including the answer to
+it.** Showing one window is not one event - a window of any size shows
+many frames as it opens, and each reached the answer and took a slice
+of work there and then. A hundred frames took a hundred slices in the
+single frame the player was waiting through. Nothing is painted on a
+showing now: one continuation is asked for, however many frames
+arrive, and the frames that follow carry it. The raising of a page's
+text is asked for once in the same way.
+
 **Opening a window costs nothing.** Showing one used to start a walk
 of everything inside it, and a window of any size shows many frames as
 it opens, each asking again - several thousand pictures examined while

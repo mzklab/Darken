@@ -1206,3 +1206,48 @@ do
     _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: many frames appearing cost one request, not many")
+
+-- A window of any size shows many frames as it opens, and every one of them
+-- reaches the answer to a showing. Doing even a slice of work per arrival
+-- multiplies that slice by the number of frames and spends it all in the one
+-- frame the player is waiting through.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local asked = 0
+    local savedTimer = _G.C_Timer
+    _G.C_Timer = { After = function() asked = asked + 1 end }
+
+    local painted = 0
+    local savedPaint = Late.PaintNamed
+    Late.PaintNamed = function() painted = painted + 1 return 0 end
+
+    local frame = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "APanel" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+    }
+
+    for _ = 1, 200 do Late.WindowShown(frame) end
+
+    T.eq(painted, 0, "nothing was painted while the window was opening")
+    T.ok(asked <= 3, "and the frames to come were asked for once: " .. asked)
+
+    Late.PaintNamed = savedPaint
+    _G.C_Timer = savedTimer
+    fresh.Addon, fresh.flavor = nil, nil
+end

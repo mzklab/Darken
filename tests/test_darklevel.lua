@@ -579,6 +579,10 @@ do
     local raised = 0
     Darkness.LiftPages = function() raised = raised + 1 return 0 end
 
+    -- The request is single-flight, and a fake clock never runs what it
+    -- collects, so the flag has to be dropped between cases.
+    Darkness.ForgetLift()
+
     Darkness.LiftPagesLater()
     T.ok(#pending >= 1, "a return is scheduled: " .. #pending)
     T.eq(raised, 0, "and nothing is raised before it comes due")
