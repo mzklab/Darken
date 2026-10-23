@@ -1270,11 +1270,17 @@ do
 
     Late.WindowShown(deep)
 
+    -- The top layer is painted - the window itself and what is directly
+    -- inside it - and nothing below that. Six levels were built; the deep
+    -- ones must be untouched, which is the difference between a bounded
+    -- answer and a walk.
     local touched = 0
     for i = 1, #pictures do
         if pictures[i].r < 1 then touched = touched + 1 end
     end
-    T.eq(touched, 0, "showing walked nothing: " .. touched .. " painted")
+    T.ok(touched <= 2, "only the top layer was painted: " .. touched)
+    T.eq(pictures[1].r, 1, "the deepest level was not reached")
+    T.eq(pictures[2].r, 1, "nor the one above it")
 
     _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil

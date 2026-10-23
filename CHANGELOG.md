@@ -63,6 +63,14 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A window is dark as it appears, named or not.** The framing of a
+window is on the window itself and on the frames directly inside it -
+the backdrop, the border, the header, the insets - which is a few
+dozen pictures however large the window is. Those are painted in the
+call that shows it. Nothing below that level is taken there: what is
+deeper is reached by the names, by the background pass and by the
+watcher, none of which is paid for while the player waits.
+
 **A window is dark as it appears, not a moment later.** The painting
 by name works through the list in the background, and a window could
 be shown before its turn came - so it appeared in the game's own

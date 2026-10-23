@@ -1814,3 +1814,35 @@ do
     ns.Compat = savedCompat
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: a window the list does not name is dark as it appears")
+
+-- Painting a window's own entries covers the windows the list names. A
+-- window it does not name was still being shown in the game's colours and
+-- painted afterwards. The framing of a window is on the window and on the
+-- frames directly inside it, which is a bounded number of pictures and can
+-- be done in the call that shows it.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local backdrop = newArt("the window's backdrop")
+    local header   = newArt("a header inside it")
+    local buried   = newArt("something two levels down")
+
+    local inner = newFrame("Frame", "ADeeperPart", { buried })
+    local panel = newFrame("Frame", "AHeaderPart", { header }, { inner })
+    local window = newFrame("Frame", "AnUnnamedWindow", { backdrop },
+        { panel })
+
+    local painted = Darkness.PaintShallow(window, nil, "AnUnnamedWindow")
+
+    local dark = helpers.whiteAt(Darkness.Factor(64))
+    T.ok(close(backdrop.r, dark), "the window's own backdrop is dark")
+    T.ok(close(header.r, dark), "and the header directly inside it")
+    T.eq(buried.r, 1, "while the level below that is left to the pass")
+    T.ok(painted >= 2, "two pictures at least: " .. painted)
+
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

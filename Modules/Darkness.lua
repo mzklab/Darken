@@ -6068,6 +6068,82 @@ function Darkness.PaintNamedSoon()
     end)
 end
 
+--- How many direct children of a shown window are painted with it.
+--
+-- A ceiling rather than a budget in milliseconds, because this runs in the
+-- call that shows the window and has to be bounded by something the caller
+-- can reason about. A window with more children than this has the rest of
+-- them painted by the background pass as before.
+local SHOWN_CHILDREN = 60
+
+--- Paint the top layer of a window in the call that shows it.
+--
+-- The framing of a window is on the window itself and on the frames directly
+-- inside it: the backdrop, the border, the header, the insets. That is a few
+-- dozen pictures and can be done before the frame is drawn, which is the
+-- difference between a window that appears dark and one that appears in the
+-- game's colours and changes afterwards.
+--
+-- It is not a walk. Nothing below the first level is taken: the number of
+-- frames under a window has no bound, and what is deeper is reached by the
+-- names, by the background pass and by the watcher on assignment, none of
+-- which is paid for while the player waits.
+--
+-- The rule for what is framing is the same one the walk uses; only the
+-- finding differs.
+--
+-- @param frame table the window that appeared
+-- @param area string|nil the area it belongs to
+-- @param window string|nil the name it is recorded under
+-- @return number how many pictures were painted
+function Darkness.PaintShallow(frame, area, window)
+    local settings = Settings()
+    if settings == nil then return 0 end
+    if type(frame) ~= "table" then return 0 end
+    if ns.Skin.Forbidden(frame) or Darkness.IsOurs(frame) then return 0 end
+
+    local kind = objectType(frame)
+    if kind == nil or SKIP_TYPES[kind] then return 0 end
+
+    local from = plan.n + 1
+
+    local function take(object)
+        if type(object) ~= "table" then return end
+        if ns.Skin.Forbidden(object) or Darkness.IsOurs(object) then return end
+
+        local sort = objectType(object)
+        if sort == nil or SKIP_TYPES[sort] then return end
+
+        local ok, regions = pcall(gather, object.GetRegions, object)
+        if not ok then return end
+
+        local content = contentRegions(object)
+        for i = 1, #regions do
+            local region = regions[i]
+            if not content[region]
+                and not ns.Skin.Forbidden(region)
+                and not Darkness.IsOurs(region)
+                and objectType(region) == "Texture"
+                and chromeOf(region) then
+                record(region, area or "window", window)
+                counters.named = counters.named + 1
+            end
+        end
+    end
+
+    take(frame)
+
+    local ok, children = pcall(gather, frame.GetChildren, frame)
+    if ok then
+        local many = #children
+        if many > SHOWN_CHILDREN then many = SHOWN_CHILDREN end
+        for i = 1, many do take(children[i]) end
+    end
+
+    if plan.n >= from then applyPlan(settings, from) end
+    return plan.n - from + 1
+end
+
 --- Answer the showing of a window without walking it.
 --
 -- Showing a window used to start a walk of its subtree. A window of any
@@ -6089,10 +6165,28 @@ end
 function Darkness.WindowShown(frame)
     if type(frame) ~= "table" then return end
 
-    -- This window's own names first, and in this call: it is about to be
-    -- drawn, and a handful of pictures is the difference between a window
-    -- that appears dark and one that appears and then changes colour.
+    -- This window first, and in this call: it is about to be drawn, and a
+    -- handful of pictures is the difference between a window that appears
+    -- dark and one that appears and then changes colour.
+    --
+    -- Its own names, which may reach deeper than one level, and then its top
+    -- layer, which covers a window the list does not name at all.
     Darkness.PaintNamedFor(frame)
+
+    -- The areas come from the resolved list, which holds them already:
+    -- computing them here would resolve every group in the layer on every
+    -- frame a window shows.
+    local held = chromeList()
+    local covered = (held and held.covered) or {}
+    local area = covered[frame]
+    if area ~= true then
+        local window = nil
+        if type(area) ~= "string" then
+            area = nil
+            window = stringFrom(frame, "GetName")
+        end
+        Darkness.PaintShallow(frame, area, window)
+    end
 
     Darkness.PaintNamedSoon()
 
