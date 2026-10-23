@@ -38,6 +38,19 @@ is set to.
 The names were read out of each addon's own source and are cited where
 they are written down, one line each.
 
+**Opening a window costs nothing.** Showing one used to start a walk
+of everything inside it, and a window of any size shows many frames as
+it opens, each asking again - several thousand pictures examined while
+the player waits to see the window. The framing is carried by the list
+of names instead, which does not depend on a frame being shown, so
+showing only continues the painting already under way and raises the
+text of a page. Pictures the game creates after showing are caught
+where they always were, by the watcher on repainting.
+
+What this costs is plain: framing that is not in the list and is not
+created after the window opens now stays as the game drew it. The list
+is extended from `/dark harvest`, which names exactly those pieces.
+
 **Opening a large window no longer stalls the game.** A window shows
 dozens of frames as it opens, and each one asked for a walk of what
 had appeared. That request replaced the queue instead of joining it,

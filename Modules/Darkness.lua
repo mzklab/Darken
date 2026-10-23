@@ -5790,6 +5790,34 @@ end
 --
 -- @param frame table
 -- @return number how many textures were processed
+--- Answer the showing of a window without walking it.
+--
+-- Showing a window used to start a walk of its subtree. A window of any
+-- size shows many frames as it opens, each of them asking again, and a large
+-- one holds several thousand pictures - which is paid in full at the moment
+-- the player is waiting to see it.
+--
+-- The names carry that work instead, and they do not depend on a frame being
+-- shown, so the showing only continues the painting that is already under
+-- way. The resolution is not redone here: it costs a lookup per name over
+-- the whole list, and what makes new names resolvable is an addon of the
+-- game's loading, which drops it already.
+--
+-- The text of a page is raised as before. That is a handful of labels, it
+-- cannot be named in advance because the game writes it after showing, and
+-- it is the difference between a readable quest and an unreadable one.
+--
+-- @param frame table the window that appeared
+function Darkness.WindowShown(frame)
+    if type(frame) ~= "table" then return end
+
+    Darkness.PaintNamed()
+
+    if type(Darkness.LiftPagesLater) == "function" then
+        Darkness.LiftPagesLater()
+    end
+end
+
 function Darkness.ApplyToWindow(frame, force)
     local settings = Settings()
     if not settings then return 0 end
@@ -5974,7 +6002,7 @@ function Darkness.ApplyToWindow(frame, force)
     if not SHOWN_WATCH[frame] and type(_G.hooksecurefunc) == "function"
         and type(frame.Show) == "function" then
         if pcall(_G.hooksecurefunc, frame, "Show", function(self)
-            pcall(Darkness.ApplyToWindow, self, true)
+            pcall(Darkness.WindowShown, self)
         end) then
             SHOWN_WATCH[frame] = true
         end
@@ -6474,7 +6502,7 @@ local function sweepLater(frame)
 
     for i = 1, #LATER do
         pcall(timer.After, LATER[i], function()
-            pcall(Darkness.ApplyToWindow, frame, true)
+            pcall(Darkness.WindowShown, frame)
         end)
     end
 end
@@ -6574,7 +6602,7 @@ function Darkness.Watch()
                 -- second time is not walked at all (see SEEN below), while the
                 -- first opening drowns in the loading of the game's own
                 -- load-on-demand addon anyway.
-                pcall(Darkness.ApplyToWindow, frame)
+                pcall(Darkness.WindowShown, frame)
 
                 -- And twice more later: the game fills a window after it has
                 -- shown it (see LATER).

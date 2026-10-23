@@ -73,91 +73,6 @@ do
         1, 3, 5), true, "a texture was added -- it does too")
 end
 
-T.suite("darkness: a window is revisited later")
-
--- The game calls ShowUIPanel BEFORE it fills the window: reputation rows,
--- statistics sections, character window headers are frame pools, and they
--- are created after the show, sometimes after the server answers. A walk in
--- the same frame does not see them: they do not exist yet. The author sent
--- golden plates from four different windows, none of which reached the scan.
-do
-    local fresh = helpers.newNamespace()
-    helpers.loadAddonFile("Core/Skin.lua", fresh)
-    helpers.loadAddonFile("Core/Compat.lua", fresh)
-    helpers.loadAddonFile("Core/Locale.lua", fresh)
-    helpers.loadAddonFile("Core/Registry.lua", fresh)
-    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
-
-    local Late = fresh.Darkness
-    fresh.Events = { Subscribe = function() end }
-
-    -- A fake clock: it collects the deferred work without running it.
-    local waits = {}
-    local savedTimer, savedShow, savedHook = _G.C_Timer, _G.ShowUIPanel,
-        _G.hooksecurefunc
-    _G.C_Timer = { After = function(delay, run)
-        waits[#waits + 1] = { delay = delay, run = run }
-    end }
-
-    local hooks = {}
-    _G.ShowUIPanel = function() end
-    _G.hooksecurefunc = function(name, handler) hooks[name] = handler end
-
-    Late.Watch()
-    T.ok(hooks["ShowUIPanel"] ~= nil, "the watcher on window shows was not installed")
-
-    -- A window that is empty when shown and filled afterwards.
-    local regions = {}
-    local window = {
-        GetObjectType = function() return "Frame" end,
-        GetName = function() return "ReputationFrame" end,
-        GetRegions = function() return unpack(regions) end,
-        GetChildren = function() return end,
-    }
-
-    fresh.flavor = "vanilla"
-    fresh.Addon = { db = { profile = { darkness = {
-        amount = 64, mode = {} } } } }
-
-    hooks["ShowUIPanel"](window)
-
-    -- There is one revisit, and that is a decision: every revisit costs a
-    -- full walk of the window, and four walks of the talent window per open
-    -- read to the player as the game freezing. Everything arriving later is
-    -- caught by events and by the repaint watcher.
-    T.eq(#waits, 2, "the number of deferred revisits is not two but " .. #waits)
-    T.ok(waits[1].delay > 0, "the revisit was scheduled for the same frame")
-    T.ok(waits[2].delay > waits[1].delay, "the second revisit is not later than the first")
-
-    -- The game filled the window: the header appeared after the show.
-    local header = {
-        r = 1, g = 1, b = 1, a = 1,
-        GetObjectType = function() return "Texture" end,
-        GetDrawLayer = function() return "ARTWORK" end,
-        GetTexture = function()
-            return "Interface" .. string.char(92) .. string.char(92)
-                .. "Buttons" .. string.char(92) .. string.char(92)
-                .. "UI-Panel-Button-Up"
-        end,
-    }
-    function header:GetVertexColor() return self.r, self.g, self.b, self.a end
-    function header:SetVertexColor(cr, cg, cb)
-        self.r, self.g, self.b = cr, cg, cb
-    end
-    regions[1] = header
-
-    -- The count of direct children and regions of the window did NOT change:
-    -- the game puts list rows deeper, inside the scroll. The revisit must go
-    -- into the window anyway -- otherwise "the window did not change" would
-    -- mean "nothing appeared inside it", which is untrue.
-    waits[1].run()
-    T.ok(header.r < 1, "the late header stayed light")
-
-    fresh.Addon, fresh.flavor = nil, nil
-    _G.C_Timer, _G.ShowUIPanel, _G.hooksecurefunc =
-        savedTimer, savedShow, savedHook
-end
-
 T.suite("darkness: a window filled on a server reply")
 
 -- Some lists wait for the server: reputations, skills, statistics. The reply
@@ -386,162 +301,6 @@ do
     _G.UIParent = savedRoot
     _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
     _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
-end
-
-T.suite("darkness: a window that gave everything up is not walked twice")
-
--- A revisit costs a full walk of the window: it does not ask "did it
--- change", otherwise it would not find rows created deeper. For the talent
--- window that is tens of thousands of calls, and there is no reason to pay
--- them on every open -- the author noticed at once: "the game stops dead
--- when I press to open the window".
-do
-    local fresh = helpers.newNamespace()
-    helpers.loadAddonFile("Core/Skin.lua", fresh)
-    helpers.loadAddonFile("Core/Compat.lua", fresh)
-    helpers.loadAddonFile("Core/Locale.lua", fresh)
-    helpers.loadAddonFile("Core/Registry.lua", fresh)
-    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
-
-    local Late = fresh.Darkness
-    fresh.Events = { Subscribe = function() end }
-    fresh.flavor = "vanilla"
-    fresh.Addon = { db = { profile = { darkness = {
-        amount = 64, mode = {} } } } }
-
-    local waits = {}
-    local savedTimer, savedHook, savedShow =
-        _G.C_Timer, _G.hooksecurefunc, _G.ShowUIPanel
-    _G.C_Timer = { After = function(delay, run)
-        waits[#waits + 1] = run
-    end }
-
-    local hooks = {}
-    _G.ShowUIPanel = function() end
-    _G.hooksecurefunc = function(name, handler)
-        if type(name) == "string" then hooks[name] = handler end
-    end
-
-    Late.Watch()
-
-    local art = {
-        r = 1, g = 1, b = 1, a = 1,
-        GetObjectType = function() return "Texture" end,
-        GetDrawLayer = function() return "ARTWORK" end,
-        GetTexture = function()
-            return "Interface" .. string.char(92) .. string.char(92)
-                .. "DialogFrame" .. string.char(92) .. string.char(92)
-                .. "UI-DialogBox-Background"
-        end,
-    }
-    function art:GetVertexColor() return self.r, self.g, self.b, self.a end
-    function art:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
-
-    local window = {
-        GetObjectType = function() return "Frame" end,
-        GetName = function() return "MerchantFrame" end,
-        GetRegions = function() return art end,
-        GetChildren = function() return end,
-    }
-
-    -- First open: a walk on the show and a revisit after it.
-    hooks["ShowUIPanel"](window)
-    T.eq(#waits, 2, "the revisits were not deferred")
-    waits[1]()
-    waits[2]()
-
-    -- The revisit found nothing new -- a second open does not order one.
-    waits = {}
-    hooks["ShowUIPanel"](window)
-    T.eq(#waits, 0, "a revisit was ordered a second time for the same window")
-
-    fresh.Addon, fresh.flavor = nil, nil
-    _G.C_Timer, _G.hooksecurefunc, _G.ShowUIPanel =
-        savedTimer, savedHook, savedShow
-end
-
-T.suite("darkness: showing the window itself is a reason to walk it again")
-
--- The game calls ShowUIPanel BEFORE the show, and at that moment half the
--- window does not exist: it creates the tab, the list, the panel in its own
--- show handler, that is after us. A revisit half a second later catches up,
--- but the player has time to see the native look and its switch to ours:
--- "I see a flicker from the default into our repaint".
-do
-    local fresh = helpers.newNamespace()
-    helpers.loadAddonFile("Core/Skin.lua", fresh)
-    helpers.loadAddonFile("Core/Compat.lua", fresh)
-    helpers.loadAddonFile("Core/Locale.lua", fresh)
-    helpers.loadAddonFile("Core/Registry.lua", fresh)
-    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
-
-    local Late = fresh.Darkness
-    fresh.flavor = "vanilla"
-    fresh.Addon = { db = { profile = { darkness = {
-        amount = 64, mode = {} } } } }
-
-    local savedHook, savedTimer = _G.hooksecurefunc, _G.C_Timer
-    _G.C_Timer = { After = function() end }
-
-    local hooks = {}
-    _G.hooksecurefunc = function(object, method, handler)
-        if type(object) == "table" then
-            hooks[object] = hooks[object] or {}
-            hooks[object][method] = handler
-        end
-    end
-
-    local function art()
-        local region = {
-            r = 1, g = 1, b = 1, a = 1,
-            GetObjectType = function() return "Texture" end,
-            GetDrawLayer = function() return "ARTWORK" end,
-            GetTexture = function()
-                return "Interface" .. string.char(92) .. string.char(92)
-                    .. "DialogFrame" .. string.char(92) .. string.char(92)
-                    .. "UI-DialogBox-Border"
-            end,
-        }
-        function region:GetVertexColor() return self.r, self.g, self.b, self.a end
-        function region:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
-        return region
-    end
-
-    -- A window whose contents appear only on the show.
-    local late = art()
-    local inner = nil
-    local window
-    window = {
-        GetObjectType = function() return "Frame" end,
-        GetName = function() return "ProfessionsFrame" end,
-        GetRegions = function() return end,
-        GetChildren = function()
-            if inner == nil then return end
-            return inner
-        end,
-        IsShown = function() return true end,
-        Show = function(self)
-            inner = {
-                GetObjectType = function() return "Frame" end,
-                GetName = function() return "ProfessionsFrameInner" end,
-                GetRegions = function() return late end,
-                GetChildren = function() return end,
-                IsShown = function() return true end,
-            }
-            local watch = hooks[self] and hooks[self]["Show"]
-            if watch then watch(self) end
-        end,
-    }
-
-    Late.ApplyToWindow(window)
-    T.ok(hooks[window] and hooks[window]["Show"] ~= nil,
-        "nobody watches the window show")
-
-    window:Show()
-    T.ok(late.r < 1, "what was created on the show stayed light")
-
-    fresh.Addon, fresh.flavor = nil, nil
-    _G.hooksecurefunc, _G.C_Timer = savedHook, savedTimer
 end
 
 T.suite("darkness: a texture created by the game is tinted at once")
@@ -1373,5 +1132,77 @@ do
     end
     T.eq(painted, 5, "each frame that appeared was reached: " .. painted)
 
+    fresh.Addon, fresh.flavor = nil, nil
+end
+
+T.suite("darkness: showing a window costs no walk")
+
+-- Showing a window used to start a walk of its subtree, and a window of any
+-- size shows many frames as it opens, each of them asking again. On a large
+-- window that is several thousand pictures examined while the player waits
+-- to see it.
+--
+-- The names carry the framing instead. What the showing changes is only
+-- which of them resolve - a window the game builds on demand did not exist a
+-- moment ago - so the resolution is dropped and the painting goes on at its
+-- own budget. Pictures the game creates after showing are caught where they
+-- always were, by the watcher on repainting.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedTimer = _G.C_Timer
+    _G.C_Timer = { After = function() end }
+
+    -- A window with a great deal inside it. Not one of its pictures is
+    -- named, so after the showing not one of them is touched.
+    local deep, pictures = nil, {}
+    for level = 1, 6 do
+        local art = {
+            r = 1, g = 1, b = 1, a = 1,
+            GetObjectType = function() return "Texture" end,
+            GetDrawLayer = function() return "ARTWORK" end,
+            GetTexture = function() return 777 end,
+        }
+        function art:GetVertexColor() return self.r, self.g, self.b, self.a end
+        function art:SetVertexColor(cr, cg, cb)
+            self.r, self.g, self.b = cr, cg, cb
+        end
+        pictures[level] = art
+
+        local below = deep
+        deep = {
+            GetObjectType = function() return "Frame" end,
+            GetName = function() return "DeepPanel" .. level end,
+            GetRegions = function() return art end,
+            GetChildren = function() if below then return below end end,
+        }
+    end
+
+    fresh.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveChrome = function() return {}, {}, {}, {} end,
+    }
+    Late.ForgetChrome()
+
+    Late.WindowShown(deep)
+
+    local touched = 0
+    for i = 1, #pictures do
+        if pictures[i].r < 1 then touched = touched + 1 end
+    end
+    T.eq(touched, 0, "showing walked nothing: " .. touched .. " painted")
+
+    _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil
 end
