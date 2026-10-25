@@ -91,6 +91,7 @@ local files = {
     "tests/test_darkcost.lua",
     "tests/test_dimexceptions.lua",
     "tests/test_darkwatch.lua",
+    "tests/test_darkbefore.lua",
     "tests/test_frameknowledge.lua",
     "tests/test_settingsloss.lua",
     "tests/test_nameplates2.lua",

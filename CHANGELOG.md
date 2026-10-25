@@ -63,6 +63,20 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A named window is dark two levels deep before it opens.** Its own
+backdrop was painted before opening and the header inside it was not,
+because a header is a frame directly inside the window rather than a
+picture on it. Both levels are painted now, by one piece of code
+shared with the answer to a showing - there were two copies of that
+decision, which is two answers to "is this framing" before long.
+
+**A check that enters the world and opens nothing.** The whole addon
+is brought up on a stand-in client, the world is entered, the deferred
+work is run, and a window that has never been shown is examined: its
+backdrop and its header have to be dark already, its bar's fill and
+its portrait untouched. That is the question the live client was being
+asked by hand, and it is the check that found the gap above.
+
 **A list of frames the darkening never touches.** The rules that tell
 framing from contents decide from what a picture is - its layer, its
 name, its atlas, the file behind it - and a general rule is wrong

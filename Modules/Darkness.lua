@@ -4911,6 +4911,57 @@ local function chromeList()
     return chromeHeld
 end
 
+--- How many direct children of a frame are painted with it.
+local TOP_LAYER_CHILDREN = 60
+
+--- Paint a frame's own pictures and those of the frames directly inside it.
+--
+-- The framing of a window lives on these two levels: the backdrop and the
+-- edges on the frame itself, the header and the insets on the frames
+-- directly inside it. One level further is where the contents begin - rows,
+-- buttons, icons - and their number has no bound a caller can reason about.
+--
+-- Nothing is applied here. The caller decides when to write the colours, so
+-- a pass over many frames pays for one application rather than one each.
+--
+-- @param frame table
+-- @param area string|nil
+-- @param window string|nil
+local function paintTopLayer(frame, area, window)
+    local function take(object)
+        if type(object) ~= "table" then return end
+        if ns.Skin.Forbidden(object) or Darkness.IsOurs(object) then return end
+
+        local sort = objectType(object)
+        if sort == nil or SKIP_TYPES[sort] then return end
+
+        local ok, regions = pcall(gather, object.GetRegions, object)
+        if not ok then return end
+
+        local content = contentRegions(object)
+        for i = 1, #regions do
+            local region = regions[i]
+            if not content[region]
+                and not ns.Skin.Forbidden(region)
+                and not Darkness.IsOurs(region)
+                and objectType(region) == "Texture"
+                and chromeOf(region) then
+                record(region, area or "window", window)
+                counters.named = counters.named + 1
+            end
+        end
+    end
+
+    take(frame)
+
+    local ok, children = pcall(gather, frame.GetChildren, frame)
+    if ok then
+        local many = #children
+        if many > TOP_LAYER_CHILDREN then many = TOP_LAYER_CHILDREN end
+        for i = 1, many do take(children[i]) end
+    end
+end
+
 --- Paint one entry of the resolved list of names.
 --
 -- Shared by the two callers: the background pass, which works through
@@ -4965,21 +5016,12 @@ local function paintNamedAt(held, i, settings)
                 counters.named = counters.named + 1
             end
         elseif kind ~= nil and not SKIP_TYPES[kind] then
-            local fine, regions = pcall(gather, object.GetRegions, object)
-            if fine then
-                local content = contentRegions(object)
-                for j = 1, #regions do
-                    local region = regions[j]
-                    if not content[region]
-                        and not ns.Skin.Forbidden(region)
-                        and not Darkness.IsOurs(region)
-                        and objectType(region) == "Texture"
-                        and chromeOf(region) then
-                        record(region, area or "window", window)
-                        counters.named = counters.named + 1
-                    end
-                end
-            end
+            -- The same two levels the showing of a window paints, and for
+            -- the same reason: a window's header and insets are frames
+            -- directly inside it rather than pictures on it. Painting only
+            -- the frame's own pictures left a window with a dark backdrop
+            -- and a bright header until it was opened.
+            paintTopLayer(object, area, window)
         end
     end
 end
@@ -6158,14 +6200,6 @@ function Darkness.PaintNamedSoon()
     end)
 end
 
---- How many direct children of a shown window are painted with it.
---
--- A ceiling rather than a budget in milliseconds, because this runs in the
--- call that shows the window and has to be bounded by something the caller
--- can reason about. A window with more children than this has the rest of
--- them painted by the background pass as before.
-local SHOWN_CHILDREN = 60
-
 --- Paint the top layer of a window in the call that shows it.
 --
 -- The framing of a window is on the window itself and on the frames directly
@@ -6197,39 +6231,7 @@ function Darkness.PaintShallow(frame, area, window)
 
     local from = plan.n + 1
 
-    local function take(object)
-        if type(object) ~= "table" then return end
-        if ns.Skin.Forbidden(object) or Darkness.IsOurs(object) then return end
-
-        local sort = objectType(object)
-        if sort == nil or SKIP_TYPES[sort] then return end
-
-        local ok, regions = pcall(gather, object.GetRegions, object)
-        if not ok then return end
-
-        local content = contentRegions(object)
-        for i = 1, #regions do
-            local region = regions[i]
-            if not content[region]
-                and not ns.Skin.Forbidden(region)
-                and not Darkness.IsOurs(region)
-                and objectType(region) == "Texture"
-                and chromeOf(region) then
-                record(region, area or "window", window)
-                counters.named = counters.named + 1
-            end
-        end
-    end
-
-    take(frame)
-
-    local ok, children = pcall(gather, frame.GetChildren, frame)
-    if ok then
-        local many = #children
-        if many > SHOWN_CHILDREN then many = SHOWN_CHILDREN end
-        for i = 1, many do take(children[i]) end
-    end
-
+    paintTopLayer(frame, area, window)
     if plan.n >= from then applyPlan(settings, from) end
     return plan.n - from + 1
 end
