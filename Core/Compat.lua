@@ -959,13 +959,43 @@ distribute({
 -- and a substring is the opposite of certain.
 --
 -- A name absent from this client costs nothing: nothing ever asks about it.
-local NEVER_PAINT = {
-    "CollectionsJournalPortrait", "CollectionsJournalPortraitFrame",
-    "ContainerFrame1Portrait", "FocusFrameToTPortrait",
-    "FriendsFrameIcon", "FriendsFramePortrait", "FriendsFramePortraitFrame",
-    "FriendsListFrame", "FriendsTabHeader", "HonorFramePvPIcon",
-    "Portrait2", "RTPortrait1", "TargetFrameToTPortrait",
-}
+local NEVER_PAINT = (function()
+    local out = {
+        -- Read from another addon's list of the same kind, which is where
+        -- the first thirteen come from.
+        "CollectionsJournalPortrait", "CollectionsJournalPortraitFrame",
+        "FocusFrameToTPortrait", "FriendsFrameIcon", "FriendsFramePortrait",
+        "FriendsFramePortraitFrame", "FriendsListFrame", "FriendsTabHeader",
+        "HonorFramePvPIcon", "Portrait2", "RTPortrait1",
+        "TargetFrameToTPortrait",
+
+        -- And from this client's own list of globals: every window that
+        -- carries a portrait in its corner. A portrait is a picture of a
+        -- person or a thing and is never framing, but it has nothing to be
+        -- recognised by except its name - it is assigned by a file number,
+        -- which is what framing looks like here.
+        "BankFramePortrait", "CharacterFramePortrait", "MailFramePortrait",
+        "MerchantFramePortrait", "QuestFramePortrait",
+        "QuestLogPopupDetailFramePortrait", "NamePlatesTutorialPortrait",
+        "ContainerFrameCombinedBagsPortrait",
+
+        -- The unit frames' own, which the substring rule covers as well;
+        -- named here because this list is the one that cannot be wrong.
+        "PlayerPortrait", "TargetFramePortrait", "FocusFramePortrait",
+        "PetPortrait", "PetFramePortrait", "TargetFrameToTPortrait",
+        "PlayerFrameAlternateManaBarLeftBorder",
+    }
+
+    for i = 1, 7 do out[#out + 1] = "ContainerFrame" .. i .. "Portrait" end
+    for i = 1, 5 do
+        out[#out + 1] = "PartyMemberFrame" .. i .. "Portrait"
+        out[#out + 1] = "PartyMemberFrame" .. i .. "PetFramePortrait"
+        out[#out + 1] = "ArenaEnemyMatchFrame" .. i .. "PetFramePortrait"
+    end
+    for i = 1, 4 do out[#out + 1] = "Boss" .. i .. "TargetFramePortrait" end
+
+    return out
+end)()
 
 distribute({ ["never-paint"] = NEVER_PAINT })
 

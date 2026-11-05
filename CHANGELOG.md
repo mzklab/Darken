@@ -88,6 +88,24 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**The player's portrait is not painted black.** A window names its
+contents in fields of its own - portrait, icon, fill - and the picture
+named there is frequently a region of a frame inside it rather than of
+the window itself: a unit frame holds its portrait while the texture
+lives on the container below. The painting of a window's top layer
+asked each frame what its own contents were and never asked the window
+above, so the portrait was framing by every general rule - it has no
+name and its picture is a file number, which is exactly what framing
+looks like here. The window's answer is carried down to the level
+below it now.
+
+**More of what is never painted is named outright.** The list of
+exceptions is merged with this client's own: every window that carries
+a portrait in its corner, the unit frames' portraits, the party and
+arena frames'. A portrait is a picture of a person and is never
+framing, and naming it is the one way of saying so that cannot be
+wrong.
+
 **Every chat window counts as the chat.** The rule that stops the
 addon answering an animation applies to the chat's area, and that
 area named the first chat window and its parts - so every window a

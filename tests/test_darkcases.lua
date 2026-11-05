@@ -1936,3 +1936,37 @@ do
     ns.Compat = savedCompat
     ns.flavor = savedFlavor
 end
+
+T.suite("darkness: a portrait held by the window is spared on its container")
+
+-- A frame names its contents in fields of its own, and the picture named
+-- there is frequently a region of a frame INSIDE it: a unit frame holds its
+-- portrait in PlayerFrame.portrait while the texture lives on the container
+-- below. Reading a container's regions and asking only the container what
+-- its contents are misses that, and a portrait has nothing else to be
+-- recognised by - no name, and a file number for a picture, which is what
+-- framing looks like in this client.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    -- No name, a file number for a picture: framing by every general rule.
+    local face = newRegion({ kind = "Texture", layer = "ARTWORK",
+        texture = 135000 })
+    face.r, face.g, face.b = 1, 1, 1
+
+    local edge = newArt("the frame around the unit")
+
+    local container = newFrame("Frame", "AUnitFrameContainer", { face, edge })
+    local unit = newFrame("Frame", "AUnitFrame", {}, { container })
+    -- The window names it, as a unit frame does.
+    unit.portrait = face
+
+    Darkness.PaintShallow(unit, nil, "AUnitFrame")
+
+    T.eq(face.r, 1, "the portrait is spared although it sits one level down")
+    T.ok(edge.r < 1, "while the framing beside it darkens")
+
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end

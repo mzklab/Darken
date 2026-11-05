@@ -4964,6 +4964,21 @@ local function paintTopLayer(frame, area, window)
     if TOP_DONE[frame] then return end
     TOP_DONE[frame] = true
 
+    -- What the window itself calls its contents.
+    --
+    -- A frame names its contents in fields of its own - portrait, icon,
+    -- fill - and the picture named there is frequently a region of a frame
+    -- INSIDE it rather than of the frame itself: a unit frame holds its
+    -- portrait in PlayerFrame.portrait while the texture lives on the
+    -- container below. Asking only the frame whose regions are being read
+    -- misses that, and a portrait has nothing else to be recognised by: it
+    -- has no name of its own and its picture is a file number, which is
+    -- what framing looks like in this client.
+    --
+    -- So the window's own answer is carried down one level, which is as far
+    -- as this goes in any case.
+    local above = contentRegions(frame)
+
     local function take(object)
         if type(object) ~= "table" then return end
         if ns.Skin.Forbidden(object) or Darkness.IsOurs(object) then return end
@@ -4977,7 +4992,7 @@ local function paintTopLayer(frame, area, window)
         local content = contentRegions(object)
         for i = 1, #regions do
             local region = regions[i]
-            if not content[region]
+            if not content[region] and not above[region]
                 and not ns.Skin.Forbidden(region)
                 and not Darkness.IsOurs(region)
                 and objectType(region) == "Texture"
