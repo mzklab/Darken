@@ -4134,25 +4134,6 @@ local churnSkipped = 0
 local churnWindows = 0
 local churnBounded = 0
 
--- How long one frame is left alone after being walked on a showing.
---
--- A rate rather than a count, and the difference is the character sheet. A
--- count said "three walks and no more, ever", and the sheet spent its three
--- on showings that were not openings - the game shows and hides a panel more
--- than the player opens it - after which opening it brought no walk at all
--- and the slot frames stayed light.
---
--- A second is long against what this door actually hears. The author's
--- reading named sixty-seven showings a second, and they are a handful of
--- frames shown over and over: tooltips, error text, zone names, drop-downs.
--- Each of those now costs one walk a second instead of sixty-seven, while a
--- window the player opens is always more than a second since its last
--- showing and is walked as it always was.
-local WINDOW_PAUSE_MS = 1000
-
--- When each frame was last walked on a showing.
-local WALKED_AT = ns.Skin.Memory()
-
 -- How many times one frame is walked in full on being shown before it is
 -- answered the cheap way instead.
 --
@@ -6808,29 +6789,14 @@ function Darkness.WindowShown(frame, opened)
         -- here - a list row handed out of a pool, a tab, a button, each
         -- appearing continuously in a fight. Those keep the bounded answer
         -- (sweepShown).
-        local times, last = 0, nil
+        local times = 0
         if WALKED_GEN[frame] == generation then
             times = WALKED_TIMES[frame] or 0
-            last = WALKED_AT[frame]
         end
 
-        -- By the clock where there is one, and by a count where there is
-        -- not: outside the game there is no clock, and a walk refused
-        -- there would be a walk refused in a check rather than in play.
-        local now = nowMs()
-        local due
-        if opened == true then
-            due = true
-        elseif now ~= nil then
-            due = last == nil or (now - last) >= WINDOW_PAUSE_MS
-        else
-            due = times < WINDOW_WALKS
-        end
-
-        if due then
+        if opened == true or times < WINDOW_WALKS then
             WALKED_GEN[frame] = generation
             WALKED_TIMES[frame] = times + 1
-            WALKED_AT[frame] = now
             churnWindows = churnWindows + 1
             pcall(Darkness.ApplyToWindow, frame, true)
         else
