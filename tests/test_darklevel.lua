@@ -702,3 +702,53 @@ do
     for name, was in pairs(saved) do _G[name] = was end
 end
 
+
+T.suite("the chat's text keeps the colour the game gave it")
+
+-- The raising decides by a label's own colour: dark ink is raised because
+-- dark ink was chosen for a light page, and a darkened page leaves it
+-- unreadable. That holds on parchment and nowhere else.
+--
+-- A colour in the chat is the message's own - which channel it came on,
+-- whether it was a whisper, whether it is a warning. A dark one there was
+-- chosen rather than inherited, and rewriting it loses the only thing the
+-- colour carried. The author reported it as the chat turning white.
+do
+    ns.flavor = "vanilla"
+
+    local function label(r, g, b)
+        local text = newRegion(1)
+        text.GetObjectType = function() return "FontString" end
+        text.r, text.g, text.b = r, g, b
+        function text:GetTextColor() return self.r, self.g, self.b, 1 end
+        function text:SetTextColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+        function text:GetShadowColor() return 0, 0, 0, 0 end
+        function text:GetShadowOffset() return 0, 0 end
+        function text:SetShadowColor() end
+        function text:SetShadowOffset() end
+        return text
+    end
+
+    -- A dark line in the chat, and a dark line on a quest's page.
+    local message = label(0.10, 0.10, 0.10)
+    local quest   = label(0.10, 0.10, 0.10)
+
+    local chat = newFrame("ChatFrame1", { message })
+    local page = newFrame("QuestFrameDetailPanel", { quest })
+
+    local savedRoot, savedChat = _G.UIParent, _G.ChatFrame1
+    -- The layer finds the chat by name, which is how the window comes to
+    -- belong to the chat's area at all.
+    _G.ChatFrame1 = chat
+    _G.UIParent = newFrame("UIParent", {}, { chat, page })
+
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+    Darkness:ApplySettings()
+
+    T.eq(message.r, 0.10, "the chat's line keeps the colour it was given")
+    T.ok(quest.r > 0.5, "while a quest's line is raised as before")
+
+    ns.Addon = nil
+    ns.flavor = nil
+    _G.UIParent, _G.ChatFrame1 = savedRoot, savedChat
+end

@@ -88,6 +88,16 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**The chat's text keeps the colour the game gave it.** The pass
+raised any dark label it met, in any window, and the chat's windows
+are walked like the rest - so a dark line in the chat was rewritten
+in the addon's own light ink. The raising exists for dark ink on a
+light page: a quest, a letter, a book, where a darkened sheet leaves
+the text unreadable. A colour in the chat is the message's own -
+which channel it came on, whether it was a whisper, whether it is a
+warning - and a dark one there was chosen rather than inherited.
+Nothing of ours writes it now.
+
 **Only parchment keeps its ink written.** The colours written into
 the game's font objects are rewritten on every raising of the pages,
 which happens whenever a quest is opened. Four of those objects

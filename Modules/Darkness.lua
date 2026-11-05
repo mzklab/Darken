@@ -1767,6 +1767,17 @@ local function contentRegions(frame)
     return set
 end
 
+-- The areas whose text is never raised, whatever its colour.
+--
+-- The raising exists for dark ink on a light page: a quest, a letter, a
+-- book. A colour in the chat is the message's own - which channel it came
+-- on, whether it was a whisper, whether it is a warning - and a dark one
+-- there was chosen rather than inherited. Rewriting it loses the only thing
+-- the colour was carrying.
+local NO_LIFT = {
+    chat = true,
+}
+
 -- The areas in which raising text is allowed right now: area key -> true.
 --
 -- Why the area is asked about. The raising decides by the colour of the label
@@ -2979,7 +2990,15 @@ local function walk(object, depth, skip, sink, area, push)
                     -- A raised label is an occasion to remember its frame:
                     -- the game often writes the text in it later than our walk
                     -- (see pages).
-                    if LIFT[area or "window"]
+                    --
+                    -- Not in an area whose text is not ours. The raising
+                    -- decides by a label's own colour, and that decision is
+                    -- sound on a sheet of parchment, where dark ink was
+                    -- chosen for a light page. In the chat a colour is a
+                    -- message's own - a channel, a whisper, a warning - and
+                    -- a dark one there is a choice rather than an oversight.
+                    local where = area or "window"
+                    if LIFT[where] and not NO_LIFT[where]
                         and Darkness.LiftText(region) then
                         rememberPage(object)
                     end
