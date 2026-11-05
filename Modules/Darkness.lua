@@ -4149,10 +4149,19 @@ local churnBounded = 0
 -- what it would have got as a list row all along.
 local WINDOW_WALKS = 3
 
--- How many times each frame has been walked on being shown, and under which
--- plan. A fresh reconnaissance means the interface itself changed, and the
--- count starts over with it.
+-- The ceiling over all of it, fruitful walks included.
+--
+-- A frame that yields something new on every single showing is not a window
+-- filling itself up; it is a frame the game rebuilds from scratch each time,
+-- and answering that one with a walk apiece is the same ruin by another
+-- road. Twenty is far above any window's filling and far below a cost.
+local WINDOW_WALKS_MAX = 20
+
+-- How many fruitless walks each frame has had on being shown, how many walks
+-- in all, and under which plan. A fresh reconnaissance means the interface
+-- itself changed, and the counts start over with it.
 local WALKED_TIMES = ns.Skin.Memory()
+local WALKED_ALL = ns.Skin.Memory()
 local WALKED_GEN = ns.Skin.Memory()
 
 -- The plan's generation number. Incremented on a clearing, and the former
@@ -6789,16 +6798,43 @@ function Darkness.WindowShown(frame, opened)
         -- here - a list row handed out of a pool, a tab, a button, each
         -- appearing continuously in a fight. Those keep the bounded answer
         -- (sweepShown).
-        local times = 0
+        local times, all = 0, 0
         if WALKED_GEN[frame] == generation then
             times = WALKED_TIMES[frame] or 0
+            all = WALKED_ALL[frame] or 0
         end
 
-        if opened == true or times < WINDOW_WALKS then
+        if opened == true
+            or (times < WINDOW_WALKS and all < WINDOW_WALKS_MAX) then
             WALKED_GEN[frame] = generation
-            WALKED_TIMES[frame] = times + 1
+            WALKED_ALL[frame] = all + 1
             churnWindows = churnWindows + 1
+
+            local before = plan.n
             pcall(Darkness.ApplyToWindow, frame, true)
+
+            -- A walk that found something new is not held against the
+            -- frame.
+            --
+            -- The two cases this door hears look the same from outside and
+            -- are not the same at all. A window whose rows the game creates
+            -- as it goes - the reputations, the skills, the statistics -
+            -- yields something new every time it is walked, and it has to go
+            -- on being walked or those rows stay light: that is exactly what
+            -- the author saw, a dark window with gold frames on every row.
+            -- A frame that merely flickers finds nothing new on its second
+            -- visit, and it is that one the limit is for.
+            --
+            -- The measure is the plan's growth, taken here rather than
+            -- read out of what the walk remembers: the walk records its
+            -- verdict only when it runs to the end, and a walk cut short by
+            -- the next showing records nothing at all - which is precisely
+            -- the case this limit exists for.
+            if plan.n > before then
+                WALKED_TIMES[frame] = 0
+            else
+                WALKED_TIMES[frame] = times + 1
+            end
         else
             churnBounded = churnBounded + 1
         end

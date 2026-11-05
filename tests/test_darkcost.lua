@@ -619,3 +619,41 @@ do
 
     Darkness.ApplyToWindow = saved
 end
+
+T.suite("the darkness: a walk that finds something new is not held against it")
+
+-- Two things come through this door and look the same from outside. A window
+-- whose rows the game creates as it goes - reputations, skills, statistics -
+-- yields something new every time it is walked, and it has to go on being
+-- walked or those rows stay light: the author sent exactly that, a dark
+-- window with a gold frame on every row. A frame that merely flickers finds
+-- nothing new on its second visit, and the limit is for that one.
+do
+    local saved = Darkness.ApplyToWindow
+    local walked, growing = 0, false
+
+    -- A stand-in for the walk: it records a texture into the plan when the
+    -- window has something new in it, and nothing when it has not.
+    Darkness.ApplyToWindow = function(frame)
+        walked = walked + 1
+        if growing then
+            Darkness.Remember(frame, newArt and newArt() or nil)
+        end
+    end
+
+    local list = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "ListWindow" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    -- Nothing new: the limit closes after three.
+    growing = false
+    for _ = 1, 30 do Darkness.WindowShown(list) end
+    T.ok(walked <= 3, "a fruitless showing is walked at most three times: "
+        .. walked)
+
+    Darkness.ApplyToWindow = saved
+end
