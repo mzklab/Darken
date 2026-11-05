@@ -185,6 +185,34 @@ function Bags:ApplySettings()
     end
 end
 
+-- Whether an answer to the game's repainting is already waiting.
+local pending = false
+
+--- Answer the game's repainting of a bag, once however many arrive.
+--
+-- The game repaints a bag window by window, so a single item dropping in
+-- calls the handler once for each bag the player carries - and the handler
+-- below goes over every bag window there is. Thirteen bags is a hundred and
+-- sixty-nine paintings for one item.
+--
+-- They are folded into one. What the game does is one event as far as this
+-- subsystem is concerned: the bags now look like this, paint them.
+function Bags.PaintSoon()
+    if pending then return end
+
+    local timer = _G.C_Timer
+    if type(timer) ~= "table" or type(timer.After) ~= "function" then
+        Bags:ApplySettings()
+        return
+    end
+
+    pending = true
+    pcall(timer.After, 0, function()
+        pending = false
+        pcall(function() Bags:ApplySettings() end)
+    end)
+end
+
 --- Enabling the subsystem.
 --
 -- Here and only here are the handlers on top of the game's functions
@@ -200,7 +228,7 @@ function Bags:OnEnable()
             if type(_G[names[i]]) == "function" then
                 if pcall(hooksecurefunc, names[i], function()
                     counters.fired_bags = counters.fired_bags + 1
-                    Bags:ApplySettings()
+                    Bags.PaintSoon()
                 end) then
                     if not counted[names[i]] then
                         counted[names[i]] = true

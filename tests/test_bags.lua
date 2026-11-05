@@ -172,3 +172,39 @@ do
     _G.ContainerFrame1 = nil
     _G.ContainerFrame1Item1 = nil
 end
+
+T.suite("bags: a burst of repaintings costs one painting")
+
+-- The game repaints a bag window by window, so one item dropping in calls
+-- the handler once for each bag the player carries - and the handler goes
+-- over every bag window there is. Thirteen bags is a hundred and sixty-nine
+-- paintings for one item, which the player feels as the game stopping.
+do
+    local Bags = ns.Bags
+
+    local savedTimer = _G.C_Timer
+    local pending = {}
+    _G.C_Timer = {
+        After = function(_, fn)
+            if type(fn) == "function" then pending[#pending + 1] = fn end
+        end,
+    }
+
+    local painted = 0
+    local savedApply = Bags.ApplySettings
+    Bags.ApplySettings = function() painted = painted + 1 end
+
+    for _ = 1, 13 do Bags.PaintSoon() end
+    T.eq(painted, 0, "nothing is painted from the handler itself")
+    T.eq(#pending, 1, "thirteen repaintings ask for one answer")
+
+    pending[1]()
+    T.eq(painted, 1, "and the answer paints once")
+
+    -- The gate opens again: the next item must not be swallowed.
+    Bags.PaintSoon()
+    T.eq(#pending, 2, "a later burst is asked for in its turn")
+
+    Bags.ApplySettings = savedApply
+    _G.C_Timer = savedTimer
+end

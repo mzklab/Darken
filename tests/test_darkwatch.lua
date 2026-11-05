@@ -208,9 +208,12 @@ do
     touched.r, touched.g, touched.b = 1, 1, 1
     fireColour(touched)
 
-    T.eq(Late.Repaint(), 1, "the number of restored textures is not one")
-    T.ok(math.abs(touched.r - ours) < 1e-9, "the touched one did not get its colour back")
-    T.eq(quiet.writes, 0, "the untouched one was repainted along with it")
+    -- The colour goes back in the same call the game wrote in, so there is
+    -- nothing left for the deferred repainting to do.
+    T.ok(math.abs(touched.r - ours) < 1e-9,
+        "the touched one got its colour back at once")
+    T.eq(Late.Repaint(), 0, "and nothing was left queued")
+    T.eq(quiet.writes, 0, "the untouched one was not written at all")
 
     fresh.Addon, fresh.flavor = nil, nil
     _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
@@ -322,11 +325,12 @@ do
     -- The game handed out the row again: its own colour.
     header.r, header.g, header.b = 1, 1, 1
     fireColour(header)
-    T.eq(#waits, 1, "the foreign repaint went unnoticed")
-
-    waits[1]()
+    -- The answer is written in the same call the game wrote in. A frame of
+    -- the game's own colours is invisible on one picture and plain on a
+    -- window of them: every purchase from a merchant rewrites its list.
+    T.eq(#waits, 0, "nothing was deferred")
     T.ok(math.abs(header.r - ours) < 1e-9,
-        "our colour did not come back: " .. tostring(header.r))
+        "our colour came back at once: " .. tostring(header.r))
 
     fresh.Addon, fresh.flavor = nil, nil
     _G.UIParent = savedRoot
@@ -1410,11 +1414,13 @@ do
 
     -- The game writes to it without stopping, and each write is answered -
     -- until the answers run out.
+    -- The answer is written in the same call, so what is counted is how
+    -- often our colour actually came back.
     local answered = 0
     for _ = 1, 500 do
         restless.r, restless.g, restless.b = 1, 1, 1
         fireColour(restless)
-        answered = answered + Late.Repaint()
+        if restless.r < 1 then answered = answered + 1 end
     end
 
     T.ok(answered > 0, "the first repaintings were answered: " .. answered)

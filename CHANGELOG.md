@@ -88,6 +88,20 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**A merchant's window no longer blinks on a purchase.** The answer to
+somebody else's repainting was written on the frame after it, which
+is invisible on one picture and plain on a window of them - buying
+rewrites the whole list at once, and the window wore the game's own
+colours for a frame each time. It is written in the same call now;
+the queue that folds several touches of one picture into one write
+is kept and emptied there.
+
+**An item dropping into a bag no longer stops the game.** The game
+repaints bags window by window, so one item called the answer once
+for each bag carried - and the answer went over every bag window
+there is. Thirteen bags meant a hundred and sixty-nine paintings for
+one item. They are folded into one.
+
 **A list row appearing no longer walks anything.** The pass places a
 listener on every hidden frame it meets - list rows, a pool's
 reserve, tabs - and there are thousands of them. Each appearance

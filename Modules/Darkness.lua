@@ -4329,24 +4329,32 @@ local function gameRecolored(texture)
         return
     end
 
-    -- Into the queue rather than at once: the game, handing a list row out of
-    -- a pool, touches its picture several times in a row, and answering every
-    -- touch would mean writing the colour ten times in one frame.
+    -- The colour goes back in this call, not on the next frame.
+    --
+    -- It used to be queued, on the reasoning that the game touches a
+    -- picture several times when it hands a list row out of a pool, and one
+    -- answer for the lot is cheaper than one per touch. True, and it buys
+    -- that with a frame in which the picture wears the colour the game just
+    -- gave it. One picture doing that is invisible. A whole window doing it
+    -- at once is not: buying from a merchant rewrites the list, and every
+    -- purchase showed the window in its native colours for a frame.
+    --
+    -- The queue still collects, because the game touches a picture several
+    -- times when it hands a list row out of a pool and the queue folds
+    -- those into one write.
     if DIRTY[texture] then return end
     DIRTY[texture] = true
     dirtyN = dirtyN + 1
     dirty[dirtyN] = at
 
+    -- But it is emptied in this call rather than on the next frame.
+    --
+    -- Writing here calls back into this very handler, and the guard that
+    -- tells our writes from anyone else's turns it away at the top.
     if repainting then return end
-
-    local timer = _G.C_Timer
-    if type(timer) ~= "table" or type(timer.After) ~= "function" then return end
-
     repainting = true
-    pcall(timer.After, REPAINT_AFTER, function()
-        repainting = false
-        pcall(Darkness.Repaint)
-    end)
+    pcall(Darkness.Repaint)
+    repainting = false
 end
 
 --- The watcher's wrapper, the one the game sees.
