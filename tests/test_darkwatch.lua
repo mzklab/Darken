@@ -1529,9 +1529,14 @@ do
     function art:GetVertexColor() return self.r, self.g, self.b, self.a end
     function art:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
 
+    -- A real frame answers how much it holds without handing it over, and
+    -- that is what the answer to a second showing asks: whether anything
+    -- has changed, not what is there.
     local chat = {
         GetObjectType = function() return "Frame" end,
         GetName = function() return "AChatWindow" end,
+        GetNumRegions = function() return 1 end,
+        GetNumChildren = function() return 0 end,
         GetRegions = function() reads = reads + 1 return art end,
         GetChildren = function() return end,
     }

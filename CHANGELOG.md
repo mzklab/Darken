@@ -88,6 +88,21 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**A list row appearing no longer walks anything.** The pass places a
+listener on every hidden frame it meets - list rows, a pool's
+reserve, tabs - and there are thousands of them. Each appearance
+started a walk of that frame's subtree, and these do not appear
+rarely: a row is handed out and taken back as a list scrolls, a
+button as a bar changes, which in a fight is continuous. An
+appearance now paints the frame's top layer, bounded, and anything
+deeper is reached by the watcher that hears a picture being assigned
+- which is the moment a pooled row gets its pictures in any case.
+
+A frame is not re-read when it appears again unchanged, and "changed"
+is two counts asked of the frame rather than a reading of what it
+holds. A row returning from its pool with different content is
+therefore still painted.
+
 **The chat's text keeps the colour the game gave it.** The pass
 raised any dark label it met, in any window, and the chat's windows
 are walked like the rest - so a dark line in the chat was rewritten

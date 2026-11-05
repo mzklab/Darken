@@ -4041,7 +4041,8 @@ local FADING_AREAS = {
     chat = true,
 }
 
--- The frames whose top layer has been painted: frame -> true.
+-- What a frame held when its top layer was last painted: how many pictures
+-- of its own, and how many frames inside it.
 --
 -- Showing a frame is not a rare event. Chat windows, their tabs and their
 -- buttons appear and vanish on the movement of a mouse, and each appearance
@@ -4051,7 +4052,8 @@ local FADING_AREAS = {
 -- painted the first time and are held by the hook on each of them.
 --
 -- Cleared with the plan, which is when the colours have to be written again.
-local TOP_DONE = ns.Skin.Memory()
+local TOP_PICTURES = ns.Skin.Memory()
+local TOP_INSIDE = ns.Skin.Memory()
 
 -- The frames of the list already painted: frame -> true.
 --
@@ -4093,7 +4095,8 @@ function Darkness.Invalidate()
     -- half, and nothing about a frame has changed.
     chromeAt = 0
     NAMED_DONE = ns.Skin.Memory()
-    TOP_DONE = ns.Skin.Memory()
+    TOP_PICTURES = ns.Skin.Memory()
+    TOP_INSIDE = ns.Skin.Memory()
 
     -- The rule of selection's ready answers were gathered for the former
     -- composition of the interface and no longer mean anything.
@@ -4715,6 +4718,10 @@ local function areaAbove(frame)
 end
 
 
+-- Painting the top layer of a frame, declared in advance: it stands further
+-- down the file and the answer to a showing calls it.
+local paintTopLayer
+
 --- Walk a subtree the game has just shown.
 --
 -- A list row, a tab, a pool's reserve: the reconnaissance skipped them (they
@@ -4734,10 +4741,23 @@ function sweepShown(frame, area)
     if area == UNTOUCHED then return end
     if area == false then area = nil end
 
-    local items = { { object = frame, depth = 1, area = area,
-        skip = coveredFrames(), name = nil } }
-
-    startSlice(items, 1, nil, nil, nil)
+    -- The top layer of what appeared, and no walk.
+    --
+    -- A listener is placed on every hidden frame the pass meets - list
+    -- rows, a pool's reserve, tabs - and there are thousands of those. They
+    -- are not shown rarely, whatever the note above this once said: a row
+    -- is handed out and taken back as a list scrolls, a button as a bar
+    -- changes, and in a fight that is continuous. Each of those showings
+    -- used to start a walk of the subtree.
+    --
+    -- What a row holds is its own pictures and those of the frames directly
+    -- inside it, which is what the top layer is. Anything deeper is reached
+    -- by the watcher on assignment, which hears a picture the moment the
+    -- game gives it one - and a row handed out of a pool is given its
+    -- pictures at exactly that moment.
+    local from = plan.n + 1
+    paintTopLayer(frame, area, nil)
+    if plan.n >= from then applyPlan(settings, from) end
 end
 
 --- Adopt a picture the game created a moment ago.
@@ -4992,9 +5012,40 @@ local TOP_LAYER_CHILDREN = 60
 -- @param frame table
 -- @param area string|nil
 -- @param window string|nil
-local function paintTopLayer(frame, area, window)
-    if TOP_DONE[frame] then return end
-    TOP_DONE[frame] = true
+function paintTopLayer(frame, area, window)
+    -- Painted already, and nothing about it has changed since.
+    --
+    -- "Already" alone is not enough: a row handed back to its pool and out
+    -- again carries different content, and a frame that may never be looked
+    -- at twice is a frame whose new pictures stay bright. "Nothing has
+    -- changed" is asked of the frame as a count of what it holds - two
+    -- questions, no reading of anything - and that is the difference
+    -- between answering a showing cheaply and not answering it at all.
+    local pictures, inside = -1, -1
+
+    if type(frame.GetNumRegions) == "function" then
+        local ok, many = pcall(frame.GetNumRegions, frame)
+        if ok and type(many) == "number" then pictures = many end
+    end
+    if pictures < 0 and type(frame.GetRegions) == "function" then
+        local ok, list = pcall(gather, frame.GetRegions, frame)
+        if ok then pictures = #list end
+    end
+
+    if type(frame.GetNumChildren) == "function" then
+        local ok, many = pcall(frame.GetNumChildren, frame)
+        if ok and type(many) == "number" then inside = many end
+    end
+    if inside < 0 and type(frame.GetChildren) == "function" then
+        local ok, list = pcall(gather, frame.GetChildren, frame)
+        if ok then inside = #list end
+    end
+
+    if TOP_PICTURES[frame] == pictures and TOP_INSIDE[frame] == inside then
+        return
+    end
+    TOP_PICTURES[frame] = pictures
+    TOP_INSIDE[frame] = inside
 
     -- What the window itself calls its contents.
     --
