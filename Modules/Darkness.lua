@@ -4129,6 +4129,32 @@ local churnSwept = 0
 local churnRefills = 0
 local churnSkipped = 0
 
+-- How often a frame was answered as a window, and how often that answer was
+-- the bounded one because the frame shows too often to be walked.
+local churnWindows = 0
+local churnBounded = 0
+
+-- How many times one frame is walked in full on being shown before it is
+-- answered the cheap way instead.
+--
+-- A window opening can afford a walk: it is rare, and the walk is what
+-- reaches everything the top layer does not. A frame that shows twenty times
+-- a minute cannot - and the watcher of showings is placed on every named
+-- child of the interface root, which is tooltips, error text, zone names,
+-- drop-downs and whatever other addons show as the player moves. Each of
+-- those showings threw away the walk in flight and started another.
+--
+-- Three, because the first showing is often the emptiest: the game creates
+-- the contents after it. Past that the frame gets the top layer, which is
+-- what it would have got as a list row all along.
+local WINDOW_WALKS = 3
+
+-- How many times each frame has been walked on being shown, and under which
+-- plan. A fresh reconnaissance means the interface itself changed, and the
+-- count starts over with it.
+local WALKED_TIMES = ns.Skin.Memory()
+local WALKED_GEN = ns.Skin.Memory()
+
 -- The plan's generation number. Incremented on a clearing, and the former
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
@@ -6022,6 +6048,8 @@ function Darkness.Repaint()
         store.churn.swept = churnSwept
         store.churn.refills = churnRefills
         store.churn.skipped = churnSkipped
+        store.churn.windows = churnWindows
+        store.churn.bounded = churnBounded
         local by = store.churn.by
         for who, times in pairs(churnBy) do by[who] = times end
     end
@@ -6723,7 +6751,20 @@ function Darkness.WindowShown(frame)
         -- it is what the player sees in the instant the window appears.
         Darkness.PaintShallow(frame, area, window)
 
-        -- And then the window itself, properly.
+        -- And then the window itself, properly - unless this frame shows
+        -- too often for that.
+        --
+        -- The watcher of showings is placed on every named child of the
+        -- interface root, so this is reached by tooltips, error text, zone
+        -- names, drop-downs and whatever other addons show as the player
+        -- moves. The author's reading while walking about: sixty-five walk
+        -- slices a second and ninety milliseconds of walking in every
+        -- second of play, with no window open at all. Each showing threw
+        -- away the walk in flight and started another, so none of them ever
+        -- finished.
+        --
+        -- The rule is the one this file already follows: how much work a
+        -- thing deserves is decided by how often it happens.
         --
         -- A window holds more than its top layer, and painting only that
         -- left windows opening half dressed. The walk is what reaches the
@@ -6734,7 +6775,19 @@ function Darkness.WindowShown(frame)
         -- here - a list row handed out of a pool, a tab, a button, each
         -- appearing continuously in a fight. Those keep the bounded answer
         -- (sweepShown).
-        pcall(Darkness.ApplyToWindow, frame, true)
+        local times = 0
+        if WALKED_GEN[frame] == generation then
+            times = WALKED_TIMES[frame] or 0
+        end
+
+        if times < WINDOW_WALKS then
+            WALKED_GEN[frame] = generation
+            WALKED_TIMES[frame] = times + 1
+            churnWindows = churnWindows + 1
+            pcall(Darkness.ApplyToWindow, frame, true)
+        else
+            churnBounded = churnBounded + 1
+        end
     end
 
     Darkness.PaintNamedSoon()
@@ -7147,6 +7200,8 @@ function Darkness.Churn()
         swept   = churnSwept,
         refills = churnRefills,
         skipped = churnSkipped,
+        windows = churnWindows,
+        bounded = churnBounded,
         dimmed  = counters.dimmed,
         slices  = cost.slices or 0,
         spent   = cost.total or 0,
@@ -7187,6 +7242,9 @@ function Darkness.ChurnLines(before, after, seconds)
     lines[#lines + 1] = string.format(
         "  windows asked to be walked again %.1f - turned away %.1f",
         rate("refills"), rate("skipped"))
+    lines[#lines + 1] = string.format(
+        "  frames shown and walked as windows %.1f - given the top layer "
+            .. "instead %.1f", rate("windows"), rate("bounded"))
     lines[#lines + 1] = string.format(
         "  pictures painted %.0f, walk slices %.1f taking %.2f ms",
         rate("dimmed"), rate("slices"), rate("spent") * seconds)

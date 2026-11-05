@@ -540,3 +540,44 @@ do
     Darkness.GroupMultipliers = real
     Darkness.ForgetShade()
 end
+
+T.suite("the darkness: a frame that shows often is not walked every time")
+
+-- The watcher of showings is placed on every named child of the interface
+-- root, so the answer "a window appeared, walk it" is reached by tooltips,
+-- error text, zone names, drop-downs and whatever other addons show as the
+-- player moves about. A walk is what a window opening can afford because a
+-- window opening is rare; these are not rare.
+--
+-- The author's reading while walking about the world: sixty-five walk slices
+-- a second and ninety milliseconds of walking in every second of play, with
+-- no window open at all. Each showing threw away the walk in flight and
+-- started another, so none of them ever finished.
+do
+    local walked = 0
+    local saved = Darkness.ApplyToWindow
+    Darkness.ApplyToWindow = function() walked = walked + 1 end
+
+    local tooltip = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "HoverTip" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    for _ = 1, 40 do Darkness.WindowShown(tooltip) end
+    T.ok(walked > 0, "the first showings are walked: " .. walked)
+    T.ok(walked <= 3,
+        "and forty showings do not cost forty walks: " .. walked)
+
+    -- A fresh reconnaissance means the interface itself changed, and the
+    -- count starts over with it: a frame rebuilt from scratch has contents
+    -- nobody has walked.
+    Darkness.Invalidate()
+    local before = walked
+    Darkness.WindowShown(tooltip)
+    T.eq(walked, before + 1, "after a fresh plan it is walked again")
+
+    Darkness.ApplyToWindow = saved
+end
