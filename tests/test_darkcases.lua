@@ -1970,3 +1970,31 @@ do
 
     ns.flavor, ns.Addon = savedFlavor, savedAddon
 end
+
+T.suite("darkness: the ink is written only into the parchment families")
+
+-- The objects whose colour is written are rewritten on every raising of the
+-- pages, which happens whenever a quest is opened. An object belonging to no
+-- window in particular can be inherited from anywhere, so writing one means
+-- changing the colour of text nobody asked about - over and over, as quests
+-- are taken.
+--
+-- Every name on the list has to belong to a known window of parchment.
+do
+    local families = {
+        "^Quest", "^ItemText", "^Mail",
+    }
+
+    local stray = {}
+    for i = 1, #Darkness.PARCHMENT_FONTS do
+        local name = Darkness.PARCHMENT_FONTS[i]
+        local known = false
+        for j = 1, #families do
+            if name:find(families[j]) then known = true break end
+        end
+        if not known then stray[#stray + 1] = name end
+    end
+
+    T.eq(#stray, 0, "no object outside a parchment family is written: "
+        .. table.concat(stray, " "))
+end

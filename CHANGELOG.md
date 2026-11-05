@@ -88,6 +88,16 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**Only parchment keeps its ink written.** The colours written into
+the game's font objects are rewritten on every raising of the pages,
+which happens whenever a quest is opened. Four of those objects
+belonged to no window in particular - the generic black and dark-grey
+fonts - so anything in the interface inheriting from them changed
+colour each time a quest was taken. They are off the list. A dark
+label outside a window of parchment is raised by the walk instead,
+which decides by the label's own colour and touches nothing it has
+not looked at.
+
 **The chat's text is never written.** The font settings used to give
 the chat the player's font and size along with the rest of the
 interface, standing down only when another addon owned the chat. They

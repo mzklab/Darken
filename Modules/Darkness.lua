@@ -2276,11 +2276,24 @@ local PARCHMENT_FONTS = {
     "ItemTextFontNormal", "ItemTextFontNormalLarge",
     "MailTextFontNormal", "MailFont_Large",
 
-    -- Ink named for being ink: black and dark grey are dark because the page
-    -- was light, which is this list's whole subject.
-    "GameFontBlack", "GameFontBlackSmall", "GameFontBlackMedium",
-    "GameFontDarkGraySmall",
+    -- The four generic objects that used to stand here - GameFontBlack,
+    -- GameFontBlackSmall, GameFontBlackMedium, GameFontDarkGraySmall - are
+    -- gone, and the reasoning that put them there is why.
+    --
+    -- It was "ink named for being ink": black and dark grey are dark
+    -- because the page under them was light, which is this list's subject.
+    -- True of the ink, and not true of the objects: they belong to no
+    -- window in particular, anything in the interface may inherit from
+    -- them, and this list is written over on every raising of the pages -
+    -- which happens whenever a quest is opened. Whatever inherits from them
+    -- therefore changed colour every time the player took a quest.
+    --
+    -- Everything above belongs to a known window of parchment. A dark label
+    -- outside one is raised by the walk instead, which decides by the
+    -- label's own colour and touches nothing it has not looked at.
 }
+
+Darkness.PARCHMENT_FONTS = PARCHMENT_FONTS
 
 --- The ink each font object had before we touched it: name -> { r, g, b, a }.
 local FONT_BASE = {}
