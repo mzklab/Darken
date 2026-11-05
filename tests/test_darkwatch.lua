@@ -1484,3 +1484,63 @@ do
     _G.hooksecurefunc, _G.UIParent = savedHook, savedRoot
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: a window shown again costs nothing")
+
+-- Showing a frame is not a rare event. A chat window, its tabs and its
+-- buttons appear and vanish on the movement of a mouse, and each appearance
+-- reaches the answer to a showing. Reading every region of the frame and of
+-- the frames inside it each time - and building a table per frame to do it -
+-- is work for nothing: the pictures were painted the first time and are held
+-- by the hook on each of them.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedTimer = _G.C_Timer
+    _G.C_Timer = { After = function() end }
+
+    local reads = 0
+    local art = {
+        r = 1, g = 1, b = 1, a = 1,
+        GetObjectType = function() return "Texture" end,
+        GetDrawLayer = function() return "ARTWORK" end,
+        GetTexture = function() return 5150 end,
+    }
+    function art:GetVertexColor() return self.r, self.g, self.b, self.a end
+    function art:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+
+    local chat = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "AChatWindow" end,
+        GetRegions = function() reads = reads + 1 return art end,
+        GetChildren = function() return end,
+    }
+
+    Late.PaintShallow(chat, nil, "AChatWindow")
+    local afterFirst = reads
+    T.ok(afterFirst >= 1, "the first showing read the frame: " .. afterFirst)
+    T.ok(art.r < 1, "and painted it")
+
+    -- The mouse moves over the chat forty times.
+    for _ = 1, 40 do Late.PaintShallow(chat, nil, "AChatWindow") end
+    T.eq(reads, afterFirst, "and the rest cost no reading at all: " .. reads)
+
+    -- Clearing the plan is what makes the colours need writing again.
+    Late.Invalidate()
+    Late.PaintShallow(chat, nil, "AChatWindow")
+    T.ok(reads > afterFirst, "a cleared plan reads it afresh: " .. reads)
+
+    _G.C_Timer = savedTimer
+    fresh.Addon, fresh.flavor = nil, nil
+end

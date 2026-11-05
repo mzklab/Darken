@@ -63,6 +63,15 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A window shown again costs nothing.** Showing a frame is not a rare
+event - a chat window, its tabs and its buttons appear and vanish on
+the movement of a mouse - and each appearance read every region of the
+frame and of the frames inside it, building a table per frame to do
+it. The pictures were painted the first time and are held by the hook
+on each of them, so a frame whose top layer is done is now recognised
+by a single lookup. The record is cleared with the plan, which is when
+the colours have to be written again.
+
 **A named window is dark two levels deep before it opens.** Its own
 backdrop was painted before opening and the header inside it was not,
 because a header is a frame directly inside the window rather than a

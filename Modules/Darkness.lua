@@ -3999,6 +3999,18 @@ local churnClimbs = 0
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
 
+-- The frames whose top layer has been painted: frame -> true.
+--
+-- Showing a frame is not a rare event. Chat windows, their tabs and their
+-- buttons appear and vanish on the movement of a mouse, and each appearance
+-- asks for the top layer again - which reads every region of the frame and
+-- of the frames inside it, and builds a table per frame while doing it.
+-- Repeating that on a mouse movement is work for nothing: the pictures were
+-- painted the first time and are held by the hook on each of them.
+--
+-- Cleared with the plan, which is when the colours have to be written again.
+local TOP_DONE = ns.Skin.Memory()
+
 -- The frames of the list already painted: frame -> true.
 --
 -- An entry is painted once and not returned to. The list is worked through
@@ -4039,6 +4051,7 @@ function Darkness.Invalidate()
     -- half, and nothing about a frame has changed.
     chromeAt = 0
     NAMED_DONE = ns.Skin.Memory()
+    TOP_DONE = ns.Skin.Memory()
 
     -- The rule of selection's ready answers were gathered for the former
     -- composition of the interface and no longer mean anything.
@@ -4928,6 +4941,9 @@ local TOP_LAYER_CHILDREN = 60
 -- @param area string|nil
 -- @param window string|nil
 local function paintTopLayer(frame, area, window)
+    if TOP_DONE[frame] then return end
+    TOP_DONE[frame] = true
+
     local function take(object)
         if type(object) ~= "table" then return end
         if ns.Skin.Forbidden(object) or Darkness.IsOurs(object) then return end
