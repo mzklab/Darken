@@ -527,6 +527,9 @@ ns.RegisterLocale("ruRU", {
         "подсистема затемнения не загружена",
     ["the bar text subsystem is not loaded"] =
         "подсистема текстов на полосках не загружена",
+    ["measuring from now - walk about for ten seconds or so and "
+        .. "type /dark cost again"] =
+        "замеряю с этого момента - побегай секунд десять и набери /dark cost снова",
     ["the window opened last"] = "последнее открытое окно",
     ["open the window first, then type /dark probe - or name the frame: "
         .. "/dark probe <frame name>"] =

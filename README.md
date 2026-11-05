@@ -181,6 +181,9 @@ screenshot does:
                      name a frame to probe that one, or "mouse" to
                      probe what the cursor is on
 /dark scan <text>    frames whose names contain the text
+/dark cost           what the addon spends while nothing is
+                     happening: run it, walk about for ten seconds,
+                     run it again. "reset" starts the count afresh
 /dark bars           why the numbers on the health and power bars are
                      missing: where this client keeps each bar, where
                      it keeps the text object, and which of the game's

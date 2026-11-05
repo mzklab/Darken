@@ -4081,6 +4081,17 @@ local churnBy = {}
 -- doing.
 local churnClimbs = 0
 
+-- How often a picture the plan does not hold announced itself, and how often
+-- a hidden frame being shown was answered.
+--
+-- The two hot paths beside the climb, and until now neither was counted. The
+-- report named the hearings and the pictures of ours among them, and between
+-- those two numbers lies everything the addon does for pictures that are
+-- nobody's business of ours: that is where a frame goes while the player is
+-- merely walking about, and it could not be seen.
+local churnAdopted = 0
+local churnSwept = 0
+
 -- The plan's generation number. Incremented on a clearing, and the former
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
@@ -4830,6 +4841,8 @@ function sweepShown(frame, area)
     -- by the watcher on assignment, which hears a picture the moment the
     -- game gives it one - and a row handed out of a pool is given its
     -- pictures at exactly that moment.
+    churnSwept = churnSwept + 1
+
     local from = plan.n + 1
     paintTopLayer(frame, area, nil)
     if plan.n >= from then applyPlan(settings, from) end
@@ -4850,6 +4863,8 @@ end
 --
 -- @param texture table
 function adopt(texture)
+    churnAdopted = churnAdopted + 1
+
     local owner = texture.GetParent
     if type(owner) ~= "function" then return end
 
@@ -5910,6 +5925,8 @@ function Darkness.Repaint()
         store.churn.heard = counters.repainted
         store.churn.ours = churnOurs
         store.churn.climbs = churnClimbs
+        store.churn.adopted = churnAdopted
+        store.churn.swept = churnSwept
         local by = store.churn.by
         for who, times in pairs(churnBy) do by[who] = times end
     end
@@ -6948,6 +6965,77 @@ function Darkness.Harvest(root)
     end
 
     return found, seen, covered
+end
+
+--- What the subsystem has done since it loaded, in numbers.
+--
+-- The answer to "it stutters while I walk about". Walking about opens no
+-- window and changes no setting, so whatever the addon spends then is spent
+-- on the interface moving by itself: pictures the game assigns afresh, frames
+-- it shows and hides, areas looked up for them. Each of those is cheap and
+-- each is paid per write, and the only way to tell which one is costing the
+-- frames is to count them over a stretch of walking.
+--
+-- Totals since the load rather than a rolling window: a window would have to
+-- be kept up per frame, which is itself a cost on the path being measured.
+-- Two readings and the time between them give the rate.
+--
+-- @return table
+function Darkness.Churn()
+    local store = Store()
+    local cost = (store and store.cost) or {}
+
+    return {
+        heard   = counters.repainted,
+        ours    = churnOurs,
+        adopted = churnAdopted,
+        climbs  = churnClimbs,
+        swept   = churnSwept,
+        dimmed  = counters.dimmed,
+        slices  = cost.slices or 0,
+        spent   = cost.total or 0,
+        worst   = cost.worst or 0,
+    }
+end
+
+--- The difference between two readings, in words.
+--
+-- Per second, because that is the question: a hundred thousand hearings over
+-- an evening is nothing and a thousand a second is a frame gone. The worst
+-- slice is not a rate and is reported as it stands.
+--
+-- @param before table a reading from Darkness.Churn
+-- @param after table a later one
+-- @param seconds number how long between them
+-- @return table array of lines
+function Darkness.ChurnLines(before, after, seconds)
+    local lines = {}
+    if type(before) ~= "table" or type(after) ~= "table" then return lines end
+    if type(seconds) ~= "number" or seconds <= 0 then return lines end
+
+    local function rate(key)
+        local was = tonumber(before[key]) or 0
+        local now = tonumber(after[key]) or 0
+        return (now - was) / seconds
+    end
+
+    lines[#lines + 1] = string.format("over %.1f seconds, per second:", seconds)
+    lines[#lines + 1] = string.format(
+        "  pictures assigned by the game, heard %.0f - of ours %.0f",
+        rate("heard"), rate("ours"))
+    lines[#lines + 1] = string.format(
+        "  of those not in the plan, taken up %.0f - climbs for an area %.0f",
+        rate("adopted"), rate("climbs"))
+    lines[#lines + 1] = string.format(
+        "  hidden frames shown and answered %.0f", rate("swept"))
+    lines[#lines + 1] = string.format(
+        "  pictures painted %.0f, walk slices %.1f taking %.2f ms",
+        rate("dimmed"), rate("slices"), rate("spent") * seconds)
+    lines[#lines + 1] = string.format(
+        "  worst slice of the session %.2f ms",
+        tonumber(after.worst) or 0)
+
+    return lines
 end
 
 --- The harvest as lines for chat, worst first.

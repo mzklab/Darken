@@ -680,6 +680,52 @@ function Addon:HandleCommand(input)
         return
     end
 
+    if cmd == "cost" then
+        -- What the addon spends while nothing is happening.
+        --
+        -- Opening a window and changing a setting are measured by the tests;
+        -- walking about is not, and that is where the player feels the frames
+        -- go. Nothing is opened then, so whatever is spent is spent on the
+        -- interface moving by itself - pictures the game assigns afresh,
+        -- frames it shows and hides.
+        --
+        -- Two readings and the time between them. A rolling window would
+        -- have to be kept up on the very path being measured, which would
+        -- charge the measurement to the thing measured.
+        if not self.db then
+            self:Print(ns.Localize("the settings database is not ready yet"))
+            return
+        end
+
+        local dark = ns.Darkness
+        if type(dark) ~= "table" or type(dark.Churn) ~= "function" then
+            self:Print(ns.Localize("the dimming subsystem is not loaded"))
+            return
+        end
+
+        local now = type(_G.GetTime) == "function" and _G.GetTime() or nil
+        local mark = self.db.global.costmark
+        local taken = type(mark) == "table" and mark.at or nil
+
+        if rest == "reset" or type(taken) ~= "number" or type(now) ~= "number"
+            or now <= taken then
+            self.db.global.costmark = { at = now, churn = dark.Churn() }
+            self:Print(ns.Localize(
+                "measuring from now - walk about for ten seconds or so and "
+                    .. "type /dark cost again"))
+            return
+        end
+
+        local lines = dark.ChurnLines(mark.churn, dark.Churn(), now - taken)
+        for i = 1, #lines do self:Print(lines[i]) end
+
+        -- The reading is left in place: a second /dark cost after another
+        -- stretch of walking answers about that stretch, and "/dark cost
+        -- reset" starts afresh.
+        self.db.global.costmark = { at = now, churn = dark.Churn() }
+        return
+    end
+
     if cmd == "bars" then
         -- Why the numbers on the health and power bars are missing.
         --

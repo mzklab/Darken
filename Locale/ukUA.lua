@@ -533,6 +533,9 @@ ns.RegisterLocale("ukUA", {
         "підсистему затемнення не завантажено",
     ["the bar text subsystem is not loaded"] =
         "підсистему текстів на смужках не завантажено",
+    ["measuring from now - walk about for ten seconds or so and "
+        .. "type /dark cost again"] =
+        "міряю з цієї миті - побігай секунд десять і набери /dark cost знову",
     ["the window opened last"] = "останнє відкрите вікно",
     ["open the window first, then type /dark probe - or name the frame: "
         .. "/dark probe <frame name>"] =

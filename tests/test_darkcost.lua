@@ -432,3 +432,60 @@ do
 
     ns.Addon, ns.flavor = nil, nil
 end
+
+T.suite("the darkness: what it spends while nothing is happening")
+
+-- Opening a window and changing a setting are measured above and in the whole
+-- cost set. Walking about is measured nowhere, and that is where the author
+-- says the frames go: nothing is opened then, so whatever the addon spends is
+-- spent on the interface moving by itself - pictures the game assigns afresh,
+-- frames it shows and hides, areas looked up for them.
+--
+-- Each of those is cheap and each is paid per write, so the question is not
+-- "is it cheap" but "how many times a second". The subsystem counts them and
+-- the difference between two readings answers it.
+do
+    local ns = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", ns)
+    helpers.loadAddonFile("Core/Compat.lua", ns)
+    helpers.loadAddonFile("Core/Locale.lua", ns)
+    helpers.loadAddonFile("Core/Registry.lua", ns)
+    helpers.loadAddonFile("Modules/Darkness.lua", ns)
+
+    local reading = ns.Darkness.Churn()
+    T.ok(type(reading) == "table", "a reading is a table of numbers")
+    for _, key in ipairs({ "heard", "ours", "adopted", "climbs", "swept",
+        "dimmed", "slices", "spent", "worst" }) do
+        T.eq(type(reading[key]), "number", "the reading holds " .. key)
+    end
+
+    -- The two paths that were counted nowhere before: a picture the plan does
+    -- not hold announcing itself, and a hidden frame being shown. Between the
+    -- hearings and the pictures of ours lies everything the addon does for
+    -- pictures that are none of its business, and that was invisible.
+    local before = { heard = 100, ours = 10, adopted = 80, climbs = 4,
+        swept = 20, dimmed = 5, slices = 2, spent = 3, worst = 1 }
+    local after = { heard = 1100, ours = 60, adopted = 980, climbs = 404,
+        swept = 220, dimmed = 15, slices = 12, spent = 23, worst = 7 }
+
+    local lines = ns.Darkness.ChurnLines(before, after, 10)
+    local joined = table.concat(lines, "\n")
+
+    T.ok(joined:find("heard 100", 1, true) ~= nil,
+        "the hearings are given per second, not as a total")
+    T.ok(joined:find("of ours 5", 1, true) ~= nil,
+        "and the share of them that is about our own pictures")
+    T.ok(joined:find("taken up 90", 1, true) ~= nil,
+        "the pictures taken up are per second too")
+    T.ok(joined:find("climbs for an area 40", 1, true) ~= nil,
+        "a climb per picture is the expensive case and is named apart")
+    T.ok(joined:find("shown and answered 20", 1, true) ~= nil,
+        "so are the showings answered")
+    T.ok(joined:find("worst slice of the session 7.00 ms", 1, true) ~= nil,
+        "the worst slice is not a rate and is given as it stands")
+
+    T.eq(#ns.Darkness.ChurnLines(before, after, 0), 0,
+        "with no time between the readings there is nothing to divide by")
+    T.eq(#ns.Darkness.ChurnLines(nil, after, 10), 0,
+        "and nothing to compare against without a first reading")
+end
