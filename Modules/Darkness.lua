@@ -1791,15 +1791,24 @@ local function contentRegions(frame)
     return set
 end
 
--- The areas whose text is never raised, whatever its colour.
+-- The areas whose text may be raised. Everything else keeps its own.
 --
--- The raising exists for dark ink on a light page: a quest, a letter, a
--- book. A colour in the chat is the message's own - which channel it came
--- on, whether it was a whisper, whether it is a warning - and a dark one
--- there was chosen rather than inherited. Rewriting it loses the only thing
--- the colour was carrying.
-local NO_LIFT = {
-    chat = true,
+-- The raising exists for one thing: dark ink chosen for a light page. A
+-- quest, a letter, a book, a trainer's list - the game prints those dark
+-- because the parchment under them is pale, and darkening the parchment
+-- leaves them unreadable.
+--
+-- Everywhere else a colour is a statement. In the chat it says which
+-- channel a line came on; on a unit frame it says a class; in a tooltip it
+-- says an item's quality. Those are dark or light because somebody decided
+-- so, and rewriting them destroys what they carried.
+--
+-- This used to be the other way round - raise everywhere, except where
+-- told not to - and the exceptions were discovered one complaint at a time.
+-- A list of where it IS wanted is short, closed, and cannot surprise the
+-- player in a window nobody thought of.
+local LIFT_AREAS = {
+    questlog = true,
 }
 
 -- The areas in which raising text is allowed right now: area key -> true.
@@ -1862,6 +1871,13 @@ function Darkness.ToldHidden(on)
     if not ok then return false end
     return hidden == true
 end
+
+-- How deep into a window a hidden frame is still listened for.
+--
+-- Two: the window's own panels and what sits directly in them. Deeper than
+-- that is a list's rows and a pool's reserve, which are counted in
+-- thousands and are reached by the watcher on assignment instead.
+local WATCH_DEPTH = 2
 
 --- Watch for the moment the hidden is shown.
 --
@@ -2778,7 +2794,7 @@ local function walk(object, depth, skip, sink, area, push)
             counters.hidden = counters.hidden + 1
 
             -- The hidden is not walked — but it will be shown, and then
-            -- somebody is obliged to walk it.
+            -- somebody is obliged to answer for it.
             --
             -- That used to be left to hope: there are six occasions to walk a
             -- window afresh, and it seemed that at least one of them would
@@ -2792,7 +2808,21 @@ local function walk(object, depth, skip, sink, area, push)
             -- The author's reconnaissance showed exactly that in numbers: the
             -- rule of selection does take a section's header ("dims") while it
             -- has no written colour at all — that is, we never reached it.
-            watchShown(object, area)
+            -- Listened for only near the top of a window.
+            --
+            -- A listener was placed on every hidden frame at any depth, and
+            -- there are thousands of those in an interface - every row of
+            -- every list, every button of every pool. They are not free:
+            -- each is two hooks that live for the session and run whenever
+            -- the game shows the frame, which for a pooled row is
+            -- continuously.
+            --
+            -- What they were for is reached by two cheaper roads now. A
+            -- window appearing is answered by its own listener, and that
+            -- answer paints the window and the frames directly inside it.
+            -- Anything below that is given its pictures at the moment it is
+            -- handed out, and the watcher on assignment hears exactly that.
+            if depth <= WATCH_DEPTH then watchShown(object, area) end
             return
         end
     end
@@ -3022,7 +3052,7 @@ local function walk(object, depth, skip, sink, area, push)
                     -- message's own - a channel, a whisper, a warning - and
                     -- a dark one there is a choice rather than an oversight.
                     local where = area or "window"
-                    if LIFT[where] and not NO_LIFT[where]
+                    if LIFT[where] and LIFT_AREAS[where]
                         and Darkness.LiftText(region) then
                         rememberPage(object)
                     end
@@ -4231,7 +4261,7 @@ local function watchColourOf(texture)
 
     COLOUR_HOOKED[texture] = true
     pcall(_G.hooksecurefunc, texture, "SetVertexColor", function(self)
-        watchHandler(self)
+        watchHandler(self, false)
     end)
 end
 
@@ -4257,7 +4287,9 @@ local adopt
 -- somebody else's write is an occasion to put our colour back. The order is a
 -- shared one for all of them and comes with a pause, so a series of assignments
 -- in a row costs one repainting.
-local function gameRecolored(texture)
+--- @param texture table the picture written to
+--- @param assigned boolean|nil whether the write gave it a new picture
+local function gameRecolored(texture, assigned)
     if writing then return end
     if type(texture) ~= "table" then return end
 
@@ -4272,10 +4304,18 @@ local function gameRecolored(texture)
     --
     -- We get here exactly when the game has assigned that picture — that is, at
     -- the one moment when the answer has really gone stale.
-    VERDICT[texture] = nil
-    -- The game has just changed the picture, so the answer to "whose artwork"
-    -- has gone stale along with it.
-    ART_MEMO[texture] = nil
+    --
+    -- Only then. A colour written over a picture does not change WHAT the
+    -- picture is, and the answer to that question costs half a dozen
+    -- protected calls to work out again. Colours are written in floods -
+    -- experience ticking, a bag redrawing, a bar moving - and throwing the
+    -- answer away on each of them meant recomputing it on each of them.
+    if assigned then
+        VERDICT[texture] = nil
+        -- The game has just changed the picture, so the answer to "whose
+        -- artwork" has gone stale along with it.
+        ART_MEMO[texture] = nil
+    end
 
     local at = INDEX[texture]
 
@@ -4364,7 +4404,7 @@ end
 -- that is none of ours, and the player sees a failure of an addon of the game's
 -- rather than ours. So everything we do in answer to somebody else's repainting
 -- goes through a protected call.
-function watchHandler(texture)
+function watchHandler(texture, assigned)
     -- Counted here rather than inside gameRecolored: what is asked is whether
     -- the watcher HEARS at all, and gameRecolored turns away early on guards
     -- of its own. A count taken past them would answer a different question
@@ -4388,7 +4428,10 @@ function watchHandler(texture)
     local fought = CONTESTED[texture]
     if fought ~= nil and fought > CONTESTED_MAX then return end
 
-    pcall(gameRecolored, texture)
+    -- Nothing says otherwise means the shared table called us, and that
+    -- table carries only the two methods that assign a picture.
+    if assigned == nil then assigned = true end
+    pcall(gameRecolored, texture, assigned)
 end
 
 --- Place the watcher of other people's repaintings.

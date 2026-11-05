@@ -1685,3 +1685,81 @@ do
     _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: a colour written over us does not make us think again")
+
+-- Working out whether a picture is framing or contents costs half a dozen
+-- protected calls, and the answer is remembered. It has to be forgotten when
+-- the game gives the picture a new image - a list row handed out of a pool
+-- is a different thing from one moment to the next.
+--
+-- A colour written over a picture changes no such thing, and colours are
+-- written in floods: experience ticking, a bag redrawing, a bar moving.
+-- Forgetting the answer on each of those meant working it out again on each
+-- of those.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedTimer, savedHook, savedShow, savedCreate =
+        _G.C_Timer, _G.hooksecurefunc, _G.ShowUIPanel, _G.CreateFrame
+    _G.C_Timer = { After = function() end }
+    _G.ShowUIPanel = function() end
+
+    local methods = {
+        SetVertexColor = function() end,
+        SetAtlas = function() end,
+        SetTexture = function() end,
+    }
+    local installed = {}
+    _G.hooksecurefunc = function(object, method, handler)
+        if object == methods then
+            installed[method] = handler
+        elseif type(object) == "table" then
+            object["umbraHook" .. method] = handler
+        end
+    end
+    _G.CreateFrame = function()
+        return {
+            CreateTexture = function()
+                return setmetatable({}, { __index = methods })
+            end,
+        }
+    end
+
+    Late.Watch()
+
+    -- Every question the rule asks of a picture is counted.
+    local asked = 0
+    local art = { r = 1, g = 1, b = 1, a = 1 }
+    art.GetObjectType = function() return "Texture" end
+    art.GetDrawLayer = function() asked = asked + 1 return "ARTWORK" end
+    art.GetTexture = function() return 4040 end
+    function art:GetVertexColor() return self.r, self.g, self.b, self.a end
+    function art:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+
+    Late.ApplyToWindow({
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "ABarWindow" end,
+        GetRegions = function() return art end,
+        GetChildren = function() return end,
+    })
+
+    asked = 0
+    for _ = 1, 20 do fireColour(art) end
+    T.eq(asked, 0, "twenty colours cost no fresh thinking: " .. asked)
+
+    _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook
+    _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
+    fresh.Addon, fresh.flavor = nil, nil
+end

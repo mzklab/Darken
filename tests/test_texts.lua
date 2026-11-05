@@ -500,3 +500,44 @@ do
 end
 
 for i = 1, #FAKE_GLOBALS do _G[FAKE_GLOBALS[i]] = savedGlobals[i] end
+
+
+T.suite("bar text: the value stays on the bar after the cursor leaves")
+
+-- The game draws a bar's value only while the cursor is over the bar, and
+-- it hides the label inside the very function this subsystem is hooked to.
+-- Writing the text and stopping there leaves a correct string on a hidden
+-- label: the player sees the values on hover and nowhere else, which is the
+-- opposite of what choosing a format asks for.
+do
+    local savedAddon = ns.Addon
+    ns.Addon = { db = { profile = { texts = {
+        health = "value", position = "__native",
+    } } } }
+
+    local shown = true
+    local written = nil
+    local label = {
+        SetText = function(_, text) written = text end,
+        IsShown = function() return shown end,
+        Show = function() shown = true end,
+    }
+
+    local bar = {
+        healthbar = label,
+        TextString = label,
+        GetValue = function() return 300 end,
+        GetMinMaxValues = function() return 0, 1000 end,
+    }
+
+    ns.Texts.Role(bar, "health")
+
+    -- The game has just hidden it, as it does when the cursor leaves.
+    shown = false
+    ns.Texts.Refresh(bar)
+
+    T.ok(written ~= nil, "the value was written: " .. tostring(written))
+    T.eq(shown, true, "and the label was shown again")
+
+    ns.Addon = savedAddon
+end

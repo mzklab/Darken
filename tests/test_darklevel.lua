@@ -752,3 +752,52 @@ do
     ns.flavor = nil
     _G.UIParent, _G.ChatFrame1 = savedRoot, savedChat
 end
+
+T.suite("text keeps its colour everywhere but on parchment")
+
+-- The raising exists for one thing: dark ink chosen for a light page. A
+-- quest, a letter, a book - the game prints those dark because the
+-- parchment under them is pale, and darkening the parchment leaves them
+-- unreadable.
+--
+-- Everywhere else a colour is a statement. In a tooltip it says an item's
+-- quality, in the chat which channel a line came on, on a unit frame a
+-- class. Those were being rewritten, and each was reported in turn: the
+-- chat turning white, then the tooltips.
+do
+    ns.flavor = "vanilla"
+
+    local function label(r, g, b)
+        local text = newRegion(1)
+        text.GetObjectType = function() return "FontString" end
+        text.r, text.g, text.b = r, g, b
+        function text:GetTextColor() return self.r, self.g, self.b, 1 end
+        function text:SetTextColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+        function text:GetShadowColor() return 0, 0, 0, 0 end
+        function text:GetShadowOffset() return 0, 0 end
+        function text:SetShadowColor() end
+        function text:SetShadowOffset() end
+        return text
+    end
+
+    -- A poor item's grey name in a tooltip, and a quest's dark line.
+    local quality = label(0.24, 0.24, 0.24)
+    local quest   = label(0.10, 0.10, 0.10)
+
+    local tip  = newFrame("GameTooltip", { quality })
+    local page = newFrame("QuestFrameDetailPanel", { quest })
+
+    local savedRoot, savedTip = _G.UIParent, _G.GameTooltip
+    _G.GameTooltip = tip
+    _G.UIParent = newFrame("UIParent", {}, { tip, page })
+
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+    Darkness:ApplySettings()
+
+    T.eq(quality.r, 0.24, "the tooltip keeps the colour that says the quality")
+    T.ok(quest.r > 0.5, "while a quest's line is raised as before")
+
+    ns.Addon = nil
+    ns.flavor = nil
+    _G.UIParent, _G.GameTooltip = savedRoot, savedTip
+end

@@ -117,6 +117,31 @@ is two counts asked of the frame rather than a reading of what it
 holds. A row returning from its pool with different content is
 therefore still painted.
 
+**Text keeps its colour everywhere but on parchment.** The raising
+exists for one thing: dark ink chosen for a light page - a quest, a
+letter, a book, a trainer's list - which a darkened page leaves
+unreadable. Everywhere else a colour is a statement: an item's
+quality in a tooltip, a channel in the chat, a class on a unit frame.
+Those were being rewritten, and each was reported in turn. The rule
+is now a short closed list of where raising is wanted, rather than a
+list of exceptions that grew one complaint at a time.
+
+**Far fewer listeners.** A listener was placed on every hidden frame
+at any depth, and an interface holds thousands - every row of every
+list, every button of every pool. Each is two hooks that live for the
+session and run whenever the game shows the frame, which for a pooled
+row is continuous. They are placed near the top of a window now; what
+is deeper is given its pictures at the moment it is handed out, and
+the watcher on assignment hears exactly that.
+
+**The answer about a picture is not thrown away on every colour.**
+Working out whether a picture is framing or contents costs half a
+dozen protected calls, and the answer was forgotten whenever anything
+wrote to the picture - including a colour, which changes nothing
+about what the picture is. Colours are written in floods: experience
+ticking, a bag redrawing, a bar moving. The answer is kept now and
+forgotten only when the game gives the picture a new image.
+
 **The chat's text keeps the colour the game gave it.** The pass
 raised any dark label it met, in any window, and the chat's windows
 are walked like the rest - so a dark line in the chat was rewritten

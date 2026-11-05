@@ -453,6 +453,20 @@ end
 --
 -- @param bar table|nil the bar
 -- @return boolean whether we wrote anything
+--- Say which value a bar carries.
+--
+-- The pass records this as it meets each bar: the game's handler hands us
+-- the bar itself rather than a name, so the role has to be remembered
+-- against the object. Exposed because a check needs to set it without
+-- running the whole pass.
+--
+-- @param bar table
+-- @param role string|nil
+function Texts.Role(bar, role)
+    if type(bar) ~= "table" then return end
+    ROLE[bar] = role
+end
+
 function Texts.Refresh(bar)
     if type(bar) ~= "table" then return false end
 
@@ -480,7 +494,35 @@ function Texts.Refresh(bar)
     local text = Texts.FormatValue(current, maximum, format, settings.abbreviate)
     if text == nil then return false end
 
-    return (pcall(label.SetText, label, text))
+    local wrote = pcall(label.SetText, label, text)
+
+    -- And shown, because the game has just hidden it.
+    --
+    -- The game draws a bar's value only while the cursor is over the bar,
+    -- unless the player says otherwise in its own options. It hides the
+    -- label inside the very function this one is hooked to - so writing the
+    -- text and stopping there left a correct string on a hidden label, and
+    -- the values appeared on hover and nowhere else.
+    --
+    -- A player who has chosen a format has asked for the opposite, and that
+    -- is the whole of the setting.
+    --
+    -- Showing a region of a protected frame is forbidden in combat, so in a
+    -- fight it waits. The text itself is contents rather than visibility and
+    -- is written immediately, in a fight too.
+    if type(label.IsShown) == "function" and type(label.Show) == "function" then
+        local seen, shown = pcall(label.IsShown, label)
+        if seen and shown == false then
+            if ns.Combat and ns.Combat.InCombat and ns.Combat.InCombat() then
+                ns.Combat.Enqueue(ns.Combat.QueueFor(Texts.name), label,
+                    function() pcall(label.Show, label) end)
+            else
+                pcall(label.Show, label)
+            end
+        end
+    end
+
+    return wrote
 end
 
 --- Take a bar onto the ledger. Doing nothing to it in the process.
