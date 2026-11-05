@@ -638,6 +638,26 @@ function Texts.Refresh(bar)
     local okRange, _, maximum = pcall(bar.GetMinMaxValues, bar)
     if not okValue or not okRange then return false end
 
+    -- What a protected bar hands over is not always a number one may
+    -- compute with.
+    --
+    -- The engine gives the properties of its protected objects as secret
+    -- values: they have the type "number", they may be held and passed
+    -- anywhere, and the first comparison on one raises - inside our code,
+    -- which the player sees as an error in the addon. The author saw exactly
+    -- that, out of the player frame's own update:
+    --
+    --   Core/Format.lua:73: attempt to compare local 'value' (a secret
+    --   number value, while execution tainted by 'Darken')
+    --
+    -- There is one door in this addon for that question and this is it. A
+    -- value that cannot be computed with means the label is left exactly as
+    -- the game wrote it, which is the right answer: the game knows the
+    -- number and we do not.
+    current = ns.Skin.Numeric(current)
+    maximum = ns.Skin.Numeric(maximum)
+    if current == nil or maximum == nil then return false end
+
     local text = Texts.FormatValue(current, maximum, format, settings.abbreviate)
     if text == nil then return false end
 

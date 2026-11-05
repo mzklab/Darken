@@ -731,3 +731,48 @@ do
 
     ns.Compat = savedCompat
 end
+
+T.suite("bar text: a value the engine keeps secret is left alone")
+
+-- The engine hands the properties of its protected objects over as secret
+-- values. They have the type "number", they may be held and passed anywhere,
+-- and the first comparison on one raises - inside our code, which the player
+-- sees as a failure of the addon. The author saw it out of the player
+-- frame's own update:
+--
+--   Core/Format.lua:73: attempt to compare local 'value' (a secret number
+--   value, while execution tainted by 'Darken')
+--
+-- A type check walks straight past the only case it would be written for, so
+-- the question goes to the one door the addon has for it (ns.Skin.Numeric),
+-- and a value that cannot be computed with leaves the label as the game
+-- wrote it.
+do
+    combat = false
+    withSettings({
+        health = "value", power = NATIVE,
+        abbreviate = false, position = TX.NATIVE,
+    })
+
+    local label = { written = nil }
+    function label:SetText(value) self.written = value end
+    function label:IsShown() return true end
+    function label:Show() end
+
+    -- A bar whose value raises on the first arithmetic, exactly as a secret
+    -- number does.
+    local secret = setmetatable({}, {
+        __mul = function() error("attempt to compare a secret value") end,
+        __lt = function() error("attempt to compare a secret value") end,
+    })
+
+    local bar = { TextString = label }
+    function bar:GetValue() return secret end
+    function bar:GetMinMaxValues() return 0, secret end
+
+    TX.Role(bar, "health")
+    local ok, raised = pcall(TX.Refresh, bar)
+    T.ok(ok, "the subsystem does not raise on a secret value")
+    T.eq(raised, false, "and says it wrote nothing")
+    T.eq(label.written, nil, "the label is left as the game wrote it")
+end
