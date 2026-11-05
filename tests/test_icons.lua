@@ -459,3 +459,74 @@ do
     _G.GetMinimapShape = savedShape
     ns.Compat = savedCompat
 end
+
+T.suite("icons: another addon's buttons get the same treatment")
+
+-- The icon settings work from the compatibility layer's groups, and those
+-- name the game's own bars. A player whose bars are built by another addon
+-- had none of his buttons among them: the outline, the trimming and the
+-- shade reached not one icon he could see, so the settings were on and the
+-- screen did not change.
+do
+    local Icons = ns.Icons
+
+    local savedCompat = ns.Compat
+    local savedAddon = ns.Addon
+    ns.Addon = { db = { profile = { icons = {
+        border = true, crop = true, shadow = false, dim = false,
+        minimap = false, square = false,
+    } } } }
+
+    local icon = {
+        SetTexCoord = function(self, ...) self.coords = { ... } end,
+        GetTexCoord = function(self) return 0, 0, 0, 1, 1, 0, 1, 1 end,
+        SetMask = function() end,
+        GetVertexColor = function() return 1, 1, 1 end,
+        SetVertexColor = function() end,
+    }
+
+    local made = {}
+    local button = {
+        icon = icon,
+        GetName = function() return "RackBar_main_1" end,
+        GetObjectType = function() return "CheckButton" end,
+        CreateTexture = function()
+            local t = {
+                SetColorTexture = function() end,
+                SetDrawLayer = function() end,
+                SetPoint = function() end,
+                SetSize = function() end,
+                Show = function() end, Hide = function() end,
+                SetShown = function() end,
+            }
+            made[#made + 1] = t
+            return t
+        end,
+        GetNormalTexture = function() return nil end,
+        SetNormalTexture = function() end,
+    }
+
+    ns.Compat = {
+        Resolve = function() return {}, {} end,
+        ResolveFunction = function(group)
+            if group == "addon-loaded" then
+                return function(name) return name == "Rack" end
+            end
+            return nil
+        end,
+        ResolveAddonButtons = function(_, loaded)
+            if not loaded("Rack") then return {}, {} end
+            return { "RackBar_main_1" }, { button }
+        end,
+    }
+
+    Icons:ApplySettings()
+
+    -- The trimming is the half of the treatment that needs nothing from the
+    -- button but its icon, so it is the half this check can state plainly:
+    -- the button was reached at all, which it never was before.
+    T.ok(icon.coords ~= nil, "their button's icon was trimmed")
+
+    ns.Compat = savedCompat
+    ns.Addon = savedAddon
+end

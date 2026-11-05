@@ -1400,6 +1400,69 @@ for addon, built in pairs(CHROME_ADDON_SERIES) do
     end
 end
 
+-- The action buttons of the addons whose bars this client may be using.
+--
+-- The icon settings - the outline, the trimming, the shade - work from the
+-- compatibility layer's groups, and those name the game's own bars. A
+-- player whose bars are built by another addon has none of his buttons in
+-- them, so none of those settings reached a single icon he could see.
+--
+-- The names are read from each addon's own source and the shape is theirs:
+-- a prefix and a number, or a prefix, a bar's key and a number.
+local ADDON_BUTTONS = {
+    ["Bartender4"] = (function()
+        local out = {}
+        for i = 1, 120 do out[#out + 1] = "BT4Button" .. i end
+        for i = 1, 12 do out[#out + 1] = "BT4PetButton" .. i end
+        for i = 1, 12 do out[#out + 1] = "BT4StanceButton" .. i end
+        return out
+    end)(),
+
+    ["Rack"] = (function()
+        local keys = { "main", "bottomleft", "bottomright", "right", "left",
+            "pet", "stance" }
+        local out = {}
+        for i = 1, #keys do
+            for n = 1, 12 do
+                out[#out + 1] = "RackBar_" .. keys[i] .. "_" .. n
+            end
+        end
+        for n = 1, 12 do out[#out + 1] = "RackFlyoutButton" .. n end
+        return out
+    end)(),
+}
+
+--- The action buttons of the supported addons that are loaded right now.
+--
+-- Loaded rather than installed, and existing rather than named: a bar the
+-- player has not switched on contributes nothing.
+--
+-- @param globals table|nil the globals table; _G when absent
+-- @param loaded function|nil the client's "is this addon loaded"
+-- @return table array of names
+-- @return table array of objects
+function Compat.ResolveAddonButtons(globals, loaded)
+    local where = type(globals) == "table" and globals or _G
+    local names, objects = {}, {}
+
+    if type(loaded) ~= "function" then return names, objects end
+
+    for addon, list in pairs(ADDON_BUTTONS) do
+        local ok, yes = pcall(loaded, addon)
+        if ok and yes then
+            for i = 1, #list do
+                local object = Compat.Lookup(where, list[i])
+                if type(object) == "table" then
+                    names[#names + 1] = list[i]
+                    objects[#objects + 1] = object
+                end
+            end
+        end
+    end
+
+    return names, objects
+end
+
 --- Whether this addon is one the layer knows the windows of.
 --
 -- The question the dimming puts before it goes into somebody else's window.

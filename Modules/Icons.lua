@@ -873,20 +873,44 @@ function Icons.Paint(border, crop, shadow, round, dim)
         end
     end
 
+    --- Outline, trim and shade one button.
+    local function dress(button)
+        local icon = Icons.IconOf(button)
+        local painted = frame(button, border)
+        local cropped = Icons.Crop(icon, crop)
+        if Icons.Tint(icon, dim) and dim < 1 then
+            counters.tinted = counters.tinted + 1
+        end
+        if painted then counters.framed = counters.framed + 1 end
+        if cropped then counters.cropped = counters.cropped + 1 end
+        if painted or cropped then touched = touched + 1 end
+    end
+
     for i = 1, #GROUPS do
         local ok, names, objects = pcall(ns.Compat.Resolve, GROUPS[i])
         if ok and type(objects) == "table" then
-            for j = 1, #objects do
-                local button = objects[j]
-                local icon = Icons.IconOf(button)
-                local painted = frame(button, border)
-                local cropped = Icons.Crop(icon, crop)
-                if Icons.Tint(icon, dim) and dim < 1 then
-                    counters.tinted = counters.tinted + 1
-                end
-                if painted then counters.framed = counters.framed + 1 end
-                if cropped then counters.cropped = counters.cropped + 1 end
-                if painted or cropped then touched = touched + 1 end
+            for j = 1, #objects do dress(objects[j]) end
+        end
+    end
+
+    -- The bars of another addon, when the player uses one.
+    --
+    -- The groups above name the game's own bars. A player whose bars are
+    -- built elsewhere had none of his buttons among them, so the outline,
+    -- the trimming and the shade reached not one icon he could see - the
+    -- settings were on and the screen did not change.
+    --
+    -- Only addons the compatibility layer knows by name, and only while
+    -- the client reports them as loaded: the same two conditions under
+    -- which their windows are darkened at all.
+    if type(ns.Compat.ResolveAddonButtons) == "function"
+        and type(ns.Compat.ResolveFunction) == "function" then
+        local got, isLoaded = pcall(ns.Compat.ResolveFunction, "addon-loaded")
+        if got and type(isLoaded) == "function" then
+            local fine, names, objects =
+                pcall(ns.Compat.ResolveAddonButtons, nil, isLoaded)
+            if fine and type(objects) == "table" then
+                for j = 1, #objects do dress(objects[j]) end
             end
         end
     end
