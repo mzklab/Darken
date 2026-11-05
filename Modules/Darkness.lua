@@ -4149,6 +4149,48 @@ local churnBounded = 0
 -- what it would have got as a list row all along.
 local WINDOW_WALKS = 3
 
+-- The ceiling that does not depend on being clever: how many milliseconds of
+-- walking a second may hold.
+--
+-- Every rule above this one is a judgement about which showings deserve a
+-- walk, and a judgement can be wrong - two of them were, inside an hour, and
+-- the author paid for both in frames. This one is not a judgement. Whatever
+-- the rules decide, the walk started from a showing stops being started once
+-- the walking done in the last second passes this, and the top layer answers
+-- instead until the second is out.
+--
+-- Ten milliseconds against the ninety the author measured, and against the
+-- one thousand a second the game has. A window being opened is not refused:
+-- that is the one case the player is looking straight at, it is rare, and it
+-- is the whole reason the walk exists.
+--
+-- One table rather than three names: the file's main chunk is within a
+-- handful of locals of the two hundred Lua allows it, and a ceiling that
+-- cost three of them would have been paid for by something else.
+local walking = { budget = 10, spent = 0, since = nil }
+
+--- Record what a slice of walking cost.
+-- @param spent number milliseconds
+function Darkness.SpendWalk(spent)
+    local now = nowMs()
+    if now == nil or type(spent) ~= "number" then return end
+
+    if walking.since == nil or (now - walking.since) >= 1000 then
+        walking.since = now
+        walking.spent = 0
+    end
+    walking.spent = walking.spent + spent
+end
+
+--- How much walking the second now running has already cost.
+-- @return number milliseconds
+function Darkness.WalkSpent()
+    local now = nowMs()
+    if now == nil or walking.since == nil then return 0 end
+    if (now - walking.since) >= 1000 then return 0 end
+    return walking.spent
+end
+
 -- The ceiling over all of it, fruitful walks included.
 --
 -- A frame that yields something new on every single showing is not a window
@@ -4799,6 +4841,8 @@ function Darkness.Drain()
     if spent ~= nil then
         local store = Store()
         if store ~= nil then
+            Darkness.SpendWalk(spent)
+
             local cost = store.cost
             cost.slices = cost.slices + 1
             cost.total = cost.total + spent
@@ -6804,8 +6848,11 @@ function Darkness.WindowShown(frame, opened)
             all = WALKED_ALL[frame] or 0
         end
 
+        local affordable = Darkness.WalkSpent() < walking.budget
+
         if opened == true
-            or (times < WINDOW_WALKS and all < WINDOW_WALKS_MAX) then
+            or (affordable and times < WINDOW_WALKS
+                and all < WINDOW_WALKS_MAX) then
             WALKED_GEN[frame] = generation
             WALKED_ALL[frame] = all + 1
             churnWindows = churnWindows + 1

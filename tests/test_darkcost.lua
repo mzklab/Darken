@@ -657,3 +657,56 @@ do
 
     Darkness.ApplyToWindow = saved
 end
+
+T.suite("the darkness: a ceiling on walking that does not depend on judgement")
+
+-- Every rule about which showings deserve a walk is a judgement, and two of
+-- them were wrong inside one hour, each paid for in the author's frames.
+-- This one is not a judgement: whatever the rules decide, once the walking
+-- done in the last second passes the ceiling, a showing gets the top layer
+-- and nothing more until the second is out.
+do
+    local clock = 5000
+    local savedClock = _G.debugprofilestop
+    _G.debugprofilestop = function() return clock end
+
+    local walked = 0
+    local saved = Darkness.ApplyToWindow
+    Darkness.ApplyToWindow = function() walked = walked + 1 end
+
+    local frame = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "BudgetWindow" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    T.eq(Darkness.WalkSpent(), 0, "a fresh second has nothing spent in it")
+
+    -- Nine milliseconds of walking: still under.
+    Darkness.SpendWalk(9)
+    T.eq(Darkness.WalkSpent(), 9, "what was spent is counted")
+    Darkness.WindowShown(frame)
+    T.eq(walked, 1, "and a showing is still walked")
+
+    -- Past the ceiling: the showings door closes.
+    Darkness.SpendWalk(5)
+    walked = 0
+    for _ = 1, 10 do Darkness.WindowShown(frame) end
+    T.eq(walked, 0, "past the ceiling a showing gets the top layer only")
+
+    -- A window the player opens is never refused: it is rare, he is looking
+    -- straight at it, and it is the whole reason the walk exists.
+    Darkness.WindowShown(frame, true)
+    T.eq(walked, 1, "an opening is walked even then")
+
+    -- And the second runs out.
+    clock = clock + 1100
+    T.eq(Darkness.WalkSpent(), 0, "the next second starts clean")
+    Darkness.WindowShown(frame)
+    T.eq(walked, 2, "and showings are walked again")
+
+    _G.debugprofilestop = savedClock
+    Darkness.ApplyToWindow = saved
+end
