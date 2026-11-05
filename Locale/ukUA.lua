@@ -531,8 +531,6 @@ ns.RegisterLocale("ukUA", {
         .. "вікні налаштувань каже чому і пропонує повторити.",
     ["the dimming subsystem is not loaded"] =
         "підсистему затемнення не завантажено",
-    ["the bar text subsystem is not loaded"] =
-        "підсистему текстів на смужках не завантажено",
     ["measuring from now - walk about for ten seconds or so and "
         .. "type /dark cost again"] =
         "міряю з цієї миті - побігай секунд десять і набери /dark cost знову",
@@ -774,32 +772,8 @@ ns.RegisterLocale("ukUA", {
     -- Тексты на полосках (Modules/Texts.lua).
     ["Bar Text"] = "Тексти на смужках",
     ["Health Bar Value"] = "Значення на смужці здоров’я",
-    ["What the health bar says. The first entry leaves the text to the "
-        .. "game, including the game's own setting for whether to show it "
-        .. "at all. Any other choice shows the text even when the game "
-        .. "would hide it - that is what choosing a format means."] =
-        "Що написано на смужці здоров’я. Перший рядок лишає підпис грі — "
-        .. "разом із її власним налаштуванням, чи показувати значення "
-        .. "взагалі. Будь-який інший вибір показує напис навіть там, де гра "
-        .. "сховала б його: вибір формату означає саме це.",
-    ["Power Bar Value"] = "Значення на смужці ресурсу",
-    ["Mana, rage, energy. The first entry leaves the text to the game."] =
-        "Мана, лють, енергія. Перший рядок лишає підпис грі.",
-    ["Shorten Large Numbers"] = "Скорочувати великі числа",
-    ["Writes 12400 as 12.4k and 2500000 as 2.5m. Off by default, "
-        .. "because the game writes numbers in full."] =
-        "Пише 12400 як 12.4k, а 2500000 як 2.5m. Типово вимкнено: гра пише "
-        .. "числа повністю.",
-    ["Value Position"] = "Положення значення",
-    ["Where the value sits on the bar. Moving text on a unit frame is a "
-        .. "protected operation: a change made in combat is applied as soon "
-        .. "as combat ends. The format itself is not protected and applies "
-        .. "immediately, in combat as well."] =
-        "Де стоїть значення на смужці. Переміщення напису на юнітфреймі — "
-        .. "захищена движком операція: зміна, зроблена в бою, "
-        .. "застосовується одразу після виходу з бою. Сам формат захищеним "
-        .. "не є та застосовується негайно, зокрема в бою.",
-    ["Game's Own Bar Text"] = "Рідне значення гри",
+        ["Power Bar Value"] = "Значення на смужці ресурсу",
+                        ["Game's Own Bar Text"] = "Рідне значення гри",
     ["Number"] = "Число",
     ["Percent"] = "Відсоток",
     ["Number and Percent"] = "Число та відсоток",
@@ -1389,7 +1363,6 @@ ns.RegisterLocale("ukUA", {
     ["Leave Vehicle Button"] = "Кнопка виходу з транспорту",
     ["Name and Size"] = "Ім'я та розмір",
     ["Nameplates The Game Showed"] = "Неймплейтів показала гра",
-    ["Names This Client Does Not Have"] = "Імен, яких немає в цього клієнта",
     ["New Profile"] = "Новий профіль",
     ["Objects The Game Keeps To Itself"] = "Об'єктів гра лишила собі",
     ["Only used while the switch above is on."] =
@@ -1442,8 +1415,7 @@ ns.RegisterLocale("ukUA", {
     ["Tapped Mobs Greyed"] = "Чужа здобич блякне",
     ["Target"] = "Ціль",
     ["Target of Target"] = "Ціль цілі",
-    ["Text Position"] = "Місце тексту",
-    ["The bars the game draws over heads. The first entry in every list is the game's own look."] =
+        ["The bars the game draws over heads. The first entry in every list is the game's own look."] =
         "Смуги, які гра малює над головами. Перший запис у кожному списку — " ..
         "рідний вигляд гри.",
     ["The font for this group of elements. The first entry follows the global tab."] =
@@ -1474,9 +1446,7 @@ ns.RegisterLocale("ukUA", {
     ["The outline for this group. The first entry follows the global tab."] =
         "Обведення для цієї групи. Перший запис означає «як на спільній " ..
         "вкладці».",
-    ["The same choice for the power bar."] =
-        "Той самий вибір для смуги ресурсу.",
-    ["The texture the health bar is drawn with. The first entry leaves the game's own."] =
+        ["The texture the health bar is drawn with. The first entry leaves the game's own."] =
         "Текстура, якою намальована смуга здоров'я. Перший запис лишає " ..
         "рідну ігрову.",
     ["The texture the power bar is drawn with. The first entry leaves the game's own."] =
@@ -1492,10 +1462,7 @@ ns.RegisterLocale("ukUA", {
         "Наберіть тут ім'я і натисніть одну з кнопок нижче.",
     ["Unit Name Color"] = "Колір імені юніта",
     ["Unit Name Fixed Color"] = "Власний колір імені юніта",
-    ["What the health bar says: nothing, the current value, the value and the maximum, or a percentage."] =
-        "Що написано на смузі здоров'я: нічого, поточне значення, значення " ..
-        "і межа або відсотки.",
-    ["What the health bar's colour means: the game's own rule, the class of whoever it belongs to, or one colour you pick."] =
+        ["What the health bar's colour means: the game's own rule, the class of whoever it belongs to, or one colour you pick."] =
         "Що означає колір смуги здоров'я: рідне правило гри, клас того, " ..
         "кому вона належить, або один обраний вами колір.",
     ["What the power bar's colour means: the game's own rule by power type, or one colour you pick."] =
@@ -1504,17 +1471,22 @@ ns.RegisterLocale("ukUA", {
     ["What the unit's name is coloured by: the game's own rule, the unit's class, or one colour you pick."] =
         "Чим пофарбоване ім'я юніта: рідним правилом гри, класом юніта або " ..
         "одним обраним вами кольором.",
-    ["Where on the bar the number stands."] = "Де на смузі стоїть число.",
-    ["While this is off, not one number is forced on the game: a party member keeps the size the game gave it, and the real native numbers are read before the first change of ours and put back when this goes off again."] =
+        ["While this is off, not one number is forced on the game: a party member keeps the size the game gave it, and the real native numbers are read before the first change of ours and put back when this goes off again."] =
         "Поки це вимкнено, грі не нав'язується жодного числа: член групи " ..
         "зберігає розмір, який дала йому гра, а справжні рідні числа " ..
         "зчитуються до першої нашої правки й повертаються, коли це " ..
         "вимикають знову.",
     ["World Map"] = "Мапа світу",
-    ["Write thousands as a short form instead of every digit."] =
-        "Писати тисячі скорочено, а не кожною цифрою.",
-    ["module \"%s\" brings an options section, and this version does not draw one: the settings window builds its pages from the schema instead. The module works; its settings are simply not shown."] =
+        ["module \"%s\" brings an options section, and this version does not draw one: the settings window builds its pages from the schema instead. The module works; its settings are simply not shown."] =
         "модуль «%s» приніс розділ налаштувань, а ця версія дерева " ..
         "налаштувань не малює: вікно збирає свої сторінки зі схеми. Сам " ..
         "модуль працює; просто його налаштувань не видно.",
+    ["What the bars say. The game's own setting is turned on and given this shape; both puts the percentage at the left end of the bar and the number at the right. One shape goes to every bar the game draws."] =
+        "Що написано на смужках. Вмикається рідне налаштування гри й йому задається ця форма; «число і відсоток» ставить відсоток біля лівого краю смужки, а число біля правого. Форма одна на всі смужки, які малює гра.",
+    ["Used when the health bar is left to the game: the game has one setting for every bar it draws."] =
+        "Використовується, коли смужку здоров'я залишено грі: у гри одне налаштування на всі смужки, які вона малює.",
+    ["What the bars say. The first entry leaves it to the game. Any other turns the game's own bar text on and chooses its shape - number, percentage, or both, which puts the percentage at the left end of the bar and the number at the right. The game shows one shape on every bar it draws, so this choice decides for the resource bar as well."] =
+        "Що написано на смужках. Перший пункт залишає це грі. Будь-який інший вмикає рідний текст гри на смужках і обирає його форму: число, відсоток або і те й те — тоді відсоток стоїть біля лівого краю смужки, а число біля правого. Гра показує одну форму на всіх смужках, тож цей вибір вирішує і за смужку ресурсу.",
+    ["Mana, rage, energy. The game has one setting for every bar, so this one is used when the health bar is left to the game."] =
+        "Мана, лють, енергія. У гри одне налаштування на всі смужки, тому це використовується, коли смужку здоров'я залишено грі.",
 })

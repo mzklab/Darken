@@ -726,28 +726,6 @@ function Addon:HandleCommand(input)
         return
     end
 
-    if cmd == "bars" then
-        -- Why the numbers on the health and power bars are missing.
-        --
-        -- Three answers from the client stand behind that text, all three
-        -- differ between builds, and a missing one of any kind looks the same
-        -- on screen: an empty bar with a format chosen. So each is reported
-        -- separately - where the frame keeps its bar, where the bar keeps its
-        -- text object, and which of the game's writing functions this client
-        -- has.
-        --
-        -- It reads and writes nothing to the interface.
-        local texts = ns.Registry and ns.Registry:Get("texts") or ns.Texts
-        if type(texts) ~= "table" or type(texts.Diagnose) ~= "function" then
-            self:Print(ns.Localize("the bar text subsystem is not loaded"))
-            return
-        end
-
-        local lines = texts.Diagnose(_G)
-        for i = 1, #lines do self:Print(lines[i]) end
-        return
-    end
-
     if cmd == "scan" then
         if rest == "" then
             self:Print(ns.Localize(

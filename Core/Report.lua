@@ -99,10 +99,6 @@ Report.HOOKS        = "hooks"        -- game functions for hooksecurefunc
 local CONSEQUENCE = {
     unitframe = { label = "Unit Frames", kind = Report.REQUIRED },
     ["unitframe-recolor"] = { label = "Unit Frames", kind = Report.HOOKS },
-    ["bar-text-write"] = { label = "Bar Text", kind = Report.HOOKS },
-    ["player-health-bar-text-host"] = {
-        label = "Bar Text", kind = Report.ALTERNATIVES,
-    },
     ["unitframe-auras"] = {
         label = "Auras on Unit Frames", kind = Report.SERIES,
         later = "the game makes these buttons only when the unit has auras: "
@@ -180,12 +176,6 @@ local CONSEQUENCE = {
     },
     ["secure-variable"] = {
         label = "Other Addons' Windows", kind = Report.ALTERNATIVES,
-    },
-    ["player-health-bar"] = {
-        label = "Bar Text", kind = Report.ALTERNATIVES,
-    },
-    ["player-power-bar"] = {
-        label = "Bar Text", kind = Report.ALTERNATIVES,
     },
     ["never-paint"] = {
         label = "Interface Darkness", kind = Report.ALTERNATIVES,

@@ -525,8 +525,6 @@ ns.RegisterLocale("ruRU", {
         .. "раздел в окне настроек говорит почему и предлагает повторить.",
     ["the dimming subsystem is not loaded"] =
         "подсистема затемнения не загружена",
-    ["the bar text subsystem is not loaded"] =
-        "подсистема текстов на полосках не загружена",
     ["measuring from now - walk about for ten seconds or so and "
         .. "type /dark cost again"] =
         "замеряю с этого момента - побегай секунд десять и набери /dark cost снова",
@@ -772,32 +770,8 @@ ns.RegisterLocale("ruRU", {
     -- Тексты на полосках (Modules/Texts.lua).
     ["Bar Text"] = "Тексты на полосках",
     ["Health Bar Value"] = "Значение на полоске здоровья",
-    ["What the health bar says. The first entry leaves the text to the "
-        .. "game, including the game's own setting for whether to show it "
-        .. "at all. Any other choice shows the text even when the game "
-        .. "would hide it - that is what choosing a format means."] =
-        "Что написано на полоске здоровья. Первая строка оставляет подпись "
-        .. "игре — вместе с её собственной настройкой, показывать ли "
-        .. "значения вообще. Любой другой выбор показывает надпись даже там, "
-        .. "где игра её спрятала бы: выбор формата означает именно это.",
-    ["Power Bar Value"] = "Значение на полоске ресурса",
-    ["Mana, rage, energy. The first entry leaves the text to the game."] =
-        "Мана, ярость, энергия. Первая строка оставляет подпись игре.",
-    ["Shorten Large Numbers"] = "Сокращать крупные числа",
-    ["Writes 12400 as 12.4k and 2500000 as 2.5m. Off by default, "
-        .. "because the game writes numbers in full."] =
-        "Пишет 12400 как 12.4k, а 2500000 как 2.5m. По умолчанию выключено: "
-        .. "игра пишет числа целиком.",
-    ["Value Position"] = "Положение значения",
-    ["Where the value sits on the bar. Moving text on a unit frame is a "
-        .. "protected operation: a change made in combat is applied as soon "
-        .. "as combat ends. The format itself is not protected and applies "
-        .. "immediately, in combat as well."] =
-        "Где стоит значение на полоске. Перемещение надписи на юнитфрейме — "
-        .. "защищённая движком операция: изменение, сделанное в бою, "
-        .. "применяется сразу после выхода из боя. Сам формат защищённым не "
-        .. "является и применяется немедленно, в том числе в бою.",
-    ["Game's Own Bar Text"] = "Родное значение игры",
+        ["Power Bar Value"] = "Значение на полоске ресурса",
+                        ["Game's Own Bar Text"] = "Родное значение игры",
     ["Number"] = "Число",
     ["Percent"] = "Процент",
     ["Number and Percent"] = "Число и процент",
@@ -1377,7 +1351,6 @@ ns.RegisterLocale("ruRU", {
     ["Leave Vehicle Button"] = "Кнопка выхода из транспорта",
     ["Name and Size"] = "Имя и размер",
     ["Nameplates The Game Showed"] = "Неймплейтов показала игра",
-    ["Names This Client Does Not Have"] = "Имён, которых нет у этого клиента",
     ["New Profile"] = "Новый профиль",
     ["Objects The Game Keeps To Itself"] = "Объектов игра оставила себе",
     ["Only used while the switch above is on."] =
@@ -1430,8 +1403,7 @@ ns.RegisterLocale("ruRU", {
     ["Tapped Mobs Greyed"] = "Чужая добыча блёкнет",
     ["Target"] = "Цель",
     ["Target of Target"] = "Цель цели",
-    ["Text Position"] = "Место текста",
-    ["The bars the game draws over heads. The first entry in every list is the game's own look."] =
+        ["The bars the game draws over heads. The first entry in every list is the game's own look."] =
         "Полосы, которые игра рисует над головами. Первая запись в каждом " ..
         "списке — родной вид игры.",
     ["The font for this group of elements. The first entry follows the global tab."] =
@@ -1462,9 +1434,7 @@ ns.RegisterLocale("ruRU", {
     ["The outline for this group. The first entry follows the global tab."] =
         "Обводка для этой группы. Первая запись означает «как на общей " ..
         "вкладке».",
-    ["The same choice for the power bar."] =
-        "Тот же выбор для полосы ресурса.",
-    ["The texture the health bar is drawn with. The first entry leaves the game's own."] =
+        ["The texture the health bar is drawn with. The first entry leaves the game's own."] =
         "Текстура, которой нарисована полоса здоровья. Первая запись " ..
         "оставляет родную игровую.",
     ["The texture the power bar is drawn with. The first entry leaves the game's own."] =
@@ -1480,10 +1450,7 @@ ns.RegisterLocale("ruRU", {
         "Наберите здесь имя и нажмите одну из кнопок ниже.",
     ["Unit Name Color"] = "Цвет имени юнита",
     ["Unit Name Fixed Color"] = "Свой цвет имени юнита",
-    ["What the health bar says: nothing, the current value, the value and the maximum, or a percentage."] =
-        "Что написано на полосе здоровья: ничего, текущее значение, " ..
-        "значение и предел или проценты.",
-    ["What the health bar's colour means: the game's own rule, the class of whoever it belongs to, or one colour you pick."] =
+        ["What the health bar's colour means: the game's own rule, the class of whoever it belongs to, or one colour you pick."] =
         "Что означает цвет полосы здоровья: родное правило игры, класс " ..
         "того, кому она принадлежит, или один выбранный вами цвет.",
     ["What the power bar's colour means: the game's own rule by power type, or one colour you pick."] =
@@ -1492,17 +1459,22 @@ ns.RegisterLocale("ruRU", {
     ["What the unit's name is coloured by: the game's own rule, the unit's class, or one colour you pick."] =
         "Чем покрашено имя юнита: родным правилом игры, классом юнита или " ..
         "одним выбранным вами цветом.",
-    ["Where on the bar the number stands."] = "Где на полосе стоит число.",
-    ["While this is off, not one number is forced on the game: a party member keeps the size the game gave it, and the real native numbers are read before the first change of ours and put back when this goes off again."] =
+        ["While this is off, not one number is forced on the game: a party member keeps the size the game gave it, and the real native numbers are read before the first change of ours and put back when this goes off again."] =
         "Пока это выключено, игре не навязывается ни одного числа: член " ..
         "группы сохраняет размер, который дала ему игра, а настоящие родные " ..
         "числа считываются до первой нашей правки и возвращаются, когда это " ..
         "выключают снова.",
     ["World Map"] = "Карта мира",
-    ["Write thousands as a short form instead of every digit."] =
-        "Писать тысячи сокращённо, а не каждой цифрой.",
-    ["module \"%s\" brings an options section, and this version does not draw one: the settings window builds its pages from the schema instead. The module works; its settings are simply not shown."] =
+        ["module \"%s\" brings an options section, and this version does not draw one: the settings window builds its pages from the schema instead. The module works; its settings are simply not shown."] =
         "модуль «%s» принёс раздел настроек, а эта версия дерева настроек " ..
         "не рисует: окно собирает свои страницы из схемы. Сам модуль " ..
         "работает; просто его настроек не видно.",
+    ["What the bars say. The game's own setting is turned on and given this shape; both puts the percentage at the left end of the bar and the number at the right. One shape goes to every bar the game draws."] =
+        "Что написано на полосках. Включается родная настройка игры и ей задаётся эта форма; «число и процент» ставит процент у левого края полоски, а число у правого. Форма одна на все полоски, которые рисует игра.",
+    ["Used when the health bar is left to the game: the game has one setting for every bar it draws."] =
+        "Используется, когда полоска здоровья оставлена игре: у игры одна настройка на все полоски, которые она рисует.",
+    ["What the bars say. The first entry leaves it to the game. Any other turns the game's own bar text on and chooses its shape - number, percentage, or both, which puts the percentage at the left end of the bar and the number at the right. The game shows one shape on every bar it draws, so this choice decides for the resource bar as well."] =
+        "Что написано на полосках. Первый пункт оставляет это игре. Любой другой включает родной текст игры на полосках и выбирает его форму: число, процент или и то и другое — тогда процент стоит у левого края полоски, а число у правого. Игра показывает одну форму на всех полосках, так что этот выбор решает и за полоску ресурса.",
+    ["Mana, rage, energy. The game has one setting for every bar, so this one is used when the health bar is left to the game."] =
+        "Мана, ярость, энергия. У игры одна настройка на все полоски, поэтому эта используется, когда полоска здоровья оставлена игре.",
 })

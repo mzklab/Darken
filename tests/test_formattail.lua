@@ -478,41 +478,12 @@ local function skinWith(edge)
     }
 end
 
--- 5a. The bar labels (Modules/Texts.lua)
-do
-    local ns = helpers.newNamespace()
-    helpers.loadAddonFile("Core/Skin.lua", ns)
-    helpers.loadAddonFile("Core/Compat.lua", ns)
-    helpers.loadAddonFile("Core/Locale.lua", ns)
-    helpers.loadAddonFile("Core/Registry.lua", ns)
-    helpers.loadAddonFile("Core/Events.lua", ns)
-    helpers.loadAddonFile("Core/Combat.lua", ns)
-
-    local savedLibStub = LibStub
-    LibStub = function() return nil end
-    helpers.loadAddonFile("Modules/Fonts.lua", ns)
-    helpers.loadAddonFile("Modules/UnitFrames.lua", ns)
-    helpers.loadAddonFile("Core/Format.lua", ns)
-    helpers.loadAddonFile("Modules/Texts.lua", ns)
-    LibStub = savedLibStub
-
-    local _, _, left = ns.Texts.Anchor("left")
-    local _, _, right = ns.Texts.Anchor("right")
-
-    T.eq(left, ns.Skin.Metrics.edge, "the label on the left is pushed by the scale inset")
-    T.eq(right, -ns.Skin.Metrics.edge, "and on the right by the same with a minus")
-    T.eq(left, -right, "that is they share one number, and the sign is the side")
-
-    -- Editing the scale moves the label: the magnitude is asked for on the
-    -- spot rather than remembered when the file is read.
-    ns.Skin.Metrics.edge = 7
-    local _, _, moved = ns.Texts.Anchor("left")
-    T.eq(moved, 7, "the label moves along with the scale")
-    ns.Skin.Metrics.edge = EDGE
-
-    local _, _, middle = ns.Texts.Anchor("center")
-    T.eq(middle, 0, "in the centre there is no inset at all")
-end
+-- 5a. The bar labels used to be here.
+--
+-- They anchored a label of their own on a bar, by the scale's inset like
+-- every other adopter. They anchor nothing now: the setting turns the game's
+-- own bar text on instead of writing one, so there is no label of ours on a
+-- bar to place.
 
 --- A fake font string that remembers its anchors.
 local function fontString()
@@ -679,16 +650,11 @@ do
     helpers.loadAddonFile("Modules/Texts.lua", ns)
     LibStub = savedLibStub
 
-    local _, _, left = ns.Texts.Anchor("left")
-    local _, _, right = ns.Texts.Anchor("right")
-    T.eq(math.abs(left), math.abs(right),
-        "the left and right edges share one number, only the sign differs")
 
     -- And none of the four adopters writes the inset as a number. What is
     -- searched for is the label anchoring itself rather than the string
     -- "edge": an inset written as a number is exactly what this whole work moves away from.
     local ADOPTED = {
-        "Modules/Texts.lua",
         "Features/NamePlates/Plate.lua",
         "Features/Auras/Icon.lua",
     }

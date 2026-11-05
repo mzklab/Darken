@@ -112,308 +112,17 @@ T.eq(TX.FormatValue(nil, nil, "value", false), "0/0", "garbage counts as zero")
 T.eq(TX.FormatValue("garbage", "garbage", "both", true), "0/0 0%",
     "and with abbreviation too")
 
-T.suite("texts: the position of the label")
-
-do
-    local point, relative, x, y = TX.Anchor("left")
-    T.eq(point, "LEFT", "left: the anchor of the label")
-    T.eq(relative, "LEFT", "left: the anchor of the bar")
-    T.ok(x > 0, "left: an inset into the bar")
-    T.eq(y, 0, "left: we do not move it vertically")
-end
-
-do
-    local point, _, x = TX.Anchor("right")
-    T.eq(point, "RIGHT", "right: the anchor of the label")
-    T.ok(x < 0, "right: an inset into the bar")
-end
-
-T.eq(TX.Anchor("center"), "CENTER", "centred")
-T.eq(TX.Anchor(TX.NATIVE), nil, "the native position is not computed")
-T.eq(TX.Anchor(nil), nil, "garbage is not computed either")
-
--- The secure hook is faked under the same name the engine calls it by.
--- What is counted is not the call but what the hook was attached to: the
--- subsystem must attach it to the bar rather than to a foreign function at random.
-local savedHook = _G.hooksecurefunc
-_G.hooksecurefunc = function(object, method, handler)
-    if type(object) == "table" and type(method) == "string" then
-        object.hooks = (object.hooks or 0) + 1
-        object.handler = handler
-        return
-    end
-    if savedHook then return savedHook(object, method, handler) end
-end
-
-T.suite("texts: applying the settings")
-
-local FAKE_GLOBALS = { "PlayerFrame", "TargetFrame", "PetFrame",
-    "InCombatLockdown" }
-local savedGlobals = {}
-for i = 1, #FAKE_GLOBALS do savedGlobals[i] = _G[FAKE_GLOBALS[i]] end
-
---- A fake font string for the value.
-local function newLabel()
-    local label = {
-        value = "",
-        point = { "CENTER", nil, "CENTER", 0, 0 },
-        shown = false,
-    }
-    function label:SetText(text) self.value = text end
-    function label:GetPoint()
-        return self.point[1], self.point[2], self.point[3],
-            self.point[4], self.point[5]
-    end
-    function label:ClearAllPoints() self.cleared = true end
-    function label:SetPoint(p, rel, rp, x, y)
-        self.point = { p, rel, rp, x or 0, y or 0 }
-    end
-    function label:Show() self.shown = true end
-    return label
-end
-
---- A fake bar with a value label.
-local function newBar(current, maximum)
-    -- A game bar: a value, a limit and the ability to accept a hook on SetValue.
-    --
-    -- Formerly the fake accepted HookScript, because the subsystem stitched
-    -- its own handler onto the bar handler. A stitched handler becomes ours
-    -- in its entirety, and from then on the engine treats as tainted every
-    -- execution passing through it -- including what the bar does by itself.
-    -- The author saw it as "attempt to compare a secret number value
-    -- (execution tainted by 'Darken')" in a game file, on the health bar he
-    -- looks at all the time.
-    --
-    -- So the fake now accepts a secure hook and exactly that: HookScript on
-    -- a foreign bar is that very taint, and the check must fail if it comes
-    -- back.
-    local bar = { value = current, max = maximum, hooks = 0 }
-    bar.TextString = newLabel()
-    function bar:GetValue() return self.value end
-    function bar:GetMinMaxValues() return 0, self.max end
-    function bar:SetValue(value) self.value = value end
-    -- The own method, remembered at creation. A wrapper put onto the object
-    -- will stop matching it -- that is how the substitution shows.
-    bar.nativeSetValue = bar.SetValue
-    function bar:HookScript()
-        self.stitched = true
-    end
-    return bar
-end
-
-local function newFrame()
-    return { healthbar = newBar(4500, 9000), manabar = newBar(300, 1000) }
-end
-
-local combat = false
-InCombatLockdown = function() return combat end
-
-ns.flavor = "vanilla"
-
-local function setupFrames()
-    PlayerFrame = newFrame()
-    TargetFrame = newFrame()
-    PetFrame    = newFrame()
-end
-
-local function withSettings(settings)
-    ns.Addon = { db = { profile = { texts = settings } } }
-    return settings
-end
-
--- Out of combat everything is applied at once.
-do
-    combat = false
-    setupFrames()
-    withSettings({
-        health = "both", power = "percent",
-        abbreviate = false, position = "right",
-    })
-    TX:ApplySettings()
-
-    T.eq(PlayerFrame.healthbar.TextString.value, "4500/9000 50%",
-        "the health value is assembled")
-    T.eq(PlayerFrame.manabar.TextString.value, "30%", "the resource value is assembled")
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "RIGHT",
-        "the label was moved out of combat")
-    T.ok(PlayerFrame.healthbar.TextString.shown, "and shown")
-    -- The subsystem hangs NOTHING on the bar itself, and that is a rule, not
-    -- an omission. There were two hooks, and both were wrong:
-    --
-    --   HookScript stitches our handler and the frame handler into one, and
-    --     the whole bar handler becomes ours;
-    --   hooksecurefunc(bar, "SetValue") puts a SetValue field with our
-    --     wrapper onto the object itself -- that is a write onto a foreign frame.
-    --
-    -- The client taint log named the second one outright:
-    --
-    --   StatusBar:SetValue()
-    --   An attempt to compare a secret value was blocked because of taint
-    --   from Darken
-    --
-    -- What remains is a secure hook on the game FUNCTION that writes values
-    -- onto bars (TextStatusBar_UpdateTextString): it touches no bar at all
-    -- and instead receives the one the game has just updated.
-    T.eq(PlayerFrame.healthbar.hooks, 0,
-        "the subsystem hangs nothing on the bar itself")
-    T.eq(PlayerFrame.healthbar.stitched, nil, "and stitches no handlers")
-    T.eq(PlayerFrame.healthbar.SetValue, PlayerFrame.healthbar.nativeSetValue,
-        "and the bar method stayed its own, not wrapped in ours")
-    T.eq(TargetFrame.healthbar.TextString.value, "4500/9000 50%",
-        "not only the player bar was configured")
-end
-
--- Applying again does not breed handlers.
-do
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.hooks, 0, "nor on a repeated application")
-end
-
--- Abbreviation is switched on separately and affects both numbers but not the percentage.
-do
-    setupFrames()
-    withSettings({
-        health = "both", power = TX.NATIVE,
-        abbreviate = true, position = TX.NATIVE,
-    })
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.value, "4.5k/9.0k 50%",
-        "the large numbers are abbreviated")
-    T.eq(PlayerFrame.manabar.TextString.value, "",
-        "a bar with the native format is untouched")
-end
-
--- In combat the format is applied at once while the position is deferred:
--- the label is a region of a protected unit frame, and the engine forbids moving it in combat.
-do
-    setupFrames()
-    local frames = ns.UnitFrames
-    local queue = TX.Queue()
-    frames.Drain(queue)
-
-    combat = true
-    withSettings({
-        health = "percent", power = TX.NATIVE,
-        abbreviate = false, position = "left",
-    })
-    TX:ApplySettings()
-
-    T.eq(PlayerFrame.healthbar.TextString.value, "50%",
-        "in combat the format is applied at once")
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "CENTER",
-        "in combat the position is untouched")
-    -- The position is one setting shared by both bars, so there are two
-    -- writes per frame: health and resource. The format has nothing to do
-    -- with it: a bar with the native format still has to be moved.
-    T.eq(frames.Pending(queue), 6, "two deferred writes per frame")
-
-    -- A repeated edit in combat does not lengthen the queue: the key is the same.
-    TX:ApplySettings()
-    T.eq(frames.Pending(queue), 6, "a repeated edit does not pile up writes")
-
-    combat = false
-    T.eq(frames.Drain(queue), 6, "leaving combat applies the deferred work")
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "LEFT",
-        "and moves the label")
-end
-
--- A return to the native position restores the native one, not our previous one.
-do
-    combat = false
-    setupFrames()
-    local settings = withSettings({
-        health = "value", power = TX.NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-    PlayerFrame.healthbar.TextString.point = { "TOPLEFT", nil, "TOPLEFT", 3, -1 }
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "TOPLEFT",
-        "the native position is untouched")
-
-    settings.position = "right"
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "RIGHT", "the label was moved")
-
-    settings.position = TX.NATIVE
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "TOPLEFT",
-        "the restore brought back the native position")
-
-    for _ = 1, 5 do
-        settings.position = "left"
-        TX:ApplySettings()
-        settings.position = TX.NATIVE
-        TX:ApplySettings()
-    end
-    T.eq(PlayerFrame.healthbar.TextString.point[1], "TOPLEFT",
-        "five switches in a row do not shift the native position")
-end
-
--- A fresh profile writes not a letter on the bars.
-do
-    setupFrames()
-    withSettings({
-        health = TX.NATIVE, power = TX.NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.value, "", "the health was not overwritten")
-    T.eq(PlayerFrame.manabar.TextString.value, "", "the resource was not overwritten")
-    T.eq(PlayerFrame.healthbar.TextString.shown, false, "and the label was not shown")
-end
-
--- The game handler brings us the very bar it has updated.
-do
-    setupFrames()
-    withSettings({
-        health = "percent", power = TX.NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-    TX:ApplySettings()
-
-    PlayerFrame.healthbar.value = 2250
-    T.ok(TX.Refresh(PlayerFrame.healthbar), "the update was accepted")
-    T.eq(PlayerFrame.healthbar.TextString.value, "25%",
-        "the label was recomputed from the new value")
-
-    -- A bar the subsystem never marked does not belong to it.
-    T.eq(TX.Refresh(newBar(1, 2)), false, "a foreign bar is skipped")
-    T.eq(TX.Refresh(nil), false, "garbage instead of a bar is skipped")
-end
-
--- The subsystem does not see a frame the client does not have.
-do
-    setupFrames()
-    TargetFrame = nil
-    withSettings({
-        health = "value", power = TX.NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.value, "4500/9000",
-        "an existing frame is configured")
-    T.eq(PetFrame.healthbar.TextString.value, "4500/9000", "and the second one too")
-end
-
--- Without a profile the subsystem silently does nothing.
-do
-    setupFrames()
-    ns.Addon = nil
-    TX:ApplySettings()
-    T.eq(PlayerFrame.healthbar.TextString.value, "", "without a profile we write nothing")
-end
-
-T.suite("texts: the settings section")
-
 do
     local args = TX.options.args
     T.eq(args.health.type, "select", "the health format is a select")
     T.eq(args.power.type, "select", "the resource format is a select")
-    T.eq(args.abbreviate.type, "toggle", "abbreviation is a checkbox")
-    T.eq(args.position.type, "select", "the position is a select")
+    -- Two lists and nothing else. The shortening of numbers and the place
+    -- of the text used to stand here; both belonged to a label this
+    -- subsystem wrote itself, and the game writes its own.
+    T.eq(args.abbreviate, nil, "there is no checkbox of our own invention")
+    T.eq(args.position, nil, "and no place for a label we do not write")
 
     T.eq(args.health.sorting()[1], TX.NATIVE, "the native format comes first")
-    T.eq(args.position.sorting()[1], TX.NATIVE, "the native position comes first")
 
     local values = args.health.values()
     T.ok(values.value ~= nil and values.percent ~= nil and values.both ~= nil,
@@ -422,357 +131,54 @@ do
     -- The defaults are the native look of the game.
     T.eq(TX.defaults.health, TX.NATIVE, "the health default is native")
     T.eq(TX.defaults.power, TX.NATIVE, "the resource default is native")
-    T.eq(TX.defaults.abbreviate, false, "there is no abbreviation by default")
-    T.eq(TX.defaults.position, TX.NATIVE, "the position default is native")
 
-    -- The position description must name the combat restriction: it is the
-    -- only place the player learns why the label "did not move at once".
-    T.ok(args.position.desc:find("combat") ~= nil,
-        "the position description mentions combat")
+    -- And the description says what the choice really does, because what it
+    -- does changed: it turns the game's own setting on rather than writing
+    -- a label of ours, and the game applies one shape to every bar.
+    T.ok(args.health.desc:find("game") ~= nil,
+        "the description names whose setting is being turned on")
 end
 
--- The handlers write into the profile and apply at once.
+-- The handlers write into the profile, and what is applied is the game's
+-- own setting.
 do
-    combat = false
-    setupFrames()
-    local settings = withSettings({
-        health = TX.NATIVE, power = TX.NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-
-    TX.options.args.health.set(nil, "percent")
-    T.eq(settings.health, "percent", "the format went into the profile")
-    T.eq(PlayerFrame.healthbar.TextString.value, "50%", "and was applied at once")
-    T.eq(TX.options.args.health.get(), "percent", "get returns what was chosen")
-
-    TX.options.args.abbreviate.set(nil, true)
-    TX.options.args.health.set(nil, "value")
-    T.eq(PlayerFrame.healthbar.TextString.value, "4.5k/9.0k",
-        "the abbreviation was applied at once")
-end
-
-T.suite("bar texts: it hooks every name the client happens to have")
-
--- The author's report from a live client showed zero hooks: the function
--- with the single name the subsystem counted on does not exist on his
--- client. The names differ between builds, and trying them all is cheaper than guessing.
-do
-    local Texts = ns.Registry and ns.Registry:Get("texts") or nil
-    if Texts == nil then Texts = ns.Texts end
-
-    T.ok(type(Texts) == "table", "the subsystem is in place")
-
-    if type(Texts) == "table" then
-        local writers = Texts.Writers()
-        T.ok(type(writers) == "table" and #writers >= 2,
-            "there is more than one name to try: " .. #writers)
-
-        -- ALL the ones found are taken, not the first at hand: the second is
-        -- not called from the first everywhere, and hooking only the outer
-        -- one can miss the updates that go through the inner one.
-        local hooked, saved = {}, _G.hooksecurefunc
-        _G.hooksecurefunc = function(name) hooked[name] = true end
-
-        local kept = {}
-        for _, name in ipairs(writers) do
-            kept[name] = _G[name]
-            _G[name] = function() end
-        end
-
-        Texts.MISSING = {}
-        Texts:OnEnable()
-
-        for _, name in ipairs(writers) do
-            T.ok(hooked[name], "hooked onto " .. name)
-        end
-        T.eq(#Texts.MISSING, 0, "everything was found -- nothing to complain about")
-
-        -- And what is missing is named: "zero hooks" and "nothing to hook"
-        -- are different troubles, and they are cured by different things.
-        for _, name in ipairs(writers) do _G[name] = nil end
-        Texts.MISSING = {}
-        Texts:OnEnable()
-        T.eq(#Texts.MISSING, #writers,
-            "not a single name exists -- all of them are named")
-
-        for _, name in ipairs(writers) do _G[name] = kept[name] end
-        _G.hooksecurefunc = saved
-    end
-end
-
-for i = 1, #FAKE_GLOBALS do _G[FAKE_GLOBALS[i]] = savedGlobals[i] end
-
-
-T.suite("bar text: the value stays on the bar after the cursor leaves")
-
--- The game draws a bar's value only while the cursor is over the bar, and
--- it hides the label inside the very function this subsystem is hooked to.
--- Writing the text and stopping there leaves a correct string on a hidden
--- label: the player sees the values on hover and nowhere else, which is the
--- opposite of what choosing a format asks for.
-do
-    local savedAddon = ns.Addon
-    ns.Addon = { db = { profile = { texts = {
-        health = "value", position = "__native",
-    } } } }
-
-    local shown = true
-    local written = nil
-    local label = {
-        SetText = function(_, text) written = text end,
-        IsShown = function() return shown end,
-        Show = function() shown = true end,
+    local wrote = {}
+    local api = {
+        Get = function(name) return wrote[name] or "0" end,
+        Set = function(name, value) wrote[name] = value return true end,
+        Default = function() return "0" end,
     }
 
-    local bar = {
-        healthbar = label,
-        TextString = label,
-        GetValue = function() return 300 end,
-        GetMinMaxValues = function() return 0, 1000 end,
-    }
+    local settings = { health = TX.NATIVE, power = TX.NATIVE }
+    ns.Addon = { db = { profile = { texts = settings } } }
 
-    ns.Texts.Role(bar, "health")
+    T.eq(select(1, TX.Wanted(settings)), nil,
+        "with both at the game's own look nothing is wanted")
 
-    -- The game has just hidden it, as it does when the cursor leaves.
-    shown = false
-    ns.Texts.Refresh(bar)
+    settings.health = "percent"
+    local show, shape = TX.Wanted(settings)
+    T.eq(show, "1", "a format chosen asks the game to show the text")
+    T.eq(shape, "PERCENT", "in the shape chosen")
 
-    T.ok(written ~= nil, "the value was written: " .. tostring(written))
-    T.eq(shown, true, "and the label was shown again")
+    TX.ApplyGame(settings, api)
+    T.eq(wrote.statusText, "1", "and the variable is written")
+    T.eq(wrote.statusTextDisplay, "PERCENT", "with the shape beside it")
 
-    ns.Addon = savedAddon
-end
+    -- Number and percent is the game's own BOTH: the percentage at the left
+    -- end of the bar and the number at the right, which is the other half
+    -- of what was asked for.
+    settings.health = "both"
+    TX.ApplyGame(settings, api)
+    T.eq(wrote.statusTextDisplay, "BOTH",
+        "number and percent is the game's own two-ended shape")
 
-T.suite("bar text: the client is asked for a bar no field holds")
+    -- Back to the game's own look: the variables go to what the client
+    -- itself calls default, not to a value of ours.
+    settings.health = TX.NATIVE
+    TX.ApplyGame(settings, api)
+    T.eq(wrote.statusText, "0", "going back restores the client's default")
 
--- A frame keeps its bars where its own build keeps them, and a list of
--- field spellings is a guess at that. On this client's line the guess is
--- simply wrong: the player frame holds its bars in no field, and there is
--- no PlayerFrameHealthBar global either - the client's own list of names
--- has neither. What it does have is a function that returns the bar.
---
--- With nothing found there was nothing to write into, which is why a format
--- was chosen and the bars stayed blank.
-do
-    local savedCompat = ns.Compat
-
-    local label = { SetText = function() end }
-    local bar = {
-        TextString = label,
-        GetValue = function() return 1 end,
-        GetMinMaxValues = function() return 0, 2 end,
-    }
-
-    ns.Compat = {
-        ResolveFunction = function(group)
-            if group == "player-health-bar" then
-                return function() return bar end
-            end
-            return nil
-        end,
-    }
-
-    T.eq(ns.Texts.AskClient("PlayerFrame", "health"), bar,
-        "the client handed over the bar it keeps in no field")
-    T.eq(ns.Texts.AskClient("PlayerFrame", "power"), nil,
-        "and says nothing where it offers nothing")
-    T.eq(ns.Texts.AskClient("TargetFrame", "health"), nil,
-        "a frame with no such function is not asked")
-
-    ns.Compat = savedCompat
-end
-
-T.suite("bar text: the subsystem says what it found on this client")
-
--- Three answers from the client stand behind the text on a bar: where the
--- frame keeps its bar, where the bar keeps its text object, and what the game
--- writes the value with. A missing answer of any of the three kinds looks the
--- same on screen - an empty bar with a format chosen - and the three are
--- cured by three different things, so each is reported apart.
-do
-    combat = false
-    setupFrames()
-    withSettings({
-        health = "value", power = NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-
-    -- A frame with no bar at all: the report must name it rather than leave
-    -- it out, because "the frame is not here" and "the bar is not where we
-    -- looked" are the two answers being told apart.
-    PetFrame = {}
-
-    local lines = TX.Diagnose(_G)
-    local joined = table.concat(lines, "\n")
-
-    T.ok(joined:find("health = value", 1, true) ~= nil,
-        "the chosen formats are stated first")
-    T.ok(joined:find("PlayerFrame health: field healthbar", 1, true) ~= nil,
-        "the route to a bar found in a field is named with the field")
-    T.ok(joined:find("TextStatusBar_UpdateTextString: ", 1, true) ~= nil,
-        "each writing function is reported present or absent")
-    T.ok(joined:find("hooks taken", 1, true) ~= nil,
-        "and the hooks taken and run are counted")
-
-    T.eq(#TX.Diagnose(nil), 0,
-        "without the client's globals there is nothing to say")
-end
-
-T.suite("bar text: the label is found where the template's key is absent")
-
--- The game's bar template keeps three labels under keys of its own, and the
--- central one is the value. A line that assembles its unit frames by its own
--- code gives no such key, and then the bar itself is asked for its regions:
--- a font string lying on a bar is that bar's text.
-do
-    local function newRegion(point)
-        local region = { written = nil }
-        function region:SetText(value) self.written = value end
-        function region:GetPoint() return point end
-        function region:IsShown() return true end
-        function region:Show() end
-        return region
-    end
-
-    -- A bar with the key: nothing is looked for.
-    local keyed = { TextString = newRegion("CENTER") }
-    function keyed:GetRegions() error("the key was there; no need to ask") end
-    T.eq(TX.Label(keyed), keyed.TextString, "the key answers first")
-
-    -- A bar without it: three labels, and the value stands in the middle.
-    local left, middle, right =
-        newRegion("LEFT"), newRegion("CENTER"), newRegion("RIGHT")
-    local keyless = {}
-    function keyless:GetRegions() return left, middle, right end
-    T.eq(TX.Label(keyless), middle, "of several labels the central one is taken")
-
-    -- Asked once: the answer is remembered against the bar.
-    local asked = 0
-    local only = newRegion("TOPLEFT")
-    local lonely = {}
-    function lonely:GetRegions() asked = asked + 1 return only end
-    T.eq(TX.Label(lonely), only, "with no central one the first is taken")
-    TX.Label(lonely)
-    T.eq(asked, 1, "and the bar is asked once, not on every write")
-
-    -- A bar with no labels at all is remembered as such, and asked once too.
-    local bare = {}
-    local bareAsked = 0
-    function bare:GetRegions() bareAsked = bareAsked + 1 return nil end
-    T.eq(TX.Label(bare), nil, "a bar with no label says so")
-    TX.Label(bare)
-    T.eq(bareAsked, 1, "and is not asked again")
-
-    -- And the value is written onto a label found that way, which is the
-    -- whole point: on that line the bars stayed blank with a format chosen.
-    combat = false
-    withSettings({
-        health = "value", power = NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-    local bar = { value = 120, max = 300 }
-    function bar:GetValue() return self.value end
-    function bar:GetMinMaxValues() return 0, self.max end
-    function bar:GetRegions() return newRegion("LEFT"), middle end
-    TX.Role(bar, "health")
-    T.ok(TX.Refresh(bar), "the value was written")
-    T.eq(middle.written, "120/300", "onto the label the bar itself handed over")
-end
-
-T.suite("bar text: the label on the frame the client names beside the bar")
-
--- The line that hands a bar over through a function of its own keeps a
--- container beside it and names that too. The value's font string can be
--- there rather than on the bar, and then everything found so far - the bar,
--- the moment of writing - still writes nowhere.
-do
-    local savedCompat = ns.Compat
-
-    local label = { written = nil }
-    function label:SetText(value) self.written = value end
-    function label:GetPoint() return "CENTER" end
-    function label:IsShown() return true end
-    function label:Show() end
-
-    -- A bar with no label of its own anywhere.
-    local bar = { value = 40 }
-    function bar:GetValue() return self.value end
-    function bar:GetMinMaxValues() return 0, 50 end
-    function bar:GetRegions() return nil end
-
-    local container = {}
-    function container:GetRegions() return label end
-
-    ns.Compat = {
-        ResolveFunction = function(group)
-            if group == "player-health-bar" then
-                return function() return bar end
-            end
-            if group == "player-health-bar-text-host" then
-                return function() return container end
-            end
-            return nil
-        end,
-    }
-
-    T.eq(ns.Texts.AskClient("PlayerFrame", "health"), bar,
-        "the client hands over the bar")
-    T.eq(ns.Texts.Label(bar), label,
-        "and the label is found on the frame it named beside it")
-
-    combat = false
-    withSettings({
-        health = "percent", power = NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-    TX.Role(bar, "health")
-    T.ok(TX.Refresh(bar), "the value was written")
-    T.eq(label.written, "80%", "onto that label")
-
-    ns.Compat = savedCompat
-end
-
-T.suite("bar text: a value the engine keeps secret is left alone")
-
--- The engine hands the properties of its protected objects over as secret
--- values. They have the type "number", they may be held and passed anywhere,
--- and the first comparison on one raises - inside our code, which the player
--- sees as a failure of the addon. The author saw it out of the player
--- frame's own update:
---
---   Core/Format.lua:73: attempt to compare local 'value' (a secret number
---   value, while execution tainted by 'Darken')
---
--- A type check walks straight past the only case it would be written for, so
--- the question goes to the one door the addon has for it (ns.Skin.Numeric),
--- and a value that cannot be computed with leaves the label as the game
--- wrote it.
-do
-    combat = false
-    withSettings({
-        health = "value", power = NATIVE,
-        abbreviate = false, position = TX.NATIVE,
-    })
-
-    local label = { written = nil }
-    function label:SetText(value) self.written = value end
-    function label:IsShown() return true end
-    function label:Show() end
-
-    -- A bar whose value raises on the first arithmetic, exactly as a secret
-    -- number does.
-    local secret = setmetatable({}, {
-        __mul = function() error("attempt to compare a secret value") end,
-        __lt = function() error("attempt to compare a secret value") end,
-    })
-
-    local bar = { TextString = label }
-    function bar:GetValue() return secret end
-    function bar:GetMinMaxValues() return 0, secret end
-
-    TX.Role(bar, "health")
-    local ok, raised = pcall(TX.Refresh, bar)
-    T.ok(ok, "the subsystem does not raise on a secret value")
-    T.eq(raised, false, "and says it wrote nothing")
-    T.eq(label.written, nil, "the label is left as the game wrote it")
+    -- A client without the variables at all is an ordinary answer.
+    T.eq(TX.ApplyGame(settings, { Get = nil, Set = nil }), 0,
+        "and a client that cannot be asked is written to not at all")
 end

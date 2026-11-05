@@ -376,42 +376,6 @@ for _, byFlavor in pairs(FRAMES) do
     byFlavor["unitframe-recolor"] = names
 end
 
--- What the game writes a bar's value with.
---
--- The value on a health or power bar is written by the game, and the bar text
--- subsystem rewrites it in the format the player chose. To do that it needs
--- the moment the game has just written: a protected hook on the function that
--- does the writing, which receives the bar itself and touches no bar of its
--- own.
---
--- There are four names because the writer differs by line. The first pair is
--- the older spelling, absent on 1.60.1 - the report from that client counted
--- both names looked for and neither found, and the bar text there goes
--- through a method on the bar, which this addon does not hook: a hook on an
--- object's method writes a field onto somebody else's frame.
---
--- The second pair is what that line does have. Each is called by the game
--- with the bar it has just updated, which is the same answer the first pair
--- gives.
---
--- Two of the names are in unitframe-recolor as well, and the repetition is
--- not a divergence: the colour subsystem asks for every function after which
--- a bar may have been recoloured, this one asks for those after which a
--- bar's value may have been rewritten. One list serving two questions would
--- quietly answer the wrong one as soon as either changed.
-local BAR_TEXT_WRITE = {
-    "TextStatusBar_UpdateTextString",
-    "TextStatusBar_UpdateTextStringWithValues",
-    "UnitFrameHealthBar_Update",
-    "UnitFrameManaBar_Update",
-}
-
-for _, byFlavor in pairs(FRAMES) do
-    local names = {}
-    for i = 1, #BAR_TEXT_WRITE do names[i] = BAR_TEXT_WRITE[i] end
-    byFlavor["bar-text-write"] = names
-end
-
 -- The aura icons on the unit frames: the auras of the target, the focus, the
 -- pet and the party members.
 --
@@ -2057,31 +2021,6 @@ local CONTAINERS = {
         "C_AddOns.IsAddOnLoaded",
         "IsAddOnLoaded",
     },
-
-    -- The player's bars, asked of the client rather than found by a field.
-    --
-    -- On this line the player frame carries no bar in a field and no bar
-    -- exists as a global: there is no PlayerFrameHealthBar at all. What the
-    -- client does have is a function that returns the bar, which is the
-    -- answer and does not depend on where the frame keeps it.
-    ["player-health-bar"] = {
-        "PlayerFrame_GetHealthBar",
-    },
-    ["player-power-bar"] = {
-        "PlayerFrame_GetManaBar",
-    },
-
-    -- Where that bar's own regions live.
-    --
-    -- A bar's value is written on a font string, and the template the game
-    -- builds its bars from keeps it on the bar. This line builds the player's
-    -- frame by its own code: it hands out the bar through the function above
-    -- and keeps a container beside it, and the client names that container
-    -- itself rather than leaving it to be guessed.
-    ["player-health-bar-text-host"] = {
-        "PlayerFrame_GetHealthBarContainer",
-    },
-
     -- Who created a global variable. The client answers with the name of
     -- the addon that set it, and that is the only direct answer to "whose
     -- frame is this" there is: a frame does not remember its author, but

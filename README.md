@@ -184,10 +184,6 @@ screenshot does:
 /dark cost           what the addon spends while nothing is
                      happening: run it, walk about for ten seconds,
                      run it again. "reset" starts the count afresh
-/dark bars           why the numbers on the health and power bars are
-                     missing: where this client keeps each bar, where
-                     it keeps the text object, and which of the game's
-                     writing functions it has
 /dark harvest        framing the addon does not yet reach, by frame.
                      "mouse" asks about the window under the cursor,
                      which is the way to point at a piece that stayed

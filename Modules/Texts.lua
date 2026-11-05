@@ -53,38 +53,6 @@ ns.Counters = counters
 -- Hooks installed and hooks fired. The first, were it zero, would mean that
 -- not one guessed name of a game function was found; the second, with the
 -- first non-zero, would mean the name was found and came to nothing.
-counters.hooked_texts = counters.hooked_texts or 0
-counters.fired_texts  = counters.fired_texts  or 0
-counters.absent_texts = counters.absent_texts or 0
-
---- The names of the game's functions that write a bar's value.
---
--- The names themselves live in the compatibility layer, which is the one
--- place in this addon that knows the game's own names: a second list here
--- would diverge from it silently, and a list diverged from the client makes
--- no complaint - the subsystem simply stops working.
---
--- ALL the ones found are taken rather than the first that turns up: the
--- inner one is not called from the outer one on every line, and hooking the
--- outer one alone can miss the updates that go through the inner one.
---
--- @return table array of declared names
-function Texts.Writers()
-    if type(ns.Compat) ~= "table"
-        or type(ns.Compat.GetFrameNames) ~= "function" then
-        return {}
-    end
-    return ns.Compat.GetFrameNames(ns.flavor, "bar-text-write")
-end
-
--- What was not found. The report needs it: "zero hooks" and "there are no
--- hooks because no such functions exist on this client" are different
--- troubles, and they are cured differently.
-Texts.MISSING = {}
-
--- The names of the game's functions whose hooks have already been
--- counted.
-local counted = {}
 
 -- The marker for "as the game draws it". The same value the neighbouring
 -- subsystems use: it reaches SavedVariables and has to mean one and the same
@@ -276,12 +244,113 @@ end
 -- @return string|nil the point on the bar
 -- @return number|nil the horizontal offset
 -- @return number|nil the vertical offset
-function Texts.Anchor(position)
-    local edge = Edge()
-    if position == "left"   then return "LEFT",   "LEFT",    edge, 0 end
-    if position == "center" then return "CENTER", "CENTER",  0,    0 end
-    if position == "right"  then return "RIGHT",  "RIGHT",  -edge, 0 end
-    return nil
+-- The game's own console variables for the text on a bar.
+--
+-- === Why this subsystem writes nothing on a bar ===
+--
+-- The game already has this setting. It shows the value on every bar it
+-- draws, in one of three shapes, and it does it from inside its own update -
+-- the only place that knows the number, knows when it changed and is allowed
+-- to touch a protected frame's label.
+--
+-- This subsystem used to write the label itself: find the bar, find its font
+-- string, hook whatever function the client writes values with, rewrite
+-- after it, move it, show the label the game had hidden. Every one of those
+-- is a guess at somebody else's build, every one was spelt differently on
+-- this client line, and together they managed to break the game's own text
+-- as well as never showing ours - which is what the author reported, in
+-- those words.
+--
+-- So the setting does what he asked for in the first place: it turns the
+-- game's own on and chooses its shape. "Number and Percent" is the game's
+-- BOTH, which puts the percentage at the left end of the bar and the number
+-- at the right - the two of them apart, which is the other thing he asked
+-- for. Nothing of the game's is touched until he picks a shape, and picking
+-- "the game's own" back puts the variables to the value the client itself
+-- calls default.
+local CVAR_SHOW = "statusText"
+local CVAR_SHAPE = "statusTextDisplay"
+
+-- Our formats in the game's words.
+local SHAPES = {
+    value   = "NUMERIC",
+    percent = "PERCENT",
+    both    = "BOTH",
+}
+
+--- What the console variables should hold for these settings.
+--
+-- A pure function, and nil means "the client's own default" - which is how
+-- "as in the game" is written everywhere in this addon.
+--
+-- The game shows one shape on every bar it draws; there is no separate
+-- switch for health and for power. Between two different choices the health
+-- one is taken, and the settings page says so.
+--
+-- @param settings table|nil
+-- @return string|nil what statusText should hold
+-- @return string|nil what statusTextDisplay should hold
+function Texts.Wanted(settings)
+    if type(settings) ~= "table" then return nil, nil end
+
+    local chosen = nil
+    local health, power = settings.health, settings.power
+    if health ~= nil and health ~= NATIVE and SHAPES[health] then
+        chosen = SHAPES[health]
+    elseif power ~= nil and power ~= NATIVE and SHAPES[power] then
+        chosen = SHAPES[power]
+    end
+
+    if chosen == nil then return nil, nil end
+    return "1", chosen
+end
+
+--- Apply the settings to the game's own console variables.
+--
+-- The client's functions arrive as an argument rather than out of _G, as
+-- they do for the fonts' physics: that way this is checked outside the game,
+-- and a client without one of them is an ordinary answer rather than an
+-- error.
+--
+-- Nothing is written while a variable already holds the wanted value, so a
+-- fresh install writes nothing at all.
+--
+-- @param settings table|nil
+-- @param api table|nil { Get, Set, Default }
+-- @return number how many variables were written
+function Texts.ApplyGame(settings, api)
+    if type(api) ~= "table" then
+        api = { Get = GetCVar, Set = SetCVar, Default = GetCVarDefault }
+    end
+    if type(api.Get) ~= "function" or type(api.Set) ~= "function" then
+        return 0
+    end
+
+    local show, shape = Texts.Wanted(settings)
+    local wanted = { [CVAR_SHOW] = show, [CVAR_SHAPE] = shape }
+    local written = 0
+
+    for _, name in ipairs({ CVAR_SHOW, CVAR_SHAPE }) do
+        local want = wanted[name]
+
+        if want == nil and type(api.Default) == "function" then
+            local told, value = pcall(api.Default, name)
+            if told and type(value) == "string" and value ~= "" then
+                want = value
+            end
+        end
+
+        if want ~= nil then
+            -- An empty answer means the variable does not exist on this
+            -- client: there is nowhere to write, and that is not an error.
+            local read, current = pcall(api.Get, name)
+            if read and type(current) == "string" and current ~= want then
+                if pcall(api.Set, name, want) then written = written + 1 end
+            end
+        end
+    end
+
+    return written
 end
 
 -- The default settings: everything at the game's native look. A fresh install
@@ -354,390 +423,6 @@ local function field(root, paths, method)
 end
 Texts.Field = field
 
--- Which group of the layer answers for which bar of which frame.
-local CLIENT_BARS = {
-    PlayerFrame = {
-        health = "player-health-bar",
-        power  = "player-power-bar",
-    },
-}
-
--- And where that bar's own regions live, when they do not live on the bar.
---
--- The template the game builds its bars from keeps the value's font string on
--- the bar. The line that hands the bar over through a function keeps a
--- container beside it instead, and names it itself.
-local CLIENT_HOSTS = {
-    PlayerFrame = {
-        health = "player-health-bar-text-host",
-    },
-}
-
--- The frame to look for a bar's label on, where it is not the bar.
-local HOST = ns.Skin.Memory()
-
---- Ask the client itself for a bar.
---
--- A frame keeps its bars where its own build keeps them, and a list of
--- field spellings is a guess at that. Where the client offers a function
--- that returns the bar, the guess is unnecessary: the answer comes from the
--- same place the game's own code gets it.
---
--- @param frame string the frame's name
--- @param role string the bar's role
--- @return table|nil
-function Texts.AskClient(frame, role)
-    local groups = CLIENT_BARS[frame]
-    if groups == nil then return nil end
-
-    local group = groups[role]
-    if group == nil then return nil end
-
-    if type(ns.Compat) ~= "table"
-        or type(ns.Compat.ResolveFunction) ~= "function" then
-        return nil
-    end
-
-    local got, ask = pcall(ns.Compat.ResolveFunction, group)
-    if not got or type(ask) ~= "function" then return nil end
-
-    local fine, bar = pcall(ask)
-    if not fine or type(bar) ~= "table" then return nil end
-    if type(bar.GetValue) ~= "function" then return nil end
-
-    -- Where to look for this bar's label, if the client says so. Asked here
-    -- because this is where the client is already being asked, and the answer
-    -- belongs to the bar it was asked about.
-    local hosts = CLIENT_HOSTS[frame]
-    local hostGroup = hosts and hosts[role] or nil
-    if hostGroup ~= nil then
-        local told, askHost = pcall(ns.Compat.ResolveFunction, hostGroup)
-        if told and type(askHost) == "function" then
-            local well, host = pcall(askHost)
-            if well and type(host) == "table" then HOST[bar] = host end
-        end
-    end
-
-    return bar
-end
-
---- The label a frame holds in the middle, among its own regions.
---
--- Of several the central one is taken, by the rule the game's own bar
--- template follows: the value stands in the middle, the percentage on the
--- left and the number on the right. With no anchor to judge by the first is
--- taken - a frame with one label has no second candidate to confuse it with.
---
--- @param frame table
--- @return table|nil the font string
-function Texts.Centremost(frame)
-    if type(frame) ~= "table" then return nil end
-    if type(frame.GetRegions) ~= "function" then return nil end
-
-    local ok, regions = pcall(function() return { frame:GetRegions() } end)
-    if not ok or type(regions) ~= "table" then return nil end
-
-    local first = nil
-    for i = 1, #regions do
-        local region = regions[i]
-        if type(region) == "table"
-            and type(region.SetText) == "function"
-            and type(region.GetPoint) == "function" then
-            if first == nil then first = region end
-
-            local seen, point = pcall(region.GetPoint, region, 1)
-            if seen and point == "CENTER" then return region end
-        end
-    end
-
-    return first
-end
-
---- The font string a bar writes its value on.
---
--- Why a field is not enough. The game's bar template keeps three labels
--- under keys of its own - the central one, the left one and the right one -
--- and the central one is the value. That is true wherever the template is
--- used, and on a line that builds its unit frames differently it is true of
--- nothing: the player frame of 1.60.1 is assembled by its own code, and the
--- key the template would have given is not there.
---
--- Four places, in the order of how much they are worth. The key on the bar;
--- the key on the frame the client itself names as holding that bar's regions
--- (PlayerFrame_GetHealthBarContainer - the client names a container beside
--- the bar, and the function to reach it, which is as close to a stated fact
--- as this gets); the bar's own regions; that container's regions.
---
--- A font string lying on a bar is the bar's text: asking for the regions is
--- not a search through somebody else's tree but one question to one object,
--- and it is asked once per bar.
---
--- @param bar table
--- @return table|nil the font string
-function Texts.Label(bar)
-    if type(bar) ~= "table" then return nil end
-
-    local known = LABEL[bar]
-    if known ~= nil then
-        if known == false then return nil end
-        return known
-    end
-
-    local host = HOST[bar]
-    if type(host) ~= "table" then host = nil end
-
-    local found = field(bar, TEXT_PATHS, "SetText")
-    if found == nil and host ~= nil then
-        found = field(host, TEXT_PATHS, "SetText")
-    end
-    if found == nil then found = Texts.Centremost(bar) end
-    if found == nil and host ~= nil then found = Texts.Centremost(host) end
-
-    LABEL[bar] = found or false
-    return found
-end
-
---- The label's remembered native anchor.
--- Read once, before our first move, and unchanged after that: otherwise "the
--- native position" would restore our previous one rather than the native
--- one.
--- @param label table|nil the font string
--- @return table|nil { point, object, the object's point, x, y }
-function Texts.BasePoint(label)
-    if type(label) ~= "table" then return nil end
-
-    local base = POINT_BASE[label]
-    if base ~= nil then
-        if base == false then return nil end
-        return base
-    end
-
-    if type(label.GetPoint) ~= "function" then
-        POINT_BASE[label] = false
-        return nil
-    end
-
-    local ok, point, relativeTo, relativePoint, x, y = pcall(label.GetPoint, label, 1)
-    if not ok or type(point) ~= "string" then
-        POINT_BASE[label] = false
-        return nil
-    end
-
-    base = { point, relativeTo, relativePoint, x or 0, y or 0 }
-    POINT_BASE[label] = base
-    return base
-end
-
---- Move the label.
---
--- A function of its own because it is called by two paths: at once out of
--- combat and from the queue after combat. Both paths have to do exactly the
--- same thing.
---
--- @param label table the font string
--- @param bar table the bar
--- @param position string|nil the position's key
--- @param show boolean|nil whether to show the label
--- @return boolean whether the object was touched
-function Texts.Place(label, bar, position, show)
-    if type(label) ~= "table" then return false end
-
-    local base = Texts.BasePoint(label)
-    local point, relativePoint, x, y = Texts.Anchor(position)
-
-    local touched = false
-
-    if point then
-        if type(label.ClearAllPoints) == "function" then
-            pcall(label.ClearAllPoints, label)
-        end
-        touched = pcall(label.SetPoint, label, point, bar, relativePoint, x, y)
-            or touched
-    elseif base then
-        -- The native position is restored by exactly what was read: the
-        -- anchor's object stays somebody else's, we do not choose it.
-        if type(label.ClearAllPoints) == "function" then
-            pcall(label.ClearAllPoints, label)
-        end
-        touched = pcall(label.SetPoint, label, base[1], base[2], base[3],
-            base[4], base[5]) or touched
-    end
-
-    -- Showing the label. The game hides it when the display of values is
-    -- switched off in the game's own settings; a player who chose a format
-    -- asked for the opposite.
-    if show and type(label.Show) == "function" then
-        touched = pcall(label.Show, label) or touched
-    end
-
-    return touched
-end
-
---- Whether the label has to be touched at all.
---
--- Three cases where it does: it was asked to be shown, it was asked to be
--- moved, or we have already moved it and are now restoring the native
--- position. In every other case the game's object is not touched at all — a
--- fresh install moves not one label, and in combat no work that changes
--- nothing lands in the queue.
---
--- @param label table|nil the font string
--- @param position string|nil the position's key
--- @param show boolean|nil whether to show the label
--- @return boolean
-function Texts.NeedsPlace(label, position, show)
-    if type(label) ~= "table" then return false end
-    if show then return true end
-    if Texts.Anchor(position) then return true end
-    return type(POINT_BASE[label]) == "table"
-end
-
---- Bring one bar's label into line with the settings.
---
--- Called both from ApplySettings and from the handlers by which the game
--- updates these same strings. The bar does not care what changed — a setting
--- or the health.
---
--- @param bar table|nil the bar
--- @return boolean whether we wrote anything
---- Say which value a bar carries.
---
--- The pass records this as it meets each bar: the game's handler hands us
--- the bar itself rather than a name, so the role has to be remembered
--- against the object. Exposed because a check needs to set it without
--- running the whole pass.
---
--- @param bar table
--- @param role string|nil
-function Texts.Role(bar, role)
-    if type(bar) ~= "table" then return end
-    ROLE[bar] = role
-end
-
-function Texts.Refresh(bar)
-    if type(bar) ~= "table" then return false end
-
-    local role = ROLE[bar]
-    if type(role) ~= "string" then return false end
-
-    local settings = Settings()
-    if not settings then return false end
-
-    local format = settings[role]
-    if format == nil or format == NATIVE then return false end
-
-    local label = Texts.Label(bar)
-    if not label then return false end
-
-    if type(bar.GetValue) ~= "function"
-        or type(bar.GetMinMaxValues) ~= "function" then
-        return false
-    end
-
-    local okValue, current = pcall(bar.GetValue, bar)
-    local okRange, _, maximum = pcall(bar.GetMinMaxValues, bar)
-    if not okValue or not okRange then return false end
-
-    -- What a protected bar hands over is not always a number one may
-    -- compute with.
-    --
-    -- The engine gives the properties of its protected objects as secret
-    -- values: they have the type "number", they may be held and passed
-    -- anywhere, and the first comparison on one raises - inside our code,
-    -- which the player sees as an error in the addon. The author saw exactly
-    -- that, out of the player frame's own update:
-    --
-    --   Core/Format.lua:73: attempt to compare local 'value' (a secret
-    --   number value, while execution tainted by 'Darken')
-    --
-    -- There is one door in this addon for that question and this is it. A
-    -- value that cannot be computed with means the label is left exactly as
-    -- the game wrote it, which is the right answer: the game knows the
-    -- number and we do not.
-    current = ns.Skin.Numeric(current)
-    maximum = ns.Skin.Numeric(maximum)
-    if current == nil or maximum == nil then return false end
-
-    local text = Texts.FormatValue(current, maximum, format, settings.abbreviate)
-    if text == nil then return false end
-
-    local wrote = pcall(label.SetText, label, text)
-
-    -- And shown, because the game has just hidden it.
-    --
-    -- The game draws a bar's value only while the cursor is over the bar,
-    -- unless the player says otherwise in its own options. It hides the
-    -- label inside the very function this one is hooked to - so writing the
-    -- text and stopping there left a correct string on a hidden label, and
-    -- the values appeared on hover and nowhere else.
-    --
-    -- A player who has chosen a format has asked for the opposite, and that
-    -- is the whole of the setting.
-    --
-    -- Showing a region of a protected frame is forbidden in combat, so in a
-    -- fight it waits. The text itself is contents rather than visibility and
-    -- is written immediately, in a fight too.
-    if type(label.IsShown) == "function" and type(label.Show) == "function" then
-        local seen, shown = pcall(label.IsShown, label)
-        if seen and shown == false then
-            if ns.Combat and ns.Combat.InCombat and ns.Combat.InCombat() then
-                ns.Combat.Enqueue(ns.Combat.QueueFor(Texts.name), label,
-                    function() pcall(label.Show, label) end)
-            else
-                pcall(label.Show, label)
-            end
-        end
-    end
-
-    return wrote
-end
-
---- Take a bar onto the ledger. Doing nothing to it in the process.
---
--- === Why there is no longer a hook on the bar itself ===
---
--- There were two, and both turned out to be wrong — each in its own way, and
--- both on one and the same object: the health bar of the target and of the
--- player.
---
--- The first was a HookScript for OnValueChanged. HookScript stitches our
--- handler and the frame's handler into ONE, and it is our addon that stitches
--- it: the bar's whole handler has been ours ever since, and the engine
--- considers tainted every execution that passes through it. The author saw
--- that as a line saying the execution had been tainted by Darken.
---
--- The second, which I replaced it with, was a secure hook on the bar's
--- SetValue method. It looked correct: a protected hook instead of stitching.
--- But a hook on an OBJECT'S METHOD works differently from one on a global
--- function: it puts a SetValue field with its own wrapper onto the object
--- itself. That is, a write onto a foreign frame — precisely what this addon
--- has declared inadmissible and cleaned out of twelve places. The game then
--- failed on its own update of the bar — "attempt to call a nil value" — with
--- fifteen hundred errors and an interface with no bars.
---
--- What remains is what had been the main path from the start: a protected hook
--- on the game's FUNCTION that writes the values onto the bars
--- (TextStatusBar_UpdateTextString, see OnEnable). It touches not one bar and
--- instead receives the one the game has just updated.
---
--- What that costs, honestly: on a build where no such function exists the
--- labels will update not at that instant but on an event — a change of target,
--- entering the world, a change of the group's composition. That is cheaper
--- than a bar the game itself fails on.
---
--- The ledger nevertheless stays: by it the subsystem knows whose labels it has
--- already moved.
---
--- @param bar table
--- @return boolean whether it was taken onto the ledger now
-function Texts.Hook(bar)
-    if type(bar) ~= "table" then return false end
-    if HOOKED[bar] then return false end
-
-    HOOKED[bar] = true
-    return true
-end
-
 --- Apply the settings.
 --
 -- The only path of application: entering the game, changing the profile and
@@ -750,143 +435,11 @@ function Texts:ApplySettings()
     local settings = Settings()
     if not settings then return end
 
-    local combat = inCombat()
-    local names = ns.Compat.Resolve("unitframe")
-
-    for i = 1, #names do
-        local name = names[i]
-        local frame = _G[name]
-
-        if type(frame) == "table" then
-            for j = 1, #BARS do
-                local entry = BARS[j]
-                local bar = field(frame, entry.paths, "GetValue")
-
-                -- The client asked directly, where a field answers nothing.
-                --
-                -- On this line the player frame keeps no bar in a field and
-                -- none exists as a global - there is no PlayerFrameHealthBar
-                -- at all. The client does have a function that returns the
-                -- bar, and that answer does not depend on where the frame
-                -- happens to keep it.
-                if bar == nil then
-                    bar = Texts.AskClient(name, entry.role)
-                end
-
-                if bar then
-                    -- The role is recorded for the bar itself: the game's
-                    -- handler gives us the object rather than a name, so no
-                    -- second "object -> role" table had to be created.
-                    ROLE[bar] = entry.role
-
-                    -- A label's contents are not protected by the engine:
-                    -- they are applied at once, in the middle of a fight
-                    -- too.
-                    Texts.Hook(bar)
-                    Texts.Refresh(bar)
-
-                    local label = Texts.Label(bar)
-                    local format = settings[entry.role]
-                    local show = format ~= nil and format ~= NATIVE
-
-                    if Texts.NeedsPlace(label, settings.position, show) then
-                        -- The position and the display are protected
-                        -- operations on a region of a protected frame. In
-                        -- combat they are deferred.
-                        if combat then
-                            local queue, frames = Queue()
-                            if queue then
-                                frames.Enqueue(queue,
-                                    "place:" .. name .. ":" .. entry.role,
-                                    function()
-                                        Texts.Place(label, bar,
-                                            settings.position, show)
-                                    end)
-                            end
-                        else
-                            Texts.Place(label, bar, settings.position, show)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
---- What the subsystem found on this client, in words.
---
--- Why it exists. Everything this subsystem does rests on three answers from
--- the client, and all three differ between builds: where the frame keeps its
--- bar, where the bar keeps its label, and what the game calls to write the
--- value. When one of them is missing the result on screen is the same in
--- every case - an empty bar with a format chosen - and the three are cured by
--- three different things. So they are reported apart.
---
--- It reads the interface and writes nothing to it.
---
--- @param globals table name -> object
--- @return table array of lines
-function Texts.Diagnose(globals)
-    local lines = {}
-    if type(globals) ~= "table" then return lines end
-
-    local settings = Settings()
-    lines[#lines + 1] = "health = " .. tostring(settings and settings.health)
-        .. ", power = " .. tostring(settings and settings.power)
-
-    for _, name in ipairs(ns.Compat.Resolve("unitframe")) do
-        local frame = globals[name]
-        if type(frame) == "table" then
-            for j = 1, #BARS do
-                local entry = BARS[j]
-
-                -- The route to the bar, named rather than counted: a bar
-                -- found through a field and one the client handed over are
-                -- the same object and a different fact about the build.
-                local route, bar = "none", nil
-                for i = 1, #entry.paths do
-                    local found = field(frame, { entry.paths[i] }, "GetValue")
-                    if found ~= nil then
-                        route, bar = "field " .. entry.paths[i], found
-                        break
-                    end
-                end
-                if bar == nil then
-                    bar = Texts.AskClient(name, entry.role)
-                    if bar ~= nil then route = "client" end
-                end
-
-                local said = "no text object"
-                if bar ~= nil then
-                    local found = Texts.Label(bar)
-                    if found ~= nil then
-                        said = field(bar, TEXT_PATHS, "SetText") ~= nil
-                            and TEXT_PATHS[1] or "a label on the bar"
-                        if type(found.IsShown) == "function" then
-                            local seen, shown = pcall(found.IsShown, found)
-                            said = said .. (seen and shown and ", shown"
-                                or ", hidden")
-                        end
-                    end
-                end
-
-                lines[#lines + 1] = name .. " " .. entry.role .. ": "
-                    .. route .. ", " .. said
-            end
-        end
-    end
-
-    local writers = Texts.Writers()
-    for i = 1, #writers do
-        local name = writers[i]
-        lines[#lines + 1] = name .. ": "
-            .. (type(globals[name]) == "function" and "present" or "absent")
-    end
-
-    lines[#lines + 1] = "hooks taken " .. tostring(counters.hooked_texts)
-        .. ", hooks run " .. tostring(counters.fired_texts)
-
-    return lines
+    -- The whole of the subsystem's work: the game's own setting, turned on
+    -- and given a shape. Not one bar, label or hook of the game's is
+    -- touched - see the note above CVAR_SHOW for what used to be here and
+    -- why it went.
+    Texts.ApplyGame(settings)
 end
 
 --- Enabling the subsystem.
@@ -899,23 +452,6 @@ end
 -- absent (a build in which it was renamed) — then what remains is the event
 -- path below, because Texts.Hook only keeps the ledger.
 function Texts:OnEnable()
-    if type(hooksecurefunc) == "function" then
-        for _, name in ipairs(Texts.Writers()) do
-            if type(_G[name]) ~= "function" then
-                Texts.MISSING[#Texts.MISSING + 1] = name
-                counters.absent_texts = counters.absent_texts + 1
-            elseif not counted[name] then
-                if pcall(hooksecurefunc, name, function(bar)
-                    counters.fired_texts = counters.fired_texts + 1
-                    Texts.Refresh(bar)
-                end) then
-                    counted[name] = true
-                    counters.hooked_texts = counters.hooked_texts + 1
-                end
-            end
-        end
-    end
-
     -- The subscription goes through the core's door (ns.Events) rather than
     -- through AceEvent. The reason was measured rather than guessed: AceEvent
     -- stores one handler per "event + object" pair, and the object is one and
@@ -977,7 +513,6 @@ local function listFrom(list)
 end
 
 local formatValues,   formatSorting   = listFrom(FORMATS)
-local positionValues, positionSorting = listFrom(POSITIONS)
 
 --- The get/set handlers for a plain settings field.
 -- @param field_ string
@@ -997,8 +532,6 @@ end
 
 local getHealth,     setHealth     = handlers("health")
 local getPower,      setPower      = handlers("power")
-local getAbbreviate, setAbbreviate = handlers("abbreviate")
-local getPosition,   setPosition   = handlers("position")
 
 Texts.options = {
     type = "group",
@@ -1009,11 +542,13 @@ Texts.options = {
             order = 1,
             width = "full",
             name = ns.Localize("Health Bar Value"),
-            desc = ns.Localize("What the health bar says. The first entry " ..
-                "leaves the text to the game, including the game's own " ..
-                "setting for whether to show it at all. Any other choice " ..
-                "shows the text even when the game would hide it - that is " ..
-                "what choosing a format means."),
+            desc = ns.Localize("What the bars say. The first entry leaves " ..
+                "it to the game. Any other turns the game's own bar text " ..
+                "on and chooses its shape - number, percentage, or both, " ..
+                "which puts the percentage at the left end of the bar and " ..
+                "the number at the right. The game shows one shape on " ..
+                "every bar it draws, so this choice decides for the " ..
+                "resource bar as well."),
             values = formatValues,
             sorting = formatSorting,
             get = getHealth,
@@ -1024,38 +559,13 @@ Texts.options = {
             order = 2,
             width = "full",
             name = ns.Localize("Power Bar Value"),
-            desc = ns.Localize("Mana, rage, energy. The first entry leaves " ..
-                "the text to the game."),
+            desc = ns.Localize("Mana, rage, energy. The game has one " ..
+                "setting for every bar, so this one is used when the " ..
+                "health bar is left to the game."),
             values = formatValues,
             sorting = formatSorting,
             get = getPower,
             set = setPower,
-        },
-        abbreviate = {
-            type = "toggle",
-            order = 3,
-            width = "full",
-            name = ns.Localize("Shorten Large Numbers"),
-            desc = ns.Localize("Writes 12400 as 12.4k and 2500000 as " ..
-                "2.5m. Off by default, because the game writes numbers in " ..
-                "full."),
-            get = getAbbreviate,
-            set = setAbbreviate,
-        },
-        position = {
-            type = "select",
-            order = 4,
-            width = "full",
-            name = ns.Localize("Value Position"),
-            desc = ns.Localize("Where the value sits on the bar. Moving " ..
-                "text on a unit frame is a protected operation: a change " ..
-                "made in combat is applied as soon as combat ends. The " ..
-                "format itself is not protected and applies immediately, " ..
-                "in combat as well."),
-            values = positionValues,
-            sorting = positionSorting,
-            get = getPosition,
-            set = setPosition,
         },
     },
 }
@@ -1085,8 +595,10 @@ if type(ns.Schema) == "table" then
         label = "Health Text",
         path = { "health" },
         apply = "texts",
-        hint = "What the health bar says: nothing, the current value, the "
-            .. "value and the maximum, or a percentage.",
+        hint = "What the bars say. The game's own setting is turned on and "
+            .. "given this shape; both puts the percentage at the left end "
+            .. "of the bar and the number at the right. One shape goes to "
+            .. "every bar the game draws.",
         values = formatValues,
     })
 
@@ -1095,26 +607,11 @@ if type(ns.Schema) == "table" then
         label = "Power Text",
         path = { "power" },
         apply = "texts",
-        hint = "The same choice for the power bar.",
+        hint = "Used when the health bar is left to the game: the game "
+            .. "has one setting for every bar it draws.",
         values = formatValues,
     })
 
-    Schema.Add(PAGE, {
-        kind = "select",
-        label = "Text Position",
-        path = { "position" },
-        apply = "texts",
-        hint = "Where on the bar the number stands.",
-        values = positionValues,
-    })
-
-    Schema.Add(PAGE, {
-        kind = "toggle",
-        label = "Shorten Large Numbers",
-        path = { "abbreviate" },
-        apply = "texts",
-        hint = "Write thousands as a short form instead of every digit.",
-    })
 end
 
 ns.Registry:Register(Texts)

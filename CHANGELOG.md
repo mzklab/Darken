@@ -60,15 +60,28 @@ the inspect window both, and the names are pinned by a check so they
 cannot be lost again quietly. The item's own icon is deliberately not
 in that list.
 
-**The numbers came back to the health and power bars.** With a format
-chosen in Bar Text, the bars stayed blank. Three different things had
-to be true and none of them was: this client keeps the player's bars
-in no field and under no global name, it writes their values through
-functions the addon did not know, and it keeps the value's font string
-on a container beside the bar rather than on the bar. The client is
-asked for all three now, through the one place in the addon that knows
-the game's own names. `/dark bars` says which of them this client
-gives and which it does not.
+**Bar Text turns the game's own on instead of writing its own.** With a
+format chosen the bars stayed blank, and the game's own text stopped
+working as well. The subsystem used to write the label itself: find the
+bar, find its font string, hook whatever function the client writes
+values with, rewrite after it, move it, show what the game had hidden.
+Every one of those is a guess at somebody else's build, and every one
+of them is spelt differently on this client line.
+
+The game already has this setting, and it does the job from inside its
+own update - the only place that knows the number, knows when it
+changed and may touch a protected frame's label. So the choice now
+turns that on and picks its shape: the number, the percentage, or both
+- which is the game's own two-ended form, the percentage at the left
+end of the bar and the number at the right. One shape goes to every bar
+the game draws, which is the game's rule and not ours, and the setting
+says so.
+
+Two rows went with the hand-written label: the place of the text and
+the shortening of large numbers. Both described a label this addon no
+longer writes. Choosing "the game's own" back puts the game's variables
+to the value the client itself calls default, so the setting is
+reversible like every other one here.
 
 **A supported addon is darkened all the way through.** Rack did not
 darken at all, because its bar is a one-by-one anchor with no picture

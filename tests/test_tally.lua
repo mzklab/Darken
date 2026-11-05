@@ -482,17 +482,18 @@ do
         .. tostring(counters.hooked_unitframes))
 
     wholecost.busyFrame(scene)
-    -- And the fired ones are counted per subsystem as well. On the fake scene
-    -- exactly one hook fires -- the one of the bar labels -- and that is
-    -- exactly what the shared number hid: the other six subsystems looked
-    -- like they were working at its expense.
+    -- And the fired ones are counted per subsystem as well. On the fake
+    -- scene not one of them fires now that the bar labels hook nothing:
+    -- that subsystem writes no label and turns the game's own setting on
+    -- instead. What the shared number used to hide is still the point -
+    -- a count belongs to the subsystem that earned it.
     local ran = {}
     for _, name in ipairs({ "bags", "darkness",
-        "nameplates", "texts", "unitframes" }) do
+        "nameplates", "unitframes" }) do
         if (counters["fired_" .. name] or 0) > 0 then ran[#ran + 1] = name end
     end
-    T.eq(table.concat(ran, ", "), "texts",
-        "the bar label hook fired, and only it")
+    T.eq(table.concat(ran, ", "), "",
+        "nothing fires on a frame of the fake scene")
 
     local tally = scene.ns.Tally.Build(counters, scene.ns.Registry)
     T.eq(tally.counters.fired_unitframes.verdict, scene.ns.Tally.IDLE,
@@ -674,9 +675,11 @@ T.suite("tally: a hook that did not fire in one subsystem")
 
 do
     -- Seven subsystems, seven pairs, and none shares a number with its neighbour.
+    -- The bar labels are not here: that subsystem hooks nothing at all -
+    -- it turns the game's own setting on and writes no label of its own.
     local SUBSYSTEMS = {
         "bags", "darkness",
-        "nameplates", "texts", "unitframes",
+        "nameplates", "unitframes",
     }
     for i = 1, #SUBSYSTEMS do
         local name = SUBSYSTEMS[i]

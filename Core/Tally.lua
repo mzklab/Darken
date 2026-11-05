@@ -346,26 +346,6 @@ local COUNTERS = {
             .. "then did nothing",
     },
     {
-        key = "hooked_texts", label = "Game Functions Hooked",
-        subsystem = "Bar Text", kind = Tally.NEEDED,
-        means = "game functions this subsystem hooked by a guessed name",
-    },
-    {
-        key = "absent_texts", label = "Names This Client Does Not Have",
-        subsystem = "Bar Text", kind = Tally.NORMAL,
-        means = "names of game functions this subsystem looked for and did "
-            .. "not find - zero hooks WITH names missing means the client "
-            .. "renamed them, which is a different problem from zero hooks "
-            .. "with every name present",
-    },
-    {
-        key = "fired_texts", label = "Hooks That Ran",
-        subsystem = "Bar Text", kind = Tally.NORMAL, pair = "hooked_texts",
-        means = "times one of this subsystem's hooks actually ran - zero "
-            .. "against a non-zero hook count is a name that resolved and "
-            .. "then did nothing",
-    },
-    {
         key = "hooked_unitframes", label = "Game Functions Hooked",
         subsystem = "Unit Frames", kind = Tally.NEEDED,
         means = "game functions this subsystem hooked by a guessed name",
