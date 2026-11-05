@@ -581,3 +581,41 @@ do
 
     Darkness.ApplyToWindow = saved
 end
+
+T.suite("the darkness: a window the player opened is always walked")
+
+-- The limit on walks is for frames that merely appear - tooltips, error
+-- text, zone names, whatever other addons show as the player moves. A window
+-- the player opened is a different event: it arrives through the game's own
+-- panel door, it is rare, and what it holds sits deeper than the top layer
+-- reaches.
+--
+-- Counting the two together cost the character sheet its slot frames: the
+-- slots are two levels down, and the sheet had spent its three walks on
+-- showings that were not openings.
+do
+    local walked = 0
+    local saved = Darkness.ApplyToWindow
+    Darkness.ApplyToWindow = function() walked = walked + 1 end
+
+    local sheet = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "DollWindow" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    -- Shown twenty times without being opened: the limit holds.
+    for _ = 1, 20 do Darkness.WindowShown(sheet) end
+    local byShowing = walked
+    T.ok(byShowing <= 3, "a mere showing is walked at most three times: "
+        .. byShowing)
+
+    -- And opened twenty times: every one of them is walked.
+    walked = 0
+    for _ = 1, 20 do Darkness.WindowShown(sheet, true) end
+    T.eq(walked, 20, "an opening is always walked, however many came before")
+
+    Darkness.ApplyToWindow = saved
+end

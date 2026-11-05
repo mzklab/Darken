@@ -5814,7 +5814,7 @@ function Darkness.RefillSoon()
 
     local timer = _G.C_Timer
     if type(timer) ~= "table" or type(timer.After) ~= "function" then
-        pcall(Darkness.WindowShown, window)
+        pcall(Darkness.WindowShown, window, true)
         return
     end
 
@@ -5825,7 +5825,7 @@ function Darkness.RefillSoon()
         refillPending = false
         local latest = Darkness.lastWindow
         if type(latest) == "table" then
-            pcall(Darkness.WindowShown, latest)
+            pcall(Darkness.WindowShown, latest, true)
         end
     end)
 end
@@ -6723,7 +6723,7 @@ end
 -- it is the difference between a readable quest and an unreadable one.
 --
 -- @param frame table the window that appeared
-function Darkness.WindowShown(frame)
+function Darkness.WindowShown(frame, opened)
     if type(frame) ~= "table" then return end
 
     -- This window first, and in this call: it is about to be drawn, and a
@@ -6766,6 +6766,20 @@ function Darkness.WindowShown(frame)
         -- The rule is the one this file already follows: how much work a
         -- thing deserves is decided by how often it happens.
         --
+        -- And the door it came through says which case this is. A window
+        -- the player opened arrives through the game's own panel door
+        -- (ShowUIPanel), through the returns by the clock that follow it,
+        -- or through a refill of the window standing open: those are
+        -- openings, they are rare, and they are always walked in full. The
+        -- counted limit is for the other door - the hook on Show, which is
+        -- placed on every named child of the interface root and hears
+        -- everything that merely appears.
+        --
+        -- Counting them together cost the character sheet its slot
+        -- frames: the slots sit two levels down, deeper than the top
+        -- layer reaches, and the sheet had used up its three walks on
+        -- showings that were not openings.
+        --
         -- A window holds more than its top layer, and painting only that
         -- left windows opening half dressed. The walk is what reaches the
         -- rest, and a window opening can afford it: it is one event, it is
@@ -6780,7 +6794,7 @@ function Darkness.WindowShown(frame)
             times = WALKED_TIMES[frame] or 0
         end
 
-        if times < WINDOW_WALKS then
+        if opened == true or times < WINDOW_WALKS then
             WALKED_GEN[frame] = generation
             WALKED_TIMES[frame] = times + 1
             churnWindows = churnWindows + 1
@@ -7566,7 +7580,7 @@ local function sweepLater(frame)
 
     for i = 1, #LATER do
         pcall(timer.After, LATER[i], function()
-            pcall(Darkness.WindowShown, frame)
+            pcall(Darkness.WindowShown, frame, true)
         end)
     end
 end
@@ -7666,7 +7680,7 @@ function Darkness.Watch()
                 -- second time is not walked at all (see SEEN below), while the
                 -- first opening drowns in the loading of the game's own
                 -- load-on-demand addon anyway.
-                pcall(Darkness.WindowShown, frame)
+                pcall(Darkness.WindowShown, frame, true)
 
                 -- And twice more later: the game fills a window after it has
                 -- shown it (see LATER).
