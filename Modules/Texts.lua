@@ -354,64 +354,6 @@ local function field(root, paths, method)
 end
 Texts.Field = field
 
---- The font string a bar writes its value on.
---
--- Why a field is not enough. The game's bar template keeps three labels
--- under keys of its own - the central one, the left one and the right one -
--- and the central one is the value. That is true wherever the template is
--- used, and on a line that builds its unit frames differently it is true of
--- nothing: the player frame of 1.60.1 is assembled by its own code, and the
--- key the template would have given is not there.
---
--- So the key is asked for first, and where there is none the bar is asked
--- for its own regions. A font string lying on a bar is the bar's text: this
--- is not a search through somebody else's tree but one question to one
--- object, and it is asked once per bar.
---
--- Of several the central one is taken, by the same rule the template
--- follows: the value stands in the middle, the percentage on the left and
--- the number on the right. With no anchor to judge by the first is taken -
--- a bar with one label has no second candidate to confuse it with.
---
--- @param bar table
--- @return table|nil the font string
-function Texts.Label(bar)
-    if type(bar) ~= "table" then return nil end
-
-    local known = LABEL[bar]
-    if known ~= nil then
-        if known == false then return nil end
-        return known
-    end
-
-    local found = field(bar, TEXT_PATHS, "SetText")
-
-    if found == nil and type(bar.GetRegions) == "function" then
-        local ok, regions = pcall(function() return { bar:GetRegions() } end)
-        if ok and type(regions) == "table" then
-            local first = nil
-            for i = 1, #regions do
-                local region = regions[i]
-                if type(region) == "table"
-                    and type(region.SetText) == "function"
-                    and type(region.GetPoint) == "function" then
-                    if first == nil then first = region end
-
-                    local seen, point = pcall(region.GetPoint, region, 1)
-                    if seen and point == "CENTER" then
-                        found = region
-                        break
-                    end
-                end
-            end
-            if found == nil then found = first end
-        end
-    end
-
-    LABEL[bar] = found or false
-    return found
-end
-
 -- Which group of the layer answers for which bar of which frame.
 local CLIENT_BARS = {
     PlayerFrame = {
@@ -419,6 +361,20 @@ local CLIENT_BARS = {
         power  = "player-power-bar",
     },
 }
+
+-- And where that bar's own regions live, when they do not live on the bar.
+--
+-- The template the game builds its bars from keeps the value's font string on
+-- the bar. The line that hands the bar over through a function keeps a
+-- container beside it instead, and names it itself.
+local CLIENT_HOSTS = {
+    PlayerFrame = {
+        health = "player-health-bar-text-host",
+    },
+}
+
+-- The frame to look for a bar's label on, where it is not the bar.
+local HOST = ns.Skin.Memory()
 
 --- Ask the client itself for a bar.
 --
@@ -449,7 +405,96 @@ function Texts.AskClient(frame, role)
     if not fine or type(bar) ~= "table" then return nil end
     if type(bar.GetValue) ~= "function" then return nil end
 
+    -- Where to look for this bar's label, if the client says so. Asked here
+    -- because this is where the client is already being asked, and the answer
+    -- belongs to the bar it was asked about.
+    local hosts = CLIENT_HOSTS[frame]
+    local hostGroup = hosts and hosts[role] or nil
+    if hostGroup ~= nil then
+        local told, askHost = pcall(ns.Compat.ResolveFunction, hostGroup)
+        if told and type(askHost) == "function" then
+            local well, host = pcall(askHost)
+            if well and type(host) == "table" then HOST[bar] = host end
+        end
+    end
+
     return bar
+end
+
+--- The label a frame holds in the middle, among its own regions.
+--
+-- Of several the central one is taken, by the rule the game's own bar
+-- template follows: the value stands in the middle, the percentage on the
+-- left and the number on the right. With no anchor to judge by the first is
+-- taken - a frame with one label has no second candidate to confuse it with.
+--
+-- @param frame table
+-- @return table|nil the font string
+function Texts.Centremost(frame)
+    if type(frame) ~= "table" then return nil end
+    if type(frame.GetRegions) ~= "function" then return nil end
+
+    local ok, regions = pcall(function() return { frame:GetRegions() } end)
+    if not ok or type(regions) ~= "table" then return nil end
+
+    local first = nil
+    for i = 1, #regions do
+        local region = regions[i]
+        if type(region) == "table"
+            and type(region.SetText) == "function"
+            and type(region.GetPoint) == "function" then
+            if first == nil then first = region end
+
+            local seen, point = pcall(region.GetPoint, region, 1)
+            if seen and point == "CENTER" then return region end
+        end
+    end
+
+    return first
+end
+
+--- The font string a bar writes its value on.
+--
+-- Why a field is not enough. The game's bar template keeps three labels
+-- under keys of its own - the central one, the left one and the right one -
+-- and the central one is the value. That is true wherever the template is
+-- used, and on a line that builds its unit frames differently it is true of
+-- nothing: the player frame of 1.60.1 is assembled by its own code, and the
+-- key the template would have given is not there.
+--
+-- Four places, in the order of how much they are worth. The key on the bar;
+-- the key on the frame the client itself names as holding that bar's regions
+-- (PlayerFrame_GetHealthBarContainer - the client names a container beside
+-- the bar, and the function to reach it, which is as close to a stated fact
+-- as this gets); the bar's own regions; that container's regions.
+--
+-- A font string lying on a bar is the bar's text: asking for the regions is
+-- not a search through somebody else's tree but one question to one object,
+-- and it is asked once per bar.
+--
+-- @param bar table
+-- @return table|nil the font string
+function Texts.Label(bar)
+    if type(bar) ~= "table" then return nil end
+
+    local known = LABEL[bar]
+    if known ~= nil then
+        if known == false then return nil end
+        return known
+    end
+
+    local host = HOST[bar]
+    if type(host) ~= "table" then host = nil end
+
+    local found = field(bar, TEXT_PATHS, "SetText")
+    if found == nil and host ~= nil then
+        found = field(host, TEXT_PATHS, "SetText")
+    end
+    if found == nil then found = Texts.Centremost(bar) end
+    if found == nil and host ~= nil then found = Texts.Centremost(host) end
+
+    LABEL[bar] = found or false
+    return found
 end
 
 --- The label's remembered native anchor.

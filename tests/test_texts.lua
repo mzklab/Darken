@@ -678,3 +678,56 @@ do
     T.ok(TX.Refresh(bar), "the value was written")
     T.eq(middle.written, "120/300", "onto the label the bar itself handed over")
 end
+
+T.suite("bar text: the label on the frame the client names beside the bar")
+
+-- The line that hands a bar over through a function of its own keeps a
+-- container beside it and names that too. The value's font string can be
+-- there rather than on the bar, and then everything found so far - the bar,
+-- the moment of writing - still writes nowhere.
+do
+    local savedCompat = ns.Compat
+
+    local label = { written = nil }
+    function label:SetText(value) self.written = value end
+    function label:GetPoint() return "CENTER" end
+    function label:IsShown() return true end
+    function label:Show() end
+
+    -- A bar with no label of its own anywhere.
+    local bar = { value = 40 }
+    function bar:GetValue() return self.value end
+    function bar:GetMinMaxValues() return 0, 50 end
+    function bar:GetRegions() return nil end
+
+    local container = {}
+    function container:GetRegions() return label end
+
+    ns.Compat = {
+        ResolveFunction = function(group)
+            if group == "player-health-bar" then
+                return function() return bar end
+            end
+            if group == "player-health-bar-text-host" then
+                return function() return container end
+            end
+            return nil
+        end,
+    }
+
+    T.eq(ns.Texts.AskClient("PlayerFrame", "health"), bar,
+        "the client hands over the bar")
+    T.eq(ns.Texts.Label(bar), label,
+        "and the label is found on the frame it named beside it")
+
+    combat = false
+    withSettings({
+        health = "percent", power = NATIVE,
+        abbreviate = false, position = TX.NATIVE,
+    })
+    TX.Role(bar, "health")
+    T.ok(TX.Refresh(bar), "the value was written")
+    T.eq(label.written, "80%", "onto that label")
+
+    ns.Compat = savedCompat
+end

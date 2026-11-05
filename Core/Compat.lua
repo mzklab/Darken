@@ -2033,6 +2033,17 @@ local CONTAINERS = {
         "PlayerFrame_GetManaBar",
     },
 
+    -- Where that bar's own regions live.
+    --
+    -- A bar's value is written on a font string, and the template the game
+    -- builds its bars from keeps it on the bar. This line builds the player's
+    -- frame by its own code: it hands out the bar through the function above
+    -- and keeps a container beside it, and the client names that container
+    -- itself rather than leaving it to be guessed.
+    ["player-health-bar-text-host"] = {
+        "PlayerFrame_GetHealthBarContainer",
+    },
+
     -- Who created a global variable. The client answers with the name of
     -- the addon that set it, and that is the only direct answer to "whose
     -- frame is this" there is: a frame does not remember its author, but
