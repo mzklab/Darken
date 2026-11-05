@@ -1477,4 +1477,16 @@ ns.RegisterLocale("ruRU", {
         "Что написано на полосках. Первый пункт оставляет это игре. Любой другой включает родной текст игры на полосках и выбирает его форму: число, процент или и то и другое — тогда процент стоит у левого края полоски, а число у правого. Игра показывает одну форму на всех полосках, так что этот выбор решает и за полоску ресурса.",
     ["Mana, rage, energy. The game has one setting for every bar, so this one is used when the health bar is left to the game."] =
         "Мана, ярость, энергия. У игры одна настройка на все полоски, поэтому эта используется, когда полоска здоровья оставлена игре.",
+    ["Percentage Position"] =
+        "Положение процента",
+    ["Number Position"] =
+        "Положение числа",
+    ["Where the percentage stands. The game writes the text; this moves what it wrote."] =
+        "Где стоит процент. Текст пишет игра; это двигает написанное ею.",
+    ["The same for the number, so the two can stand apart."] =
+        "То же для числа, чтобы два значения стояли порознь.",
+    ["Where the percentage stands. The game writes the text; this moves what it wrote, so the two values can stand at the two ends of the bar or anywhere else you put them. Moving text on a unit frame is a protected operation: a change made in combat is applied as soon as combat ends."] =
+        "Где стоит процент. Текст пишет игра; это двигает написанное ею, так что два значения могут стоять у двух краёв полоски или где угодно ещё. Перемещение текста на рамке юнита — защищённая операция: изменение, сделанное в бою, применяется сразу после боя.",
+    ["The same for the number."] =
+        "То же для числа.",
 })

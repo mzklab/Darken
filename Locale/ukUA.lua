@@ -1489,4 +1489,16 @@ ns.RegisterLocale("ukUA", {
         "Що написано на смужках. Перший пункт залишає це грі. Будь-який інший вмикає рідний текст гри на смужках і обирає його форму: число, відсоток або і те й те — тоді відсоток стоїть біля лівого краю смужки, а число біля правого. Гра показує одну форму на всіх смужках, тож цей вибір вирішує і за смужку ресурсу.",
     ["Mana, rage, energy. The game has one setting for every bar, so this one is used when the health bar is left to the game."] =
         "Мана, лють, енергія. У гри одне налаштування на всі смужки, тому це використовується, коли смужку здоров'я залишено грі.",
+    ["Percentage Position"] =
+        "Положення відсотка",
+    ["Number Position"] =
+        "Положення числа",
+    ["Where the percentage stands. The game writes the text; this moves what it wrote."] =
+        "Де стоїть відсоток. Текст пише гра; це рухає написане нею.",
+    ["The same for the number, so the two can stand apart."] =
+        "Те саме для числа, щоб два значення стояли нарізно.",
+    ["Where the percentage stands. The game writes the text; this moves what it wrote, so the two values can stand at the two ends of the bar or anywhere else you put them. Moving text on a unit frame is a protected operation: a change made in combat is applied as soon as combat ends."] =
+        "Де стоїть відсоток. Текст пише гра; це рухає написане нею, тож два значення можуть стояти біля двох країв смужки або будь-де ще. Переміщення тексту на рамці юніта — захищена операція: зміна, зроблена в бою, застосовується одразу після бою.",
+    ["The same for the number."] =
+        "Те саме для числа.",
 })

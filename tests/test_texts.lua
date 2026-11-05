@@ -182,3 +182,58 @@ do
     T.eq(TX.ApplyGame(settings, { Get = nil, Set = nil }), 0,
         "and a client that cannot be asked is written to not at all")
 end
+
+T.suite("bar text: the game writes the values, we only move them")
+
+-- What the author asked for in the end: both values at once and the
+-- possibility of standing them apart - the percentage at one end, the
+-- number at the other. The game writes both in its two-ended shape; where
+-- they stand is the one thing its setting cannot be told.
+--
+-- So nothing here writes a label, shows one or hides one. It reads where
+-- the game put each of them and moves them, and a label that cannot be
+-- found keeps the game's own layout, which is the right failure: the values
+-- are still on the bar.
+do
+    local function label(point)
+        local it = { point = point, moved = nil }
+        function it:SetText() error("the game writes the text, not us") end
+        function it:GetPoint() return self.point, nil, self.point, 0, 0 end
+        function it:ClearAllPoints() end
+        function it:SetPoint(p, _, _, x) self.moved = { p, x } end
+        return it
+    end
+
+    local left, right, middle = label("LEFT"), label("RIGHT"), label("CENTER")
+    local bar = {}
+    function bar:GetRegions() return left, middle, right end
+    function bar:GetValue() return 1 end
+
+    local gotLeft, gotRight, gotMiddle = TX.Sort(bar)
+    T.eq(gotLeft, left, "the label at the left end is told by its own anchor")
+    T.eq(gotRight, right, "and the one at the right end")
+    T.eq(gotMiddle, middle, "and the one in the middle")
+
+    -- Which of them carries what is a pure question of the shape the game
+    -- was asked for.
+    local percent, value = TX.Carriers("BOTH", left, right, middle)
+    T.eq(percent, left, "in the two-ended shape the percentage is at the left")
+    T.eq(value, right, "and the number at the right - the game's own rule")
+
+    percent, value = TX.Carriers("PERCENT", left, right, middle)
+    T.eq(percent, middle, "with one value there is one label, in the middle")
+    T.eq(value, nil, "and no number beside it")
+
+    percent, value = TX.Carriers("NUMERIC", left, right, middle)
+    T.eq(percent, nil, "and the other way round for the number")
+    T.eq(value, middle, "which is that same middle label")
+
+    -- Moving puts the label against the end of the bar, with the inset the
+    -- whole addon uses; the native choice puts it back where the game had it.
+    T.ok(TX.MoveLabel(right, bar, "left"), "a label is moved")
+    T.eq(right.moved[1], "LEFT", "to the side asked for")
+    T.ok(right.moved[2] > 0, "pushed in from the edge rather than on it")
+
+    T.ok(TX.MoveLabel(right, bar, TX.NATIVE), "and put back")
+    T.eq(right.moved[1], "RIGHT", "where the game itself had it")
+end

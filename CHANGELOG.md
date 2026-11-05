@@ -77,11 +77,17 @@ end of the bar and the number at the right. One shape goes to every bar
 the game draws, which is the game's rule and not ours, and the setting
 says so.
 
-Two rows went with the hand-written label: the place of the text and
-the shortening of large numbers. Both described a label this addon no
-longer writes. Choosing "the game's own" back puts the game's variables
-to the value the client itself calls default, so the setting is
-reversible like every other one here.
+Where the two values stand is the one thing the game's setting cannot
+be told, so that stayed ours: "Percentage Position" and "Number
+Position" move what the game wrote - to the left end, the middle or the
+right end, or wherever the game itself had it. The text is never
+written, shown or hidden by this addon; only moved. A bar whose labels
+cannot be found keeps the game's layout, and the values stay on it.
+
+The shortening of large numbers went with the hand-written label: it
+described digits this addon no longer writes. Choosing "the game's own"
+back puts the game's variables to the value the client itself calls
+default, so the setting is reversible like every other one here.
 
 **A supported addon is darkened all the way through.** Rack did not
 darken at all, because its bar is a one-by-one anchor with no picture

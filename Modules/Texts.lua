@@ -305,6 +305,141 @@ function Texts.Wanted(settings)
     return "1", chosen
 end
 
+-- Where a label may be put, in the game's words.
+local SIDE_POINT = { left = "LEFT", center = "CENTER", right = "RIGHT" }
+
+-- A label's own anchor, read once before we move it and never again:
+-- otherwise "as the game had it" would restore our previous move rather than
+-- the game's placing.
+local POINT_BASE = ns.Skin.Memory()
+
+--- The anchor the game gave a label.
+-- @param label table the font string
+-- @return table|nil { point, relativeTo, relativePoint, x, y }
+function Texts.BasePoint(label)
+    if type(label) ~= "table" then return nil end
+
+    local base = POINT_BASE[label]
+    if base ~= nil then
+        if base == false then return nil end
+        return base
+    end
+
+    if type(label.GetPoint) ~= "function" then
+        POINT_BASE[label] = false
+        return nil
+    end
+
+    local ok, point, relativeTo, relativePoint, x, y =
+        pcall(label.GetPoint, label, 1)
+    if not ok or type(point) ~= "string" then
+        POINT_BASE[label] = false
+        return nil
+    end
+
+    base = { point, relativeTo, relativePoint, x or 0, y or 0 }
+    POINT_BASE[label] = base
+    return base
+end
+
+--- Sort a bar's labels by where the game itself put them.
+--
+-- The classification comes from the game's own placing rather than from a
+-- field's name, and that is the point: the names differ between client
+-- lines, the layout does not. In the game's two-ended shape the percentage
+-- stands at the left end and the number at the right - that is its own code,
+-- not a guess - while the single-valued shapes use the one in the middle.
+--
+-- @param bar table
+-- @return table|nil the label at the left end
+-- @return table|nil the one at the right end
+-- @return table|nil the one in the middle
+function Texts.Sort(bar)
+    if type(bar) ~= "table" then return nil, nil, nil end
+    if type(bar.GetRegions) ~= "function" then return nil, nil, nil end
+
+    local ok, regions = pcall(function() return { bar:GetRegions() } end)
+    if not ok or type(regions) ~= "table" then return nil, nil, nil end
+
+    local left, right, middle = nil, nil, nil
+    for i = 1, #regions do
+        local region = regions[i]
+        if type(region) == "table"
+            and type(region.SetText) == "function"
+            and type(region.GetPoint) == "function" then
+            local base = Texts.BasePoint(region)
+            local point = base and base[1] or nil
+
+            if point == "LEFT" and left == nil then
+                left = region
+            elseif point == "RIGHT" and right == nil then
+                right = region
+            elseif middle == nil then
+                middle = region
+            end
+        end
+    end
+
+    return left, right, middle
+end
+
+--- Put one label where the player asked, or back where the game had it.
+--
+-- Moving a region of a protected frame is a protected operation and is
+-- refused in combat; the caller defers it. Nothing is written into the label
+-- and nothing is shown or hidden: what it says and whether it says anything
+-- is the game's business.
+--
+-- @param label table|nil the font string
+-- @param bar table the bar it belongs to
+-- @param side string|nil "left", "center", "right", or the native marker
+-- @return boolean whether the label was moved
+function Texts.MoveLabel(label, bar, side)
+    if type(label) ~= "table" or type(bar) ~= "table" then return false end
+    if type(label.SetPoint) ~= "function" then return false end
+    if type(label.ClearAllPoints) ~= "function" then return false end
+
+    local base = Texts.BasePoint(label)
+
+    local point = SIDE_POINT[side]
+    if point == nil then
+        -- Back to the game's own placing, which is only possible if we read
+        -- it before the first move.
+        if base == nil then return false end
+        if not pcall(label.ClearAllPoints, label) then return false end
+        return pcall(label.SetPoint, label, base[1], base[2], base[3],
+            base[4], base[5]) == true
+    end
+
+    local inset = Edge()
+    local x = 0
+    if point == "LEFT" then x = inset end
+    if point == "RIGHT" then x = -inset end
+
+    if not pcall(label.ClearAllPoints, label) then return false end
+    return pcall(label.SetPoint, label, point, bar, point, x, 0) == true
+end
+
+--- Which of a bar's labels carries the percentage and which the number.
+--
+-- A pure function of the shape the game was asked for: in the two-ended
+-- shape the percentage is at the left end and the number at the right, in
+-- the single-valued shapes there is one label in the middle and it carries
+-- whichever was asked for.
+--
+-- @param shape string|nil the game's shape (NUMERIC, PERCENT, BOTH)
+-- @param left table|nil
+-- @param right table|nil
+-- @param middle table|nil
+-- @return table|nil the label with the percentage
+-- @return table|nil the label with the number
+function Texts.Carriers(shape, left, right, middle)
+    if shape == "BOTH" then return left, right end
+    if shape == "PERCENT" then return middle, nil end
+    if shape == "NUMERIC" then return nil, middle end
+    return nil, nil
+end
+
 --- Apply the settings to the game's own console variables.
 --
 -- The client's functions arrive as an argument rather than out of _G, as
@@ -356,10 +491,13 @@ end
 -- The default settings: everything at the game's native look. A fresh install
 -- changes not one letter on the bars until the player asks.
 Texts.defaults = {
-    health     = NATIVE,
-    power      = NATIVE,
-    abbreviate = false,
-    position   = NATIVE,
+    health    = NATIVE,
+    power     = NATIVE,
+
+    -- Where each of the two stands. The game's own placing until the player
+    -- says otherwise, like everything else here.
+    percentAt = NATIVE,
+    valueAt   = NATIVE,
 }
 
 --- The subsystem's settings from the profile.
@@ -431,15 +569,87 @@ Texts.Field = field
 -- The frames are taken from the compatibility layer: it returns only those
 -- that exist on this client. There are no checks of the client's version
 -- here.
+--- Put the game's labels where the player asked.
+--
+-- The text itself stays the game's: this moves what the game draws and
+-- writes nothing. A bar whose labels cannot be found keeps the game's
+-- layout, which is the right failure - the values are still there.
+--
+-- @param settings table
+-- @param globals table|nil name -> object, _G by default
+-- @return number how many labels were moved
+function Texts.Arrange(settings, globals)
+    if type(settings) ~= "table" then return 0 end
+    if type(globals) ~= "table" then globals = _G end
+
+    local percentAt = settings.percentAt
+    local valueAt = settings.valueAt
+    if (percentAt == nil or percentAt == NATIVE)
+        and (valueAt == nil or valueAt == NATIVE)
+        and next(POINT_BASE) == nil then
+        -- Nothing asked for and nothing moved before: not one label of the
+        -- game's is touched.
+        return 0
+    end
+
+    local _, shape = Texts.Wanted(settings)
+    local combat = inCombat()
+    local moved = 0
+
+    local names = ns.Compat.Resolve("unitframe")
+    for i = 1, #names do
+        local frame = globals[names[i]]
+        if type(frame) == "table" then
+            for j = 1, #BARS do
+                local bar = field(frame, BARS[j].paths, "GetValue")
+                if bar ~= nil then
+                    local left, right, middle = Texts.Sort(bar)
+                    local percent, value =
+                        Texts.Carriers(shape, left, right, middle)
+
+                    local work = {
+                        { label = percent, side = percentAt },
+                        { label = value, side = valueAt },
+                    }
+                    for k = 1, #work do
+                        local item = work[k]
+                        if item.label ~= nil then
+                            if combat then
+                                local queue, frames = Queue()
+                                if queue then
+                                    frames.Enqueue(queue,
+                                        "place:" .. names[i] .. ":" .. k,
+                                        function()
+                                            Texts.MoveLabel(item.label, bar,
+                                                item.side)
+                                        end)
+                                end
+                            elseif Texts.MoveLabel(item.label, bar, item.side)
+                            then
+                                moved = moved + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return moved
+end
+
 function Texts:ApplySettings()
     local settings = Settings()
     if not settings then return end
 
-    -- The whole of the subsystem's work: the game's own setting, turned on
-    -- and given a shape. Not one bar, label or hook of the game's is
-    -- touched - see the note above CVAR_SHOW for what used to be here and
-    -- why it went.
+    -- The game's own setting, turned on and given a shape. Not one label of
+    -- the game's is written - see the note above CVAR_SHOW for what used to
+    -- be here and why it went.
     Texts.ApplyGame(settings)
+
+    -- And the game's own labels put where the player asked, which is the
+    -- one thing the game's setting cannot do for him.
+    Texts.Arrange(settings)
 end
 
 --- Enabling the subsystem.
@@ -530,8 +740,12 @@ local function handlers(field_)
     end
 end
 
-local getHealth,     setHealth     = handlers("health")
-local getPower,      setPower      = handlers("power")
+local getHealth,    setHealth    = handlers("health")
+local getPower,     setPower     = handlers("power")
+local getPercentAt, setPercentAt = handlers("percentAt")
+local getValueAt,   setValueAt   = handlers("valueAt")
+
+local positionValues, positionSorting = listFrom(POSITIONS)
 
 Texts.options = {
     type = "group",
@@ -566,6 +780,33 @@ Texts.options = {
             sorting = formatSorting,
             get = getPower,
             set = setPower,
+        },
+        percentAt = {
+            type = "select",
+            order = 3,
+            width = "full",
+            name = ns.Localize("Percentage Position"),
+            desc = ns.Localize("Where the percentage stands. The game " ..
+                "writes the text; this moves what it wrote, so the two " ..
+                "values can stand at the two ends of the bar or anywhere " ..
+                "else you put them. Moving text on a unit frame is a " ..
+                "protected operation: a change made in combat is applied " ..
+                "as soon as combat ends."),
+            values = positionValues,
+            sorting = positionSorting,
+            get = getPercentAt,
+            set = setPercentAt,
+        },
+        valueAt = {
+            type = "select",
+            order = 4,
+            width = "full",
+            name = ns.Localize("Number Position"),
+            desc = ns.Localize("The same for the number."),
+            values = positionValues,
+            sorting = positionSorting,
+            get = getValueAt,
+            set = setValueAt,
         },
     },
 }
@@ -610,6 +851,25 @@ if type(ns.Schema) == "table" then
         hint = "Used when the health bar is left to the game: the game "
             .. "has one setting for every bar it draws.",
         values = formatValues,
+    })
+
+    Schema.Add(PAGE, {
+        kind = "select",
+        label = "Percentage Position",
+        path = { "percentAt" },
+        apply = "texts",
+        hint = "Where the percentage stands. The game writes the text; "
+            .. "this moves what it wrote.",
+        values = positionValues,
+    })
+
+    Schema.Add(PAGE, {
+        kind = "select",
+        label = "Number Position",
+        path = { "valueAt" },
+        apply = "texts",
+        hint = "The same for the number, so the two can stand apart.",
+        values = positionValues,
     })
 
 end
