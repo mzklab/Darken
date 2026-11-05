@@ -88,6 +88,15 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**Every chat window counts as the chat.** The rule that stops the
+addon answering an animation applies to the chat's area, and that
+area named the first chat window and its parts - so every window a
+player had made beyond the first fell into the general area, was
+answered for on every frame of every fade, and blinked. A message
+arriving is a fade, which is why it showed most when quests were
+being taken. All ten windows, their tabs, their edit boxes and their
+button frames are named now.
+
 **The chat stops blinking.** The chat fades - its window, its tabs
 and its buttons are brought up and taken down by writing a colour on
 every frame of the animation - and the addon answered each of those

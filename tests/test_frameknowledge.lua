@@ -551,3 +551,36 @@ do
     T.eq(seen["ChatFrame1EditBox"], true, "the edit box is")
     T.eq(seen["ChatFrame1Tab"], true, "and the tab")
 end
+
+T.suite("frame groups: every chat window is in the chat's area")
+
+-- The group names the area a picture belongs to, and the chat's area
+-- carries a rule of its own: the client fades these frames continuously, so
+-- they are painted once and never answered for afterwards.
+--
+-- A chat window left out of the group falls into the general area instead,
+-- is answered for on every frame of every fade, and blinks. The group named
+-- the first window and its parts; a player has as many as he has made tabs.
+do
+    local names = Compat.GetFrameNames("vanilla", "chat")
+    local seen = {}
+    for i = 1, #names do seen[names[i]] = true end
+
+    local missing = {}
+    for i = 1, 10 do
+        local parts = {
+            "ChatFrame" .. i,
+            "ChatFrame" .. i .. "Tab",
+            "ChatFrame" .. i .. "EditBox",
+            "ChatFrame" .. i .. "ButtonFrame",
+        }
+        for j = 1, #parts do
+            if not seen[parts[j]] then missing[#missing + 1] = parts[j] end
+        end
+    end
+
+    T.eq(#missing, 0, "no part of any chat window is left out: "
+        .. table.concat(missing, " "))
+
+    T.eq(seen["GeneralDockManager"], true, "the dock the tabs sit in is there")
+end

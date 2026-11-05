@@ -633,15 +633,36 @@ local CHROME = {
         "QuestTimerFrame",
     },
 
-    chat = {
-        "ChatFrame1",
-        "ChatFrame1Tab",
-        "ChatFrame1EditBox",
-        "ChatFrame1ButtonFrame",
-        "GeneralDockManager",
-        "ChatFrameMenuButton",
-        "FriendsMicroButton",
-    },
+    -- The chat, every window of it rather than the first.
+    --
+    -- The group names the area a picture belongs to, and the chat's area
+    -- carries a rule of its own: the client fades these frames up and down
+    -- continuously, so they are painted once and never answered for
+    -- afterwards. A chat window left out of the group falls into the
+    -- general area instead, is answered for on every frame of every fade,
+    -- and blinks.
+    --
+    -- A player has as many chat windows as he has made tabs, and the pieces
+    -- are the same for each: the window, its tab, its edit box and its
+    -- frame of buttons. The count is the client's own maximum.
+    chat = (function()
+        local out = {
+            "GeneralDockManager",
+            "ChatFrameMenuButton",
+            "ChatFrameChannelButton",
+            "ChatFrameToggleVoiceDeafenButton",
+            "ChatFrameToggleVoiceMuteButton",
+            "QuickJoinToastButton",
+            "FriendsMicroButton",
+        }
+        for i = 1, 10 do
+            out[#out + 1] = "ChatFrame" .. i
+            out[#out + 1] = "ChatFrame" .. i .. "Tab"
+            out[#out + 1] = "ChatFrame" .. i .. "EditBox"
+            out[#out + 1] = "ChatFrame" .. i .. "ButtonFrame"
+        end
+        return out
+    end)(),
 
     bags = {
         "MainMenuBarBackpackButton",
