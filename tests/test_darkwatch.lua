@@ -1609,3 +1609,59 @@ do
     _G.hooksecurefunc = savedHook
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: the chat does not set the text raising going")
+
+-- Raising text walks every page the addon remembers and writes every font
+-- object it knows. Asked on any showing, that runs on the movement of a
+-- mouse over the chat - a chat window, its tabs and its buttons appear and
+-- vanish constantly - for text that is not on a page and is never raised.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedTimer = _G.C_Timer
+    _G.C_Timer = { After = function() end }
+
+    -- The raising itself is counted rather than the deferred work in
+    -- general: a showing asks for other things too, and the question here
+    -- is about the text alone.
+    local asked = 0
+    local savedLift = Late.LiftPagesLater
+    Late.LiftPagesLater = function() asked = asked + 1 end
+
+    local function frame(name)
+        return {
+            GetObjectType = function() return "Frame" end,
+            GetName = function() return name end,
+            GetRegions = function() return end,
+            GetChildren = function() return end,
+        }
+    end
+
+    -- The chat, appearing and vanishing as the mouse passes over it.
+    for _ = 1, 30 do Late.WindowShown(frame("ChatFrame1")) end
+    local afterChat = asked
+    asked = 0
+
+    -- A page of text, appearing once.
+    Late.WindowShown(frame("QuestFrame"))
+
+    T.ok(asked > 0, "a page sets the raising going: " .. asked)
+    T.eq(afterChat, 0,
+        "while thirty showings of the chat did not: " .. afterChat)
+
+    Late.LiftPagesLater = savedLift
+    _G.C_Timer = savedTimer
+    fresh.Addon, fresh.flavor = nil, nil
+end

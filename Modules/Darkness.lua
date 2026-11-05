@@ -6379,7 +6379,18 @@ function Darkness.WindowShown(frame)
 
     Darkness.PaintNamedSoon()
 
-    if type(Darkness.LiftPagesLater) == "function" then
+    -- The text of a page, and only when a page is what appeared.
+    --
+    -- Raising text walks every page the addon remembers and writes every
+    -- font object it knows. Asked on any showing, that runs on the movement
+    -- of a mouse over the chat - a chat window, its tabs and its buttons
+    -- appear and vanish constantly - for text that is not on a page and
+    -- will never be raised.
+    --
+    -- The windows with text on parchment are known by name, and it is the
+    -- same list the walk remembers pages by.
+    if Darkness.TextWindow(stringFrom(frame, "GetName"))
+        and type(Darkness.LiftPagesLater) == "function" then
         Darkness.LiftPagesLater()
     end
 end

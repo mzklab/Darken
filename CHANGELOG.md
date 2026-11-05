@@ -63,6 +63,13 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**The chat no longer sets the text raising going.** Raising text walks
+every page the addon remembers and writes every font object it knows,
+and it was asked for on the showing of any window at all - so a mouse
+passing over the chat ran it, again and again, for text that is not
+on a page and is never raised. It is asked for only when a window
+with text on parchment appears.
+
 **The chat windows are not painted at all.** A chat window is text on
 no backdrop of its own, and the client fades it up and down
 continuously - the mouse leaving it, a message arriving. Painting it
