@@ -9,7 +9,66 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## Unreleased
+## 1.0.5
+
+**The game stopped stuttering while you play.** With the addon on, the
+frames dropped steadily - walking, jumping, standing in a field with
+nothing open. The cause was measured rather than guessed at: the pass
+that walks a window's tree was running every single frame, ninety
+milliseconds of walking in every second of play, with no window on the
+screen at all. The watcher that answers "a window appeared, paint it"
+is placed on every named frame the interface root holds, and most of
+what it hears is not a window opening - it is a tooltip, a line of
+error text, a zone name, a drop-down, another addon showing and hiding
+its own frames as you move. Each of those was answered with the full
+walk, and each threw away the walk already in flight, so none of them
+ever finished.
+
+Three things now stand between that door and the walk. A frame is
+walked while the walking finds something new and stops being walked
+when it does not. The window the player opens is never refused. And
+under both of those sits a ceiling that depends on no judgement at
+all: once the walking done in the last second passes ten milliseconds,
+a frame appearing is answered with its top layer and nothing more
+until the second is out.
+
+**What the addon spends is now something you can read.** `/dark cost`
+takes a reading, and a second one after a stretch of play prints the
+difference per second: pictures the game assigned and how many of them
+were ours, pictures taken up that the plan did not hold, climbs for an
+area, frames shown and what each was answered with, walk slices and
+the milliseconds they took. The numbers above were found with it, by
+the author, in his own client.
+
+**The interface costs less while nothing is happening.** Two things
+were paid for on every write the game makes to any picture anywhere -
+and nearly every such write is to a picture that is none of this
+addon's business. The answer "not ours" is now remembered against the
+picture, so a repeat costs one lookup instead of two protected calls
+into the game, and it is forgotten again the moment the addon learns
+any frame's area. And the arithmetic of an application - every area's
+multiplier, its brightness ceiling, the tint, the class colour - is
+worked out once per change of setting instead of once per picture
+painted.
+
+**The equipment slots darken with the rest of the character sheet.**
+Every slot kept its gold frame on a dark window, and the reason was a
+name: the list held the spelling another line of the client uses, and
+not one of those names exists here. The slots and their frames are
+named the way this client spells them now, for the character sheet and
+the inspect window both, and the names are pinned by a check so they
+cannot be lost again quietly. The item's own icon is deliberately not
+in that list.
+
+**The numbers came back to the health and power bars.** With a format
+chosen in Bar Text, the bars stayed blank. Three different things had
+to be true and none of them was: this client keeps the player's bars
+in no field and under no global name, it writes their values through
+functions the addon did not know, and it keeps the value's font string
+on a container beside the bar rather than on the bar. The client is
+asked for all three now, through the one place in the addon that knows
+the game's own names. `/dark bars` says which of them this client
+gives and which it does not.
 
 **A supported addon is darkened all the way through.** Rack did not
 darken at all, because its bar is a one-by-one anchor with no picture
