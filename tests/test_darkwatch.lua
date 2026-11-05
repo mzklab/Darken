@@ -1153,12 +1153,41 @@ do
     T.ok(afterFirst <= 3,
         "the first write turns back at the minimap: " .. afterFirst)
 
-    -- The second is the whole point: it asks the picture who owns it, reads
-    -- the remembered "nothing here" and stops. One call to the game instead
-    -- of the climb, and the climb was what the minimap could not afford.
-    T.eq(climbs, afterFirst + 1,
-        "the second write costs one question and no climb")
+    -- The second is the whole point: the answer is remembered against the
+    -- picture itself, so it costs one lookup - no climb and not even the
+    -- question about the owner.
+    --
+    -- It used to cost that question: GetParent, then the remembered "nothing
+    -- here" against the owner. One call into the game is nothing once and is
+    -- paid per assignment, and assignments to pictures that are none of our
+    -- business are nearly all of them - 97 per cent of the hearings in the
+    -- session the author sent in. That is the whole of what the addon spends
+    -- while the player merely walks about.
+    T.eq(climbs, afterFirst,
+        "the second write costs no call into the game at all")
     T.eq(pin.r, 1, "the pin is still not ours to paint")
+
+    -- And the write-off is not for good. The moment the addon learns any
+    -- frame's area - a walk, a window opened - what was written off under the
+    -- old knowledge is asked about again: otherwise a picture whose owner
+    -- becomes known later would stay light for the rest of the session,
+    -- which is the one complaint worse than the cost this saves.
+    -- A window the walk has not seen before: a repeated walk of an unchanged
+    -- one asks nothing afresh and therefore learns nothing new, which is the
+    -- point of it.
+    local other = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "TestPanel" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+    Late.ApplyToWindow(other)
+
+    climbs = 0
+    installed["SetTexture"](pin)
+    T.ok(climbs >= 1,
+        "after the addon learns a frame's area the picture is asked about again")
 
     fresh.Addon, fresh.flavor = nil, nil
     _G.C_Timer, _G.hooksecurefunc = savedTimer, savedHook

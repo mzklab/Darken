@@ -235,6 +235,34 @@ local BASE = ns.Skin.Memory()
 -- the owner knows its area.
 local FRAME_AREA = ns.Skin.Memory()
 
+-- Pictures written off as none of ours, and how much we knew when each was
+-- written off.
+--
+-- The watcher sits on the method table shared by every picture in the
+-- interface, so it hears every assignment anywhere - another addon's pins
+-- redrawn as the player moves included. In the session sent in, of 46,111
+-- hearings 1,227 were about pictures of ours: the other 97 per cent each
+-- paid two protected calls, one of them into the game for the owner, only to
+-- arrive at the answer they arrived at the time before.
+--
+-- Written off here means "asked and found to belong to nothing we touch".
+-- The answer is kept against the picture, so the next assignment to it costs
+-- one lookup and no call into the game.
+--
+-- It is kept against a number rather than for good. Every time the addon
+-- learns a frame's area - any walk, any window opened - that number moves,
+-- and every write-off made under the old one expires. So a picture whose
+-- owner becomes known later is asked about again, and the worst a stale
+-- write-off can cost is one picture staying light until the next window
+-- opens.
+local STRANGE = ns.Skin.Memory()
+local knowledge = 0
+
+-- Dropping the arithmetic of an application, declared in advance: it stands
+-- with the application itself, further down the file, and the two doors a
+-- change of setting comes through stand above it.
+local forgetShade
+
 -- The windows whose showing we are already watching: window -> true.
 local SHOWN_WATCH = ns.Skin.Memory()
 
@@ -2988,6 +3016,10 @@ local function walk(object, depth, skip, sink, area, push)
     -- painted by that area (see FRAME_AREA and gameRecolored).
     FRAME_AREA[object] = area or false
 
+    -- And the addon knows one frame's area more than it did, so the pictures
+    -- written off while it did not expire.
+    knowledge = knowledge + 1
+
     local content = contentRegions(object)
 
     -- A bar and its setting are different things, and the rule for them
@@ -4154,6 +4186,9 @@ local chromePending = false
 function Darkness.Invalidate()
     generation = generation + 1
 
+    -- A fresh reconnaissance may have been asked for by a change of setting.
+    forgetShade()
+
     -- The named painting starts over, because the plan it records into has
     -- been cleared and the colours have to be written again. What it has
     -- already decided about each frame is kept: deciding is the expensive
@@ -4439,6 +4474,12 @@ function watchHandler(texture, assigned)
     local fought = CONTESTED[texture]
     if fought ~= nil and fought > CONTESTED_MAX then return end
 
+    -- Asked about this picture before, under what we know now, and it
+    -- belonged to nothing we touch. One lookup instead of two protected
+    -- calls, and this is the common case: nearly every assignment in the
+    -- interface is to a picture that is none of our business.
+    if STRANGE[texture] == knowledge then return end
+
     -- Nothing says otherwise means the shared table called us, and that
     -- table carries only the two methods that assign a picture.
     if assigned == nil then assigned = true end
@@ -4695,6 +4736,7 @@ function Darkness.Drain()
         local budget = SLICE_MS
         if work.first then budget = FIRST_SLICE_MS end
         if started ~= nil and (nowMs() - started) >= budget then break end
+
     end
 
     work.first = false
@@ -4900,6 +4942,7 @@ function adopt(texture)
         -- ever be reconnoitred, FRAME_AREA is set from the walk with the
         -- real area, and the marker is gone.
         FRAME_AREA[parent] = UNTOUCHED
+        STRANGE[texture] = knowledge
         return
     end
 
@@ -4908,6 +4951,7 @@ function adopt(texture)
     -- the next tile of terrain will turn back at once, without a climb.
     if area == UNTOUCHED then
         FRAME_AREA[parent] = UNTOUCHED
+        STRANGE[texture] = knowledge
         return
     end
 
@@ -5949,54 +5993,65 @@ end
 -- @param settings table the subsystem's settings
 -- @param from number from which place in the plan to apply
 -- @return number how many textures were written
-function applyPlan(settings, from)
-    -- The areas' multipliers are computed once per application rather than
-    -- per texture. One common multiplier for all of them used to be computed
-    -- here while the areas only chose between it and a one; now an area may have
-    -- a strength of its own, and the computation moved inside a loop. The loop
-    -- goes over a dozen areas rather than over tens of thousands of textures,
-    -- and the hot path below did not grow dearer by a single approach.
+-- The arithmetic of an application that does not depend on which pictures are
+-- being painted: an area's multipliers, its brightness ceiling, the tint and
+-- the class colour.
+--
+-- Kept because of who else calls the application. Once per window opened or
+-- per step of the slider it would not be worth keeping - a dozen areas is
+-- nothing beside a window of pictures. But a picture the game creates on its
+-- own is painted the moment it announces itself, one picture per call, and
+-- that happens continuously while the player merely walks about: another
+-- addon's pins, the plates coming into range, the icons of a list handed out
+-- afresh. Each of those paid for four tables and two passes over every area
+-- in order to paint one texture.
+--
+-- Dropped whenever the settings could have changed, which is the only thing
+-- it depends on.
+local shade = nil
+
+--- Forget the arithmetic of an application.
+function forgetShade()
+    shade = nil
+end
+Darkness.ForgetShade = forgetShade
+
+--- The arithmetic of an application, computed once per change of setting.
+--
+-- @param settings table
+-- @return table
+local function shadeFor(settings)
+    -- Kept against the settings table it was computed from, not only against
+    -- the doors that drop it. A profile switched under us hands over another
+    -- table, and the value on the slider is one comparison: the doors answer
+    -- for the rest, and this answers for them being the doors we think they
+    -- are.
+    local held = shade
+    if held ~= nil and held.settings == settings
+        and held.amount == settings.amount then
+        return held
+    end
+
     local tint = tintOf(settings)
-    -- The class colour is asked for once per application rather than per area:
-    -- it is one per player and does not change during the pass.
+    -- The class colour is asked for once rather than per area: it is one per
+    -- player and does not change during the pass.
     local class = playerClassColor()
+
     -- mc is an area's brightness ceiling (Darkness.Ceiling), the fourth table
-    -- of the same enumeration: computed in the same place as the multipliers and
-    -- over the same areas.
+    -- of the same enumeration: computed in the same place as the multipliers
+    -- and over the same areas.
     local mr, mg, mb, mc = {}, {}, {}, {}
 
-    -- The windows are light again — which means the text is obliged to become
-    -- dark again.
-    --
-    -- Otherwise the result is the same unreadability, only from the other side:
-    -- light letters on a light window. It is the multiplier that is asked about
-    -- rather than the mode: a zero on the slider is also "does not darken", and
-    -- it is not named by the word "native".
-    if Darkness.Factor(settings.amount) >= 1 then
-        Darkness.DropText()
-    end
     for i = 1, #GROUPS do
         local key = GROUPS[i].key
         mr[key], mg[key], mb[key] = Darkness.GroupMultipliers(
             key, settings.mode, settings.amount, tint,
             settings.color, class)
-
     end
 
-    -- Exceptions by a single window. A one instead of a multiplier is the same
-    -- arithmetic as a group's: what is excluded returns to its remembered colour
-    -- rather than staying dark forever.
-    --
-    -- The table is taken once per application, while in the loop itself it costs
-    -- one lookup by key per texture. Neither a protected call nor an approach to
-    -- the interface's tree was added here: the cost ceilings measure exactly
-    -- those.
-    local excludeWindow = settings.excludeWindow
-    if type(excludeWindow) ~= "table" then excludeWindow = nil end
-
-    -- The brightness ceiling is computed one per area rather than per texture:
-    -- an area's strength is its own, and in the loop the ceiling costs one
-    -- lookup by key and three comparisons.
+    -- The brightness ceiling is computed one per area rather than per
+    -- texture: an area's strength is its own, and in the loop the ceiling
+    -- costs one lookup by key and three comparisons.
     local levelling = settings.level ~= false
     if levelling then
         for i = 1, #GROUPS do
@@ -6008,22 +6063,58 @@ function applyPlan(settings, from)
         end
     end
 
-    -- The gryphons get a number of their own (GRYPHON_LIFT), and it is applied
-    -- last, after the ceiling.
+    -- The gryphons get a number of their own (GRYPHON_LIFT), and it is
+    -- applied last, after the ceiling.
     --
     -- The order is not a matter of indifference here. The ceiling is computed
-    -- from the area's strength, and by raising the strength before it we would
-    -- raise the ceiling along with it — the correction would come out twice as
-    -- large as the one named. The author named a number rather than a direction:
-    -- "a multiplier of 1.05".
+    -- from the area's strength, and by raising the strength before it we
+    -- would raise the ceiling along with it - the correction would come out
+    -- twice as large as the one named. The author named a number rather than
+    -- a direction: "a multiplier of 1.05".
     --
-    -- It stands here rather than in GroupMultipliers: that function answers the
-    -- question "what did the player ask for this area", while this is a
-    -- correction for what the area is drawn with, and they must not be mixed in
-    -- one answer.
+    -- It stands here rather than in GroupMultipliers: that function answers
+    -- the question "what did the player ask for this area", while this is a
+    -- correction for what the area is drawn with, and they must not be mixed
+    -- in one answer.
     mr[GRYPHON_GROUP] = mr[GRYPHON_GROUP] * GRYPHON_LIFT
     mg[GRYPHON_GROUP] = mg[GRYPHON_GROUP] * GRYPHON_LIFT
     mb[GRYPHON_GROUP] = mb[GRYPHON_GROUP] * GRYPHON_LIFT
+
+    -- Exceptions by a single window. A one instead of a multiplier is the
+    -- same arithmetic as a group's: what is excluded returns to its
+    -- remembered colour rather than staying dark forever.
+    local excludeWindow = settings.excludeWindow
+    if type(excludeWindow) ~= "table" then excludeWindow = nil end
+
+    held = {
+        mr = mr, mg = mg, mb = mb, mc = mc,
+        levelling = levelling,
+        excludeWindow = excludeWindow,
+        settings = settings,
+        amount = settings.amount,
+    }
+    shade = held
+    return held
+end
+Darkness.Shade = shadeFor
+
+function applyPlan(settings, from)
+    local arithmetic = shadeFor(settings)
+    local mr, mg, mb, mc =
+        arithmetic.mr, arithmetic.mg, arithmetic.mb, arithmetic.mc
+    local levelling = arithmetic.levelling
+    local excludeWindow = arithmetic.excludeWindow
+
+    -- The windows are light again - which means the text is obliged to become
+    -- dark again.
+    --
+    -- Otherwise the result is the same unreadability, only from the other
+    -- side: light letters on a light window. It is the multiplier that is
+    -- asked about rather than the mode: a zero on the slider is also "does
+    -- not darken", and it is not named by the word "native".
+    if Darkness.Factor(settings.amount) >= 1 then
+        Darkness.DropText()
+    end
 
     local count = 0
 
@@ -6141,6 +6232,10 @@ function Darkness:ApplySettings()
     local settings = Settings()
     if not settings then return end
 
+    -- The arithmetic of an application depends on the settings and on
+    -- nothing else, so this is the one place it can have gone stale.
+    forgetShade()
+
     -- The parchment fonts, painted or given back, on every application.
     --
     -- Here rather than only inside the page walk, because the road back has
@@ -6206,6 +6301,10 @@ function Darkness.Refresh()
     local settings = Settings()
     if not settings then return end
 
+    -- The whole plan is about to be written again, and the only reason to do
+    -- that is that the answer has changed.
+    forgetShade()
+
     if not plan.built or plan.root ~= _G[ROOT] then build() end
     applyPlan(settings, 1)
 end
@@ -6262,6 +6361,10 @@ end
 -- @param full boolean|nil true if the interface's composition could have
 --   changed
 function Darkness.Schedule(full)
+    -- A fresh application is being asked for, and the commonest reason is a
+    -- new value: the arithmetic of the former one is no longer the answer.
+    forgetShade()
+
     -- "The composition could have changed" overrides "a new value" but not the
     -- other way round: a deferred reconnaissance must not be lost to a movement
     -- of the slider.

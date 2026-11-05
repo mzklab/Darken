@@ -489,3 +489,54 @@ do
     T.eq(#ns.Darkness.ChurnLines(nil, after, 10), 0,
         "and nothing to compare against without a first reading")
 end
+
+T.suite("the darkness: one picture does not pay for every area")
+
+-- A picture the game creates on its own is painted the moment it announces
+-- itself: one picture, one application. The arithmetic of an application -
+-- every area's multiplier, every area's brightness ceiling, the tint, the
+-- class colour and four tables to hold them - does not depend on which
+-- picture is being painted, and it was computed afresh on every one of those
+-- calls.
+--
+-- That is the whole of what the addon spends while the player merely walks
+-- about: another addon's pins redrawn, plates coming into range, a list's
+-- rows handed out afresh. So it is computed once per change of setting, and
+-- the check is by composition rather than by time: an edit that moves it back
+-- inside the per-picture call fails here.
+do
+    local settings = profile.darkness
+
+    local asked = 0
+    local real = Darkness.GroupMultipliers
+    Darkness.GroupMultipliers = function(...)
+        asked = asked + 1
+        return real(...)
+    end
+
+    Darkness.ForgetShade()
+    Darkness.Shade(settings)
+    local perChange = asked
+    T.ok(perChange > 0,
+        "a change of setting works out every area: " .. perChange)
+
+    asked = 0
+    for _ = 1, 50 do Darkness.Shade(settings) end
+    T.eq(asked, 0,
+        "fifty applications with the settings unchanged work out nothing anew")
+
+    -- And it is not kept past the change it was computed for: the doors that
+    -- apply the whole plan drop it, and so does a profile handing over
+    -- another table of settings.
+    Darkness.ForgetShade()
+    asked = 0
+    Darkness.Shade(settings)
+    T.eq(asked, perChange, "after a change it is worked out again")
+
+    asked = 0
+    Darkness.Shade({ amount = settings.amount, mode = settings.mode })
+    T.eq(asked, perChange, "another table of settings is another answer")
+
+    Darkness.GroupMultipliers = real
+    Darkness.ForgetShade()
+end
