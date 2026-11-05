@@ -963,6 +963,13 @@ distribute({ ["never-paint"] = NEVER_PAINT })
 --
 -- A name this client does not have resolves to nothing and costs one failed
 -- index, which is how every group in this file behaves.
+--
+-- The chat windows themselves are deliberately absent. A chat window is
+-- text on no backdrop, and it is faded up and down continuously - by the
+-- mouse leaving it, by a message arriving. Painting it gains nothing to
+-- look at and puts a second writer on pictures the client is already
+-- animating. Its framing is the edit box and the tab, which are frames of
+-- their own and are on the list.
 local CHROME_ROOTS = {
     "AchievementFrame", "AchievementFrameCategories",
     "AchievementFrameSummary", "AchievementFrameTab1",
@@ -1013,16 +1020,13 @@ local CHROME_ROOTS = {
     "CharacterFrameTab3", "CharacterFrameTab4", "CharacterFrameTab5",
     "CharacterModelScene", "CharacterSlots", "CharacterStatsPane",
     "ChatConfigBackgroundFrame", "ChatConfigCategoryFrame",
-    "ChatConfigFrame", "ChatFrame10", "ChatFrame10EditBox",
-    "ChatFrame10Tab", "ChatFrame1EditBox", "ChatFrame1Tab",
-    "ChatFrame2", "ChatFrame2EditBox", "ChatFrame2Tab", "ChatFrame3",
-    "ChatFrame3EditBox", "ChatFrame3Tab", "ChatFrame4",
-    "ChatFrame4EditBox", "ChatFrame4Tab", "ChatFrame5",
-    "ChatFrame5EditBox", "ChatFrame5Tab", "ChatFrame6",
-    "ChatFrame6EditBox", "ChatFrame6Tab", "ChatFrame7",
-    "ChatFrame7EditBox", "ChatFrame7Tab", "ChatFrame8",
-    "ChatFrame8EditBox", "ChatFrame8Tab", "ChatFrame9",
-    "ChatFrame9EditBox", "ChatFrame9Tab",
+    "ChatConfigFrame", "ChatFrame10EditBox", "ChatFrame10Tab",
+    "ChatFrame1EditBox", "ChatFrame1Tab", "ChatFrame2EditBox",
+    "ChatFrame2Tab", "ChatFrame3EditBox", "ChatFrame3Tab",
+    "ChatFrame4EditBox", "ChatFrame4Tab", "ChatFrame5EditBox",
+    "ChatFrame5Tab", "ChatFrame6EditBox", "ChatFrame6Tab",
+    "ChatFrame7EditBox", "ChatFrame7Tab", "ChatFrame8EditBox",
+    "ChatFrame8Tab", "ChatFrame9EditBox", "ChatFrame9Tab",
     "ChatFrameToggleVoiceDeafenButton",
     "ChatFrameToggleVoiceMuteButton", "ChestSlotFrame",
     "ClassTalentFrame", "ClassTrainerExpandButtonFrame",

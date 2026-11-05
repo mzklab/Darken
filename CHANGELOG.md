@@ -63,6 +63,14 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**The chat windows are not painted at all.** A chat window is text on
+no backdrop of its own, and the client fades it up and down
+continuously - the mouse leaving it, a message arriving. Painting it
+gains nothing to look at and puts a second writer on pictures the
+client is already animating. Its framing is the edit box and the tab,
+which are frames of their own, do not fade with the window, and are
+painted as before.
+
 **The chat stops blinking.** The chat fades - its window, its tabs
 and its buttons are brought up and taken down by writing a colour on
 every frame of the animation - and the addon answered each of those

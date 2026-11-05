@@ -525,3 +525,29 @@ do
     T.eq(#wrong, 0, "no addon's frame is in the game's list: "
         .. table.concat(wrong, " "))
 end
+
+T.suite("frame groups: the chat windows are not on the list of names")
+
+-- A chat window is text on no backdrop of its own, and the client fades it
+-- up and down continuously - the mouse leaving it, a message arriving.
+-- Painting it gains nothing to look at and puts a second writer on pictures
+-- the client is already animating, which the player sees as blinking.
+--
+-- Its framing is the edit box and the tab. Those are frames of their own,
+-- they do not fade with the window, and they stay on the list.
+do
+    local names = Compat.GetFrameNames("vanilla", "chrome")
+    local seen = {}
+    for i = 1, #names do seen[names[i]] = true end
+
+    local windows = {}
+    for i = 1, 10 do
+        if seen["ChatFrame" .. i] then
+            windows[#windows + 1] = "ChatFrame" .. i
+        end
+    end
+    T.eq(#windows, 0, "no chat window is named: " .. table.concat(windows, " "))
+
+    T.eq(seen["ChatFrame1EditBox"], true, "the edit box is")
+    T.eq(seen["ChatFrame1Tab"], true, "and the tab")
+end
