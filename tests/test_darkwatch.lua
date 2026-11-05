@@ -1221,18 +1221,24 @@ do
     fresh.Addon, fresh.flavor = nil, nil
 end
 
-T.suite("darkness: showing a window costs no walk")
+T.suite("darkness: a window is walked, a row appearing is not")
 
--- Showing a window used to start a walk of its subtree, and a window of any
--- size shows many frames as it opens, each of them asking again. On a large
--- window that is several thousand pictures examined while the player waits
--- to see it.
+-- How much work an appearance deserves is decided by how often it happens,
+-- and that is the whole rule.
 --
--- The names carry the framing instead. What the showing changes is only
--- which of them resolve - a window the game builds on demand did not exist a
--- moment ago - so the resolution is dropped and the painting goes on at its
--- own budget. Pictures the game creates after showing are caught where they
--- always were, by the watcher on repainting.
+-- A window is opened by hand, a few times a minute at most. It can afford a
+-- walk of everything inside it, cut into slices that spread it over frames,
+-- and it needs one: a window holds more than its top layer, and painting
+-- only that leaves it half dressed.
+--
+-- A row of a list, a tab, a button out of a pool appear continuously - a
+-- scroll, a bar changing, a fight. Those get the top layer and no more; what
+-- is deeper is caught by the watcher on assignment, which hears a picture
+-- the moment the game gives it one.
+--
+-- Both answers were tried on both cases, in that order, and each was wrong
+-- for the other: walking everything froze the client when a list scrolled,
+-- and bounding everything left windows opening undarkened.
 do
     local fresh = helpers.newNamespace()
     helpers.loadAddonFile("Core/Skin.lua", fresh)
@@ -1283,17 +1289,43 @@ do
 
     Late.WindowShown(deep)
 
-    -- The top layer is painted - the window itself and what is directly
-    -- inside it - and nothing below that. Six levels were built; the deep
-    -- ones must be untouched, which is the difference between a bounded
-    -- answer and a walk.
+    -- A window: all six levels, because it was walked.
     local touched = 0
     for i = 1, #pictures do
         if pictures[i].r < 1 then touched = touched + 1 end
     end
-    T.ok(touched <= 2, "only the top layer was painted: " .. touched)
-    T.eq(pictures[1].r, 1, "the deepest level was not reached")
-    T.eq(pictures[2].r, 1, "nor the one above it")
+    T.eq(touched, #pictures,
+        "the window was walked to the bottom: " .. touched .. " of "
+            .. #pictures)
+
+    -- A row of a list, as deep again, appearing the way a pool hands one
+    -- out: the top layer and no further.
+    local rowArt = {}
+    local row = nil
+    for level = 1, 4 do
+        local art = {
+            r = 1, g = 1, b = 1, a = 1,
+            GetObjectType = function() return "Texture" end,
+            GetDrawLayer = function() return "ARTWORK" end,
+            GetTexture = function() return 778 end,
+        }
+        function art:GetVertexColor() return self.r, self.g, self.b, self.a end
+        function art:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+        rowArt[level] = art
+
+        local below = row
+        row = {
+            GetObjectType = function() return "Frame" end,
+            GetName = function() return "AListRow" .. level end,
+            GetRegions = function() return art end,
+            GetChildren = function() if below then return below end end,
+        }
+    end
+
+    Late.SweepShown(row, nil)
+
+    T.ok(rowArt[4].r < 1, "the row itself is painted")
+    T.eq(rowArt[1].r, 1, "and the bottom of it is left to the watcher")
 
     _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil

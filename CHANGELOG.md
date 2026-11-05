@@ -117,6 +117,16 @@ is two counts asked of the frame rather than a reading of what it
 holds. A row returning from its pool with different content is
 therefore still painted.
 
+**Windows are painted whole again when they open.** Trimming the
+work done on an appearance went too far: a window holds more than its
+top layer, and painting only that left windows opening half dressed.
+How much work an appearance deserves is decided by how often it
+happens - a window is opened by hand and can afford a walk of
+everything inside it, cut into slices; a row of a list, a tab, a
+button out of a pool appear continuously and get the top layer and no
+more. Both answers had been tried on both cases, and each was wrong
+for the other.
+
 **Text keeps its colour everywhere but on parchment.** The raising
 exists for one thing: dark ink chosen for a light page - a quest, a
 letter, a book, a trainer's list - which a darkened page leaves

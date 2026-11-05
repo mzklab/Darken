@@ -6547,7 +6547,23 @@ function Darkness.WindowShown(frame)
             area = nil
             window = stringFrom(frame, "GetName")
         end
+
+        -- The top layer first, in this call: it is a few dozen pictures and
+        -- it is what the player sees in the instant the window appears.
         Darkness.PaintShallow(frame, area, window)
+
+        -- And then the window itself, properly.
+        --
+        -- A window holds more than its top layer, and painting only that
+        -- left windows opening half dressed. The walk is what reaches the
+        -- rest, and a window opening can afford it: it is one event, it is
+        -- rare, and the walk is cut into slices that spread it over frames.
+        --
+        -- What could not afford it is everything else that was sending work
+        -- here - a list row handed out of a pool, a tab, a button, each
+        -- appearing continuously in a fight. Those keep the bounded answer
+        -- (sweepShown).
+        pcall(Darkness.ApplyToWindow, frame, true)
     end
 
     Darkness.PaintNamedSoon()
