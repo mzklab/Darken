@@ -3999,6 +3999,16 @@ local churnClimbs = 0
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
 
+-- The areas whose pictures the game fades, and which are therefore painted
+-- once and never answered for afterwards.
+--
+-- Fading is a colour written on every frame of an animation. A picture
+-- under one has two writers while anything of ours answers those writes,
+-- and two writers on one picture is a blink rather than a shade.
+local FADING_AREAS = {
+    chat = true,
+}
+
 -- The frames whose top layer has been painted: frame -> true.
 --
 -- Showing a frame is not a rare event. Chat windows, their tabs and their
@@ -4414,7 +4424,17 @@ local function record(region, group, window)
     -- From this moment a colour written over ours on this picture is heard,
     -- and on this picture only. The hook costs one installation per picture
     -- we paint and nothing at all for the rest of the interface.
-    watchColourOf(region)
+    --
+    -- Except where the game writes colour continuously by design. The chat
+    -- fades: its window, its tabs and its buttons are brought up and taken
+    -- down by writing a colour on every frame of the fade. Answering each
+    -- of those writes puts two sources of colour on one picture, and what
+    -- the player sees is not a darkened chat but a blinking one.
+    --
+    -- Such a picture is painted once and then left alone. Our colour is
+    -- what it starts from, the fade carries it up and down from there, and
+    -- nothing of ours runs while that happens.
+    if not FADING_AREAS[group] then watchColourOf(region) end
 
     local n = plan.n + 1
     plan.n = n

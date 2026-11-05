@@ -1544,3 +1544,68 @@ do
     _G.C_Timer = savedTimer
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: the chat is painted once and not answered for")
+
+-- The chat fades: its window, its tabs and its buttons are brought up and
+-- taken down by writing a colour on every frame of the animation. A picture
+-- under a fade has two writers while anything of ours answers those writes,
+-- and two writers on one picture is a blink rather than a shade.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Late = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = { chat = "follow" } } } } }
+
+    local savedHook = _G.hooksecurefunc
+    local placed = {}
+    _G.hooksecurefunc = function(object, method)
+        if type(object) == "table" and method == "SetVertexColor" then
+            placed[object] = true
+        end
+    end
+
+    local function art()
+        local object = { r = 1, g = 1, b = 1, a = 1 }
+        object.GetObjectType = function() return "Texture" end
+        object.GetDrawLayer = function() return "ARTWORK" end
+        object.GetTexture = function() return 8080 end
+        function object:GetVertexColor() return self.r, self.g, self.b, self.a end
+        function object:SetVertexColor(cr, cg, cb) self.r, self.g, self.b = cr, cg, cb end
+        return object
+    end
+
+    local chatArt, otherArt = art(), art()
+
+    Late.PaintShallow({
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "AChatWindow" end,
+        GetRegions = function() return chatArt end,
+        GetChildren = function() return end,
+    }, "chat", nil)
+
+    Late.PaintShallow({
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "AnOrdinaryWindow" end,
+        GetRegions = function() return otherArt end,
+        GetChildren = function() return end,
+    }, nil, "AnOrdinaryWindow")
+
+    T.ok(chatArt.r < 1, "the chat's framing is painted")
+    T.eq(placed[chatArt], nil,
+        "and nothing of ours listens for a colour written over it")
+
+    T.ok(otherArt.r < 1, "an ordinary window is painted too")
+    T.eq(placed[otherArt], true, "and that one is answered for as before")
+
+    _G.hooksecurefunc = savedHook
+    fresh.Addon, fresh.flavor = nil, nil
+end

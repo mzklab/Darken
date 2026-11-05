@@ -63,6 +63,14 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**The chat stops blinking.** The chat fades - its window, its tabs
+and its buttons are brought up and taken down by writing a colour on
+every frame of the animation - and the addon answered each of those
+writes with its own colour. Two writers on one picture is a blink
+rather than a shade. The chat is painted once now and nothing of ours
+runs during a fade: our colour is what the fade starts from and
+carries up and down from there.
+
 **A window shown again costs nothing.** Showing a frame is not a rare
 event - a chat window, its tabs and its buttons appear and vanish on
 the movement of a mouse - and each appearance read every region of the
