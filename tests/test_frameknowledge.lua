@@ -440,8 +440,11 @@ do
         end
     end
 
-    T.eq(#Compat.GetFrameNames("vanilla", "equipment-slots"), 19,
-        "there are nineteen equipment slots")
+    -- Nineteen worn slots and the ammo slot the early lines carry: the
+    -- report from 1.60.1 names CharacterAmmoSlot, and a slot missing from
+    -- the list is a square that keeps its gold frame on a dark window.
+    T.eq(#Compat.GetFrameNames("vanilla", "equipment-slots"), 20,
+        "there are nineteen equipment slots and the ammo slot")
     T.eq(Compat.GetFrameNames("vanilla", "equipment-slots")[1],
         "CharacterHeadSlot", "and the button name is assembled from the window prefix")
     T.eq(Compat.GetFrameNames("mists", "equipment-slots-inspect")[1],

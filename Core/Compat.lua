@@ -947,6 +947,12 @@ local EQUIPMENT_SLOTS = {
     "ShirtSlot", "TabardSlot", "WristSlot", "HandsSlot", "WaistSlot",
     "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot",
     "Trinket1Slot", "MainHandSlot", "SecondaryHandSlot", "RangedSlot",
+
+    -- The early lines carry a slot the later ones do not, and the report
+    -- from 1.60.1 names it: CharacterAmmoSlot. A name the client does not
+    -- have costs nothing - the existence filter drops it - while a missing
+    -- one leaves that square in its gold frame on a dark window.
+    "AmmoSlot",
 }
 
 --- The slot button names for one window.
@@ -1362,6 +1368,38 @@ local CHROME_ROOTS = {
     "WorldStateScoreFrameTab1", "WorldStateScoreFrameTab2",
     "WorldStateScoreFrameTab3", "WristSlotFrame", "nwtab5", "nwtab6",
 }
+
+-- The equipment slots' own framing, by the names this line really uses.
+--
+-- The list above holds HeadSlotFrame, ChestSlotFrame and their kin, and on
+-- this client not one of them exists: the slot buttons are
+-- CharacterHeadSlot, their gold border is CharacterHeadSlotNormalTexture,
+-- and the names came from a line that spells them the other way. So the
+-- named pass never knew the slots at all, and the only thing that ever
+-- painted them was a walk reaching two levels into the character sheet. When
+-- the walk was bounded the gold frames came back, and no budget could have
+-- been the cure: the knowledge was missing, not the time.
+--
+-- The button and its border are both listed. The button, because what the
+-- pass does with a named frame is paint its framing; the border by name as
+-- well, because it is the picture the player sees and naming it outright
+-- costs one line.
+--
+-- The icon is deliberately not here. CharacterHeadSlotIconTexture is the
+-- item's own picture - contents, which this addon does not touch.
+do
+    local framing = {}
+    for _, prefix in ipairs({ "Character", "Inspect" }) do
+        local buttons = equipmentNames(prefix)
+        for i = 1, #buttons do
+            framing[#framing + 1] = buttons[i]
+            framing[#framing + 1] = buttons[i] .. "NormalTexture"
+        end
+    end
+    for i = 1, #framing do
+        CHROME_ROOTS[#CHROME_ROOTS + 1] = framing[i]
+    end
+end
 
 distribute({ chrome = CHROME_ROOTS })
 

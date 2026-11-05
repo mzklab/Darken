@@ -232,3 +232,17 @@ for i = 1, #KEPT_ORDER do
             group .. ": " .. names[j] .. " is kept for Classic Era's sake")
     end
 end
+
+-- The equipment slots, by the names the report took from the client.
+--
+-- The author sent a character sheet whose every slot kept its gold frame
+-- while the window around it was dark. The chrome list held HeadSlotFrame,
+-- ChestSlotFrame and their kin - names from another line, none of which
+-- exists here. What exists is CharacterHeadSlot and, for the frame itself,
+-- CharacterHeadSlotNormalTexture.
+pin("chrome", {
+    "CharacterHeadSlot", "CharacterChestSlot", "CharacterMainHandSlot",
+    "CharacterHeadSlotNormalTexture",
+    "CharacterBackSlotNormalTexture",
+    "CharacterAmmoSlotNormalTexture",
+})
