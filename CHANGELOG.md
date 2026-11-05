@@ -88,6 +88,15 @@ client is already animating. Its framing is the edit box and the tab,
 which are frames of their own, do not fade with the window, and are
 painted as before.
 
+**The chat's text is never written.** The font settings used to give
+the chat the player's font and size along with the rest of the
+interface, standing down only when another addon owned the chat. They
+no longer touch it at all. The chat is the one part of the interface
+whose text is read continuously and whose look is settled once - in
+the game's own options, or in whichever addon was installed for it -
+and a second hand on it is unwelcome whether or not there is an owner
+to yield to.
+
 **The player's portrait is not painted black.** A window names its
 contents in fields of its own - portrait, icon, fill - and the picture
 named there is frequently a region of a frame inside it rather than of

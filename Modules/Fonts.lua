@@ -97,9 +97,12 @@ local GLOBAL_OBJECTS = {
 
 -- The font objects the chat is written with.
 --
--- They stand in the list above as well: with no chat addon they are the
--- game's chat and get the player's font like everything else. They are named
--- here only so that they can be taken back out again, below.
+-- These are never written. The chat is the one part of the interface whose
+-- text the player reads continuously and whose look he settles once - in the
+-- game's own options, or in whichever addon he installed for the chat - and
+-- a second hand on it is unwelcome whether or not it has an owner to yield
+-- to. They stand in the list above because that list is the game's standard
+-- objects; they are named here to be taken straight back out of it.
 local CHAT_OBJECTS = {
     ChatFontNormal = true,
     ChatFontSmall  = true,
@@ -1361,22 +1364,16 @@ function Fonts:ApplySettings()
     local path  = Fonts.MediaFont(media, font)
     local flags = Fonts.Flags(outline)
 
-    -- Whose chat this is. Asked once, outside the loop: the answer is the
-    -- same for both of the chat's objects and does not change while the
-    -- player is logged in.
-    local taken = Fonts.ChatTaken()
-
     for i = 1, #GLOBAL_OBJECTS do
         local name = GLOBAL_OBJECTS[i]
         local object = _G[name]
         if accept(object) then
-            if taken and CHAT_OBJECTS[name] then
-                -- The chat belongs to another addon: ours comes off it.
+            if CHAT_OBJECTS[name] then
+                -- The chat's own font, left to the chat.
                 --
-                -- Restored rather than skipped, for the reason the switch
-                -- below is a restoration rather than a skip: a skip would
-                -- leave our font on the object for ever, and the chat addon
-                -- reads that object to build its own.
+                -- Restored rather than skipped: a skip would leave whatever
+                -- we had written on the object for ever, and a chat addon
+                -- reads that object to build its own font from.
                 if Fonts.Restore(object) then
                     counters.yielded = counters.yielded + 1
                 end

@@ -474,7 +474,7 @@ do
     T.eq(options.args.unitname.args.size.get(), 18, "the category get returns what was chosen")
 end
 
-T.suite("fonts: the chat is left to the addon that owns it")
+T.suite("fonts: the chat's own font is never written")
 
 -- A player's report: Darken keeps overruling Prat's chat font and size.
 -- Prat does not set a font on the chat at all - it calls the game's
@@ -532,14 +532,16 @@ do
     T.eq(_G.ChatFontSmall.current[1], "Fonts\\Native.ttf",
         "both of the chat's objects")
 
-    -- With nobody owning the chat it is ours like everything else: the
-    -- standing down is for an owner, not a permanent exemption.
+    -- And with nobody owning the chat it is still not ours. The chat is
+    -- the one part of the interface whose text the player reads
+    -- continuously and settles the look of once; a second hand on it is
+    -- unwelcome whether or not there is an owner to yield to.
     withLoaded(function() return false end)
     Fonts:ApplySettings()
 
-    T.eq(_G.ChatFontNormal.current[1], "Fonts\\A.ttf",
-        "with no chat addon the chat takes the player's font")
-    T.eq(_G.ChatFontNormal.current[2], 17, "shifted from its own native 13")
+    T.eq(_G.ChatFontNormal.current[1], "Fonts\\Native.ttf",
+        "with no chat addon either, the chat keeps its own font")
+    T.eq(_G.ChatFontNormal.current[2], 13, "and its own size")
 
     Fonts.ForgetChat()
     ns.Compat = savedCompat
