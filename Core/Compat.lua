@@ -1984,6 +1984,19 @@ local CONTAINERS = {
         "IsAddOnLoaded",
     },
 
+    -- The player's bars, asked of the client rather than found by a field.
+    --
+    -- On this line the player frame carries no bar in a field and no bar
+    -- exists as a global: there is no PlayerFrameHealthBar at all. What the
+    -- client does have is a function that returns the bar, which is the
+    -- answer and does not depend on where the frame keeps it.
+    ["player-health-bar"] = {
+        "PlayerFrame_GetHealthBar",
+    },
+    ["player-power-bar"] = {
+        "PlayerFrame_GetManaBar",
+    },
+
     -- Who created a global variable. The client answers with the name of
     -- the addon that set it, and that is the only direct answer to "whose
     -- frame is this" there is: a frame does not remember its author, but

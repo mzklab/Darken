@@ -350,6 +350,46 @@ local function field(root, paths, method)
 end
 Texts.Field = field
 
+-- Which group of the layer answers for which bar of which frame.
+local CLIENT_BARS = {
+    PlayerFrame = {
+        health = "player-health-bar",
+        power  = "player-power-bar",
+    },
+}
+
+--- Ask the client itself for a bar.
+--
+-- A frame keeps its bars where its own build keeps them, and a list of
+-- field spellings is a guess at that. Where the client offers a function
+-- that returns the bar, the guess is unnecessary: the answer comes from the
+-- same place the game's own code gets it.
+--
+-- @param frame string the frame's name
+-- @param role string the bar's role
+-- @return table|nil
+function Texts.AskClient(frame, role)
+    local groups = CLIENT_BARS[frame]
+    if groups == nil then return nil end
+
+    local group = groups[role]
+    if group == nil then return nil end
+
+    if type(ns.Compat) ~= "table"
+        or type(ns.Compat.ResolveFunction) ~= "function" then
+        return nil
+    end
+
+    local got, ask = pcall(ns.Compat.ResolveFunction, group)
+    if not got or type(ask) ~= "function" then return nil end
+
+    local fine, bar = pcall(ask)
+    if not fine or type(bar) ~= "table" then return nil end
+    if type(bar.GetValue) ~= "function" then return nil end
+
+    return bar
+end
+
 --- The label's remembered native anchor.
 -- Read once, before our first move, and unchanged after that: otherwise "the
 -- native position" would restore our previous one rather than the native
@@ -594,6 +634,17 @@ function Texts:ApplySettings()
             for j = 1, #BARS do
                 local entry = BARS[j]
                 local bar = field(frame, entry.paths, "GetValue")
+
+                -- The client asked directly, where a field answers nothing.
+                --
+                -- On this line the player frame keeps no bar in a field and
+                -- none exists as a global - there is no PlayerFrameHealthBar
+                -- at all. The client does have a function that returns the
+                -- bar, and that answer does not depend on where the frame
+                -- happens to keep it.
+                if bar == nil then
+                    bar = Texts.AskClient(name, entry.role)
+                end
 
                 if bar then
                     -- The role is recorded for the bar itself: the game's

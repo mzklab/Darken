@@ -541,3 +541,42 @@ do
 
     ns.Addon = savedAddon
 end
+
+T.suite("bar text: the client is asked for a bar no field holds")
+
+-- A frame keeps its bars where its own build keeps them, and a list of
+-- field spellings is a guess at that. On this client's line the guess is
+-- simply wrong: the player frame holds its bars in no field, and there is
+-- no PlayerFrameHealthBar global either - the client's own list of names
+-- has neither. What it does have is a function that returns the bar.
+--
+-- With nothing found there was nothing to write into, which is why a format
+-- was chosen and the bars stayed blank.
+do
+    local savedCompat = ns.Compat
+
+    local label = { SetText = function() end }
+    local bar = {
+        TextString = label,
+        GetValue = function() return 1 end,
+        GetMinMaxValues = function() return 0, 2 end,
+    }
+
+    ns.Compat = {
+        ResolveFunction = function(group)
+            if group == "player-health-bar" then
+                return function() return bar end
+            end
+            return nil
+        end,
+    }
+
+    T.eq(ns.Texts.AskClient("PlayerFrame", "health"), bar,
+        "the client handed over the bar it keeps in no field")
+    T.eq(ns.Texts.AskClient("PlayerFrame", "power"), nil,
+        "and says nothing where it offers nothing")
+    T.eq(ns.Texts.AskClient("TargetFrame", "health"), nil,
+        "a frame with no such function is not asked")
+
+    ns.Compat = savedCompat
+end

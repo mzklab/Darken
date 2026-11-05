@@ -177,6 +177,12 @@ local CONSEQUENCE = {
     ["secure-variable"] = {
         label = "Other Addons' Windows", kind = Report.ALTERNATIVES,
     },
+    ["player-health-bar"] = {
+        label = "Bar Text", kind = Report.ALTERNATIVES,
+    },
+    ["player-power-bar"] = {
+        label = "Bar Text", kind = Report.ALTERNATIVES,
+    },
     ["never-paint"] = {
         label = "Interface Darkness", kind = Report.ALTERNATIVES,
     },
