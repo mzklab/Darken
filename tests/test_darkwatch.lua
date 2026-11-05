@@ -87,7 +87,17 @@ T.suite("darkness: a window filled on a server reply")
 
 -- Some lists wait for the server: reputations, skills, statistics. The reply
 -- arrives when it arrives, and new rows appear in an already open window.
--- The walk of that window happened long before.
+--
+-- The answer is the same one a showing gets - the window's top layer and
+-- the names belonging to it - and not a walk of everything inside it. These
+-- events are not rare: reputation moves on every kill, spells change on
+-- every talent, equipment on every swap. A walk of the last opened window
+-- on each would be the cost of opening that window over and over, and if
+-- the last window was a large one it is thousands of pictures a kill.
+--
+-- What arrives deeper than the top layer is caught where it is created: a
+-- row handed out of a pool is given its picture at that moment, and the
+-- watcher on assignment adopts it then.
 do
     T.ok(subscribed["UPDATE_FACTION"] ~= nil,
         "there is no subscription to reputation updates")
@@ -95,21 +105,20 @@ do
         "there is no subscription to skill updates")
 
     local seen = nil
+    local savedShown = Darkness.WindowShown
     local savedApply = Darkness.ApplyToWindow
-    Darkness.ApplyToWindow = function(frame, force)
-        seen = { frame = frame, force = force }
-        return 0
-    end
+    local walked = false
+    Darkness.WindowShown = function(frame) seen = frame end
+    Darkness.ApplyToWindow = function() walked = true return 0 end
 
     local window = { GetObjectType = function() return "Frame" end }
     Darkness.lastWindow = window
     subscribed["UPDATE_FACTION"].handler()
 
-    T.ok(seen ~= nil and seen.frame == window,
-        "the walk did not go into the last opened window")
-    T.eq(seen and seen.force, true,
-        "and it went by the child count even though the window filled up inside")
+    T.eq(seen, window, "the last opened window was answered for")
+    T.eq(walked, false, "and it was not walked")
 
+    Darkness.WindowShown = savedShown
     Darkness.ApplyToWindow = savedApply
     Darkness.lastWindow = nil
 end

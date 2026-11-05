@@ -5474,7 +5474,7 @@ local LIFT_LATER = { 0, 0.5 }
 --
 -- This is the same trap, and the same answer, as LATER for the picture walk:
 -- the game fills a window after announcing it.
--- Whether a walk of the last window is already waiting for the next frame.
+-- Whether an answer to a refill is already waiting for the next frame.
 local refillPending = false
 
 --- Walk the last opened window afresh, once, however many events ask for it.
@@ -5507,7 +5507,7 @@ function Darkness.RefillSoon()
 
     local timer = _G.C_Timer
     if type(timer) ~= "table" or type(timer.After) ~= "function" then
-        pcall(Darkness.ApplyToWindow, window, true)
+        pcall(Darkness.WindowShown, window)
         return
     end
 
@@ -5518,7 +5518,7 @@ function Darkness.RefillSoon()
         refillPending = false
         local latest = Darkness.lastWindow
         if type(latest) == "table" then
-            pcall(Darkness.ApplyToWindow, latest, true)
+            pcall(Darkness.WindowShown, latest)
         end
     end)
 end

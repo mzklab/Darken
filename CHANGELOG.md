@@ -63,6 +63,16 @@ now and is then left with whatever colour the game gives it; the
 report counts how many were given up that way, and the saved
 variables name the window.
 
+**A reputation tick no longer walks a window.** Reputation moving,
+spells changing, equipment being swapped - each of these made the
+addon walk the last window the player had opened, in full, forcing
+past the check for whether anything had changed. They are not rare
+events: reputation moves on every kill. If the last window opened was
+a large one, that was thousands of pictures examined per kill. They
+get the same answer a showing gets now - the window's top layer and
+the names belonging to it - while what arrives deeper is caught where
+it is created, by the watcher on assignment.
+
 **The chat no longer sets the text raising going.** Raising text walks
 every page the addon remembers and writes every font object it knows,
 and it was asked for on the showing of any window at all - so a mouse
