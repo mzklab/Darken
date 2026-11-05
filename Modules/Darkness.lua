@@ -4124,6 +4124,11 @@ local churnClimbs = 0
 local churnAdopted = 0
 local churnSwept = 0
 
+-- How often a window was asked to be walked again because the server filled
+-- something in, and how often that was turned away.
+local churnRefills = 0
+local churnSkipped = 0
+
 -- The plan's generation number. Incremented on a clearing, and the former
 -- markers on the textures stop matching at a stroke (see PLANNED).
 local generation = 1
@@ -5709,6 +5714,14 @@ local LIFT_LATER = { 0, 0.5 }
 -- Whether an answer to a refill is already waiting for the next frame.
 local refillPending = false
 
+--- Forget that an answer to a refill is waiting.
+-- Needed by the tests, for the reason Darkness.ForgetLift exists: a fake
+-- clock collects the deferred work without running it, so the flag would
+-- stay set from one case into the next.
+function Darkness.ForgetRefill()
+    refillPending = false
+end
+
 --- Walk the last opened window afresh, once, however many events ask for it.
 --
 -- Why not on the event itself. The subscription to REFILL_EVENTS used to call
@@ -5736,6 +5749,42 @@ local refillPending = false
 function Darkness.RefillSoon()
     local window = Darkness.lastWindow
     if type(window) ~= "table" then return end
+
+    churnRefills = churnRefills + 1
+
+    -- A window nobody is looking at is not walked.
+    --
+    -- The window walked is the one the player opened last, and it stays that
+    -- after he closes it. The events that lead here are not rare and have
+    -- nothing to do with any window being open: a point of reputation, a
+    -- weapon skill, a spell learned, a piece of gear swapped. Between them
+    -- the author's last window - the character sheet, the merchant - was
+    -- walked in full again and again while he walked about the world, and a
+    -- full walk of a large window is the better part of a frame. That is the
+    -- hitch he reported: seventy slices a second and ninety milliseconds of
+    -- walking in every second of play, with no window on the screen.
+    --
+    -- Hidden has to be READ as hidden to count: an object that cannot be
+    -- asked is walked, by the same rule the rest of this file follows -
+    -- walking what was in fact hidden costs one pass and changes nothing,
+    -- while skipping what was shown leaves it light.
+    if type(window.IsShown) == "function" then
+        local seen, shown = pcall(window.IsShown, window)
+        if seen and shown == false then
+            churnSkipped = churnSkipped + 1
+            return
+        end
+    end
+
+    -- And one that gave up everything it has is not walked a second time.
+    --
+    -- The same marker the return by the clock honours (sweepLater): a walk
+    -- that found nothing new last time will find nothing new now. It clears
+    -- itself when the plan's generation changes.
+    if GREW[window] == false then
+        churnSkipped = churnSkipped + 1
+        return
+    end
 
     local timer = _G.C_Timer
     if type(timer) ~= "table" or type(timer.After) ~= "function" then
@@ -5971,6 +6020,8 @@ function Darkness.Repaint()
         store.churn.climbs = churnClimbs
         store.churn.adopted = churnAdopted
         store.churn.swept = churnSwept
+        store.churn.refills = churnRefills
+        store.churn.skipped = churnSkipped
         local by = store.churn.by
         for who, times in pairs(churnBy) do by[who] = times end
     end
@@ -7094,6 +7145,8 @@ function Darkness.Churn()
         adopted = churnAdopted,
         climbs  = churnClimbs,
         swept   = churnSwept,
+        refills = churnRefills,
+        skipped = churnSkipped,
         dimmed  = counters.dimmed,
         slices  = cost.slices or 0,
         spent   = cost.total or 0,
@@ -7131,6 +7184,9 @@ function Darkness.ChurnLines(before, after, seconds)
         rate("adopted"), rate("climbs"))
     lines[#lines + 1] = string.format(
         "  hidden frames shown and answered %.0f", rate("swept"))
+    lines[#lines + 1] = string.format(
+        "  windows asked to be walked again %.1f - turned away %.1f",
+        rate("refills"), rate("skipped"))
     lines[#lines + 1] = string.format(
         "  pictures painted %.0f, walk slices %.1f taking %.2f ms",
         rate("dimmed"), rate("slices"), rate("spent") * seconds)

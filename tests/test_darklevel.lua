@@ -801,3 +801,66 @@ do
     ns.flavor = nil
     _G.UIParent, _G.GameTooltip = savedRoot, savedTip
 end
+
+T.suite("a window nobody is looking at is not walked again")
+
+-- The window the refill answers for is the one the player opened last, and it
+-- stays that after he closes it. The events that lead there are not rare and
+-- have nothing to do with any window being open: a point of reputation, a
+-- weapon skill, a spell learned, a piece of gear swapped.
+--
+-- So between them the author's last window was walked in full again and again
+-- while he walked about the world. His own reading named the size of it:
+-- seventy walk slices a second and ninety milliseconds of walking in every
+-- second of play, with no window on the screen.
+do
+    local savedTimer = _G.C_Timer
+    local pending = {}
+    _G.C_Timer = {
+        After = function(_, fn)
+            if type(fn) == "function" then pending[#pending + 1] = fn end
+        end,
+    }
+
+    local savedApply = Darkness.WindowShown
+    local savedWindow = Darkness.lastWindow
+    local walks = 0
+    Darkness.WindowShown = function() walks = walks + 1 end
+
+    -- The fake clock above collects the deferred answers without running
+    -- them, so the gate of the previous case is still shut.
+    Darkness.ForgetRefill()
+
+    local closed = {
+        GetObjectType = function() return "Frame" end,
+        IsShown = function() return false end,
+    }
+    Darkness.lastWindow = closed
+    Darkness.RefillSoon()
+    T.eq(#pending, 0, "a closed window is not walked and nothing is scheduled")
+
+    -- Shown, and it is answered as before.
+    local open = {
+        GetObjectType = function() return "Frame" end,
+        IsShown = function() return true end,
+    }
+    Darkness.lastWindow = open
+    Darkness.RefillSoon()
+    T.eq(#pending, 1, "an open one is")
+    pending[1]()
+    T.eq(walks, 1, "and walked when the answer comes due")
+
+    -- Hidden has to be READ as hidden. A window that cannot be asked is
+    -- walked: walking what was in fact hidden costs one pass and changes
+    -- nothing, while skipping what was shown leaves it light.
+    Darkness.lastWindow = {
+        GetObjectType = function() return "Frame" end,
+        IsShown = function() error("protected") end,
+    }
+    Darkness.RefillSoon()
+    T.eq(#pending, 2, "a window that cannot be asked is walked all the same")
+
+    Darkness.WindowShown = savedApply
+    Darkness.lastWindow = savedWindow
+    _G.C_Timer = savedTimer
+end
