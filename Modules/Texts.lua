@@ -96,6 +96,7 @@ Texts.NATIVE = NATIVE
 local ROLE = ns.Skin.Memory()   -- "health" | "power", for a bar itself
 local POINT_BASE = ns.Skin.Memory()  -- a font string's native anchor
 local HOOKED = ns.Skin.Memory() -- the bar is already on the ledger
+local LABEL = ns.Skin.Memory()  -- the bar's value label, once found
 
 -- The rule for writing a number is the core's (ns.Format, which is also
 -- Darken:GetFormat(), contract version 12). There is not one threshold, not
@@ -353,6 +354,64 @@ local function field(root, paths, method)
 end
 Texts.Field = field
 
+--- The font string a bar writes its value on.
+--
+-- Why a field is not enough. The game's bar template keeps three labels
+-- under keys of its own - the central one, the left one and the right one -
+-- and the central one is the value. That is true wherever the template is
+-- used, and on a line that builds its unit frames differently it is true of
+-- nothing: the player frame of 1.60.1 is assembled by its own code, and the
+-- key the template would have given is not there.
+--
+-- So the key is asked for first, and where there is none the bar is asked
+-- for its own regions. A font string lying on a bar is the bar's text: this
+-- is not a search through somebody else's tree but one question to one
+-- object, and it is asked once per bar.
+--
+-- Of several the central one is taken, by the same rule the template
+-- follows: the value stands in the middle, the percentage on the left and
+-- the number on the right. With no anchor to judge by the first is taken -
+-- a bar with one label has no second candidate to confuse it with.
+--
+-- @param bar table
+-- @return table|nil the font string
+function Texts.Label(bar)
+    if type(bar) ~= "table" then return nil end
+
+    local known = LABEL[bar]
+    if known ~= nil then
+        if known == false then return nil end
+        return known
+    end
+
+    local found = field(bar, TEXT_PATHS, "SetText")
+
+    if found == nil and type(bar.GetRegions) == "function" then
+        local ok, regions = pcall(function() return { bar:GetRegions() } end)
+        if ok and type(regions) == "table" then
+            local first = nil
+            for i = 1, #regions do
+                local region = regions[i]
+                if type(region) == "table"
+                    and type(region.SetText) == "function"
+                    and type(region.GetPoint) == "function" then
+                    if first == nil then first = region end
+
+                    local seen, point = pcall(region.GetPoint, region, 1)
+                    if seen and point == "CENTER" then
+                        found = region
+                        break
+                    end
+                end
+            end
+            if found == nil then found = first end
+        end
+    end
+
+    LABEL[bar] = found or false
+    return found
+end
+
 -- Which group of the layer answers for which bar of which frame.
 local CLIENT_BARS = {
     PlayerFrame = {
@@ -522,7 +581,7 @@ function Texts.Refresh(bar)
     local format = settings[role]
     if format == nil or format == NATIVE then return false end
 
-    local label = field(bar, TEXT_PATHS, "SetText")
+    local label = Texts.Label(bar)
     if not label then return false end
 
     if type(bar.GetValue) ~= "function"
@@ -661,7 +720,7 @@ function Texts:ApplySettings()
                     Texts.Hook(bar)
                     Texts.Refresh(bar)
 
-                    local label = field(bar, TEXT_PATHS, "SetText")
+                    local label = Texts.Label(bar)
                     local format = settings[entry.role]
                     local show = format ~= nil and format ~= NATIVE
 
@@ -734,9 +793,10 @@ function Texts.Diagnose(globals)
 
                 local said = "no text object"
                 if bar ~= nil then
-                    local found = field(bar, TEXT_PATHS, "SetText")
+                    local found = Texts.Label(bar)
                     if found ~= nil then
-                        said = TEXT_PATHS[1]
+                        said = field(bar, TEXT_PATHS, "SetText") ~= nil
+                            and TEXT_PATHS[1] or "a label on the bar"
                         if type(found.IsShown) == "function" then
                             local seen, shown = pcall(found.IsShown, found)
                             said = said .. (seen and shown and ", shown"

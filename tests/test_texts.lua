@@ -617,3 +617,64 @@ do
     T.eq(#TX.Diagnose(nil), 0,
         "without the client's globals there is nothing to say")
 end
+
+T.suite("bar text: the label is found where the template's key is absent")
+
+-- The game's bar template keeps three labels under keys of its own, and the
+-- central one is the value. A line that assembles its unit frames by its own
+-- code gives no such key, and then the bar itself is asked for its regions:
+-- a font string lying on a bar is that bar's text.
+do
+    local function newRegion(point)
+        local region = { written = nil }
+        function region:SetText(value) self.written = value end
+        function region:GetPoint() return point end
+        function region:IsShown() return true end
+        function region:Show() end
+        return region
+    end
+
+    -- A bar with the key: nothing is looked for.
+    local keyed = { TextString = newRegion("CENTER") }
+    function keyed:GetRegions() error("the key was there; no need to ask") end
+    T.eq(TX.Label(keyed), keyed.TextString, "the key answers first")
+
+    -- A bar without it: three labels, and the value stands in the middle.
+    local left, middle, right =
+        newRegion("LEFT"), newRegion("CENTER"), newRegion("RIGHT")
+    local keyless = {}
+    function keyless:GetRegions() return left, middle, right end
+    T.eq(TX.Label(keyless), middle, "of several labels the central one is taken")
+
+    -- Asked once: the answer is remembered against the bar.
+    local asked = 0
+    local only = newRegion("TOPLEFT")
+    local lonely = {}
+    function lonely:GetRegions() asked = asked + 1 return only end
+    T.eq(TX.Label(lonely), only, "with no central one the first is taken")
+    TX.Label(lonely)
+    T.eq(asked, 1, "and the bar is asked once, not on every write")
+
+    -- A bar with no labels at all is remembered as such, and asked once too.
+    local bare = {}
+    local bareAsked = 0
+    function bare:GetRegions() bareAsked = bareAsked + 1 return nil end
+    T.eq(TX.Label(bare), nil, "a bar with no label says so")
+    TX.Label(bare)
+    T.eq(bareAsked, 1, "and is not asked again")
+
+    -- And the value is written onto a label found that way, which is the
+    -- whole point: on that line the bars stayed blank with a format chosen.
+    combat = false
+    withSettings({
+        health = "value", power = NATIVE,
+        abbreviate = false, position = TX.NATIVE,
+    })
+    local bar = { value = 120, max = 300 }
+    function bar:GetValue() return self.value end
+    function bar:GetMinMaxValues() return 0, self.max end
+    function bar:GetRegions() return newRegion("LEFT"), middle end
+    TX.Role(bar, "health")
+    T.ok(TX.Refresh(bar), "the value was written")
+    T.eq(middle.written, "120/300", "onto the label the bar itself handed over")
+end
