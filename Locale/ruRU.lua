@@ -525,6 +525,8 @@ ns.RegisterLocale("ruRU", {
         .. "раздел в окне настроек говорит почему и предлагает повторить.",
     ["the dimming subsystem is not loaded"] =
         "подсистема затемнения не загружена",
+    ["the bar text subsystem is not loaded"] =
+        "подсистема текстов на полосках не загружена",
     ["the window opened last"] = "последнее открытое окно",
     ["open the window first, then type /dark probe - or name the frame: "
         .. "/dark probe <frame name>"] =

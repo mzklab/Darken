@@ -57,22 +57,25 @@ counters.hooked_texts = counters.hooked_texts or 0
 counters.fired_texts  = counters.fired_texts  or 0
 counters.absent_texts = counters.absent_texts or 0
 
--- What the game writes the values on the bars with. There are several names
--- because they differ between builds: the author's report from a live client
--- showed hooked_texts = 0 — the function under the one name the subsystem had
--- counted on does not exist on their client.
+--- The names of the game's functions that write a bar's value.
 --
--- ALL the ones that were found are taken rather than the first that turns up:
--- the second is not called from the first everywhere, and by hooking onto the
--- outer one alone it is possible to miss the updates the game makes through
--- the inner one.
+-- The names themselves live in the compatibility layer, which is the one
+-- place in this addon that knows the game's own names: a second list here
+-- would diverge from it silently, and a list diverged from the client makes
+-- no complaint - the subsystem simply stops working.
 --
--- The list is closed and short: these are names from the game's own code
--- rather than guesses.
-Texts.HOOKS = {
-    "TextStatusBar_UpdateTextString",
-    "TextStatusBar_UpdateTextStringWithValues",
-}
+-- ALL the ones found are taken rather than the first that turns up: the
+-- inner one is not called from the outer one on every line, and hooking the
+-- outer one alone can miss the updates that go through the inner one.
+--
+-- @return table array of declared names
+function Texts.Writers()
+    if type(ns.Compat) ~= "table"
+        or type(ns.Compat.GetFrameNames) ~= "function" then
+        return {}
+    end
+    return ns.Compat.GetFrameNames(ns.flavor, "bar-text-write")
+end
 
 -- What was not found. The report needs it: "zero hooks" and "there are no
 -- hooks because no such functions exist on this client" are different
@@ -686,6 +689,81 @@ function Texts:ApplySettings()
     end
 end
 
+--- What the subsystem found on this client, in words.
+--
+-- Why it exists. Everything this subsystem does rests on three answers from
+-- the client, and all three differ between builds: where the frame keeps its
+-- bar, where the bar keeps its label, and what the game calls to write the
+-- value. When one of them is missing the result on screen is the same in
+-- every case - an empty bar with a format chosen - and the three are cured by
+-- three different things. So they are reported apart.
+--
+-- It reads the interface and writes nothing to it.
+--
+-- @param globals table name -> object
+-- @return table array of lines
+function Texts.Diagnose(globals)
+    local lines = {}
+    if type(globals) ~= "table" then return lines end
+
+    local settings = Settings()
+    lines[#lines + 1] = "health = " .. tostring(settings and settings.health)
+        .. ", power = " .. tostring(settings and settings.power)
+
+    for _, name in ipairs(ns.Compat.Resolve("unitframe")) do
+        local frame = globals[name]
+        if type(frame) == "table" then
+            for j = 1, #BARS do
+                local entry = BARS[j]
+
+                -- The route to the bar, named rather than counted: a bar
+                -- found through a field and one the client handed over are
+                -- the same object and a different fact about the build.
+                local route, bar = "none", nil
+                for i = 1, #entry.paths do
+                    local found = field(frame, { entry.paths[i] }, "GetValue")
+                    if found ~= nil then
+                        route, bar = "field " .. entry.paths[i], found
+                        break
+                    end
+                end
+                if bar == nil then
+                    bar = Texts.AskClient(name, entry.role)
+                    if bar ~= nil then route = "client" end
+                end
+
+                local said = "no text object"
+                if bar ~= nil then
+                    local found = field(bar, TEXT_PATHS, "SetText")
+                    if found ~= nil then
+                        said = TEXT_PATHS[1]
+                        if type(found.IsShown) == "function" then
+                            local seen, shown = pcall(found.IsShown, found)
+                            said = said .. (seen and shown and ", shown"
+                                or ", hidden")
+                        end
+                    end
+                end
+
+                lines[#lines + 1] = name .. " " .. entry.role .. ": "
+                    .. route .. ", " .. said
+            end
+        end
+    end
+
+    local writers = Texts.Writers()
+    for i = 1, #writers do
+        local name = writers[i]
+        lines[#lines + 1] = name .. ": "
+            .. (type(globals[name]) == "function" and "present" or "absent")
+    end
+
+    lines[#lines + 1] = "hooks taken " .. tostring(counters.hooked_texts)
+        .. ", hooks run " .. tostring(counters.fired_texts)
+
+    return lines
+end
+
 --- Enabling the subsystem.
 --
 -- Here and only here are the subscriptions and the shared handler created.
@@ -697,7 +775,7 @@ end
 -- path below, because Texts.Hook only keeps the ledger.
 function Texts:OnEnable()
     if type(hooksecurefunc) == "function" then
-        for _, name in ipairs(Texts.HOOKS) do
+        for _, name in ipairs(Texts.Writers()) do
             if type(_G[name]) ~= "function" then
                 Texts.MISSING[#Texts.MISSING + 1] = name
                 counters.absent_texts = counters.absent_texts + 1

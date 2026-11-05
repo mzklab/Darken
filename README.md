@@ -181,6 +181,10 @@ screenshot does:
                      name a frame to probe that one, or "mouse" to
                      probe what the cursor is on
 /dark scan <text>    frames whose names contain the text
+/dark bars           why the numbers on the health and power bars are
+                     missing: where this client keeps each bar, where
+                     it keeps the text object, and which of the game's
+                     writing functions it has
 /dark harvest        framing the addon does not yet reach, by frame.
                      "mouse" asks about the window under the cursor,
                      which is the way to point at a piece that stayed

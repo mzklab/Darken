@@ -531,6 +531,8 @@ ns.RegisterLocale("ukUA", {
         .. "вікні налаштувань каже чому і пропонує повторити.",
     ["the dimming subsystem is not loaded"] =
         "підсистему затемнення не завантажено",
+    ["the bar text subsystem is not loaded"] =
+        "підсистему текстів на смужках не завантажено",
     ["the window opened last"] = "останнє відкрите вікно",
     ["open the window first, then type /dark probe - or name the frame: "
         .. "/dark probe <frame name>"] =

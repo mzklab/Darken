@@ -463,8 +463,9 @@ do
     T.ok(type(Texts) == "table", "the subsystem is in place")
 
     if type(Texts) == "table" then
-        T.ok(type(Texts.HOOKS) == "table" and #Texts.HOOKS >= 2,
-            "there is more than one name to try: " .. #(Texts.HOOKS or {}))
+        local writers = Texts.Writers()
+        T.ok(type(writers) == "table" and #writers >= 2,
+            "there is more than one name to try: " .. #writers)
 
         -- ALL the ones found are taken, not the first at hand: the second is
         -- not called from the first everywhere, and hooking only the outer
@@ -473,7 +474,7 @@ do
         _G.hooksecurefunc = function(name) hooked[name] = true end
 
         local kept = {}
-        for _, name in ipairs(Texts.HOOKS) do
+        for _, name in ipairs(writers) do
             kept[name] = _G[name]
             _G[name] = function() end
         end
@@ -481,20 +482,20 @@ do
         Texts.MISSING = {}
         Texts:OnEnable()
 
-        for _, name in ipairs(Texts.HOOKS) do
+        for _, name in ipairs(writers) do
             T.ok(hooked[name], "hooked onto " .. name)
         end
         T.eq(#Texts.MISSING, 0, "everything was found -- nothing to complain about")
 
         -- And what is missing is named: "zero hooks" and "nothing to hook"
         -- are different troubles, and they are cured by different things.
-        for _, name in ipairs(Texts.HOOKS) do _G[name] = nil end
+        for _, name in ipairs(writers) do _G[name] = nil end
         Texts.MISSING = {}
         Texts:OnEnable()
-        T.eq(#Texts.MISSING, #Texts.HOOKS,
+        T.eq(#Texts.MISSING, #writers,
             "not a single name exists -- all of them are named")
 
-        for _, name in ipairs(Texts.HOOKS) do _G[name] = kept[name] end
+        for _, name in ipairs(writers) do _G[name] = kept[name] end
         _G.hooksecurefunc = saved
     end
 end
@@ -579,4 +580,40 @@ do
         "a frame with no such function is not asked")
 
     ns.Compat = savedCompat
+end
+
+T.suite("bar text: the subsystem says what it found on this client")
+
+-- Three answers from the client stand behind the text on a bar: where the
+-- frame keeps its bar, where the bar keeps its text object, and what the game
+-- writes the value with. A missing answer of any of the three kinds looks the
+-- same on screen - an empty bar with a format chosen - and the three are
+-- cured by three different things, so each is reported apart.
+do
+    combat = false
+    setupFrames()
+    withSettings({
+        health = "value", power = NATIVE,
+        abbreviate = false, position = TX.NATIVE,
+    })
+
+    -- A frame with no bar at all: the report must name it rather than leave
+    -- it out, because "the frame is not here" and "the bar is not where we
+    -- looked" are the two answers being told apart.
+    PetFrame = {}
+
+    local lines = TX.Diagnose(_G)
+    local joined = table.concat(lines, "\n")
+
+    T.ok(joined:find("health = value", 1, true) ~= nil,
+        "the chosen formats are stated first")
+    T.ok(joined:find("PlayerFrame health: field healthbar", 1, true) ~= nil,
+        "the route to a bar found in a field is named with the field")
+    T.ok(joined:find("TextStatusBar_UpdateTextString: ", 1, true) ~= nil,
+        "each writing function is reported present or absent")
+    T.ok(joined:find("hooks taken", 1, true) ~= nil,
+        "and the hooks taken and run are counted")
+
+    T.eq(#TX.Diagnose(nil), 0,
+        "without the client's globals there is nothing to say")
 end

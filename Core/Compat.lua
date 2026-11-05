@@ -376,6 +376,42 @@ for _, byFlavor in pairs(FRAMES) do
     byFlavor["unitframe-recolor"] = names
 end
 
+-- What the game writes a bar's value with.
+--
+-- The value on a health or power bar is written by the game, and the bar text
+-- subsystem rewrites it in the format the player chose. To do that it needs
+-- the moment the game has just written: a protected hook on the function that
+-- does the writing, which receives the bar itself and touches no bar of its
+-- own.
+--
+-- There are four names because the writer differs by line. The first pair is
+-- the older spelling, absent on 1.60.1 - the report from that client counted
+-- both names looked for and neither found, and the bar text there goes
+-- through a method on the bar, which this addon does not hook: a hook on an
+-- object's method writes a field onto somebody else's frame.
+--
+-- The second pair is what that line does have. Each is called by the game
+-- with the bar it has just updated, which is the same answer the first pair
+-- gives.
+--
+-- Two of the names are in unitframe-recolor as well, and the repetition is
+-- not a divergence: the colour subsystem asks for every function after which
+-- a bar may have been recoloured, this one asks for those after which a
+-- bar's value may have been rewritten. One list serving two questions would
+-- quietly answer the wrong one as soon as either changed.
+local BAR_TEXT_WRITE = {
+    "TextStatusBar_UpdateTextString",
+    "TextStatusBar_UpdateTextStringWithValues",
+    "UnitFrameHealthBar_Update",
+    "UnitFrameManaBar_Update",
+}
+
+for _, byFlavor in pairs(FRAMES) do
+    local names = {}
+    for i = 1, #BAR_TEXT_WRITE do names[i] = BAR_TEXT_WRITE[i] end
+    byFlavor["bar-text-write"] = names
+end
+
 -- The aura icons on the unit frames: the auras of the target, the focus, the
 -- pet and the party members.
 --
