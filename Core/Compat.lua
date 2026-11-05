@@ -616,6 +616,19 @@ local CHROME = {
         "WorldMapButton",
         "BattlefieldMapFrame.ScrollContainer",
         "BattlefieldMapTab",
+
+        -- The flight map, which is a map by the same argument and was
+        -- darkened into unreadability: the author sent a continent he could
+        -- not make out at all, with the route drawn across it.
+        --
+        -- The window rather than a canvas inside it, because its whole
+        -- content is the map and the flight points on it, and the names
+        -- those are drawn under differ by line. Its own framing is painted
+        -- all the same: that is named part by part in the list of framing
+        -- paths (TaxiFrame.TopBorder and its fellows), which is painted by
+        -- name and not by walking into the window.
+        "TaxiFrame",
+        "FlightMapFrame.ScrollContainer",
     },
 
     -- The colour picker. It is looked up so that the dimming passes it by:

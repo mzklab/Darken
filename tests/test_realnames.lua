@@ -246,3 +246,7 @@ pin("chrome", {
     "CharacterBackSlotNormalTexture",
     "CharacterAmmoSlotNormalTexture",
 })
+
+-- The flight map. The report has the window itself; what it holds is a map
+-- of the world, and a darkened map cannot be read - the author sent one.
+pin("map-canvas", { "TaxiFrame" })

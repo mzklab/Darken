@@ -51,6 +51,14 @@ multiplier, its brightness ceiling, the tint, the class colour - is
 worked out once per change of setting instead of once per picture
 painted.
 
+**The flight map is left alone.** It was darkened into unreadability -
+a continent that could not be made out at all, with the flight route
+drawn across it. A map is a picture of the world and is read rather
+than looked past, which is why the world map and the minimap have been
+exempt from the first; the flight map is one by the same argument and
+was simply not on the list. Its own framing still darkens: that is
+named part by part and painted by name.
+
 **The equipment slots darken with the rest of the character sheet.**
 Every slot kept its gold frame on a dark window, and the reason was a
 name: the list held the spelling another line of the client uses, and
