@@ -132,6 +132,18 @@ the game's own options, or in whichever addon was installed for it -
 and a second hand on it is unwelcome whether or not there is an owner
 to yield to.
 
+**The player's portrait is not painted black, by any road.** A window
+names its contents in fields of its own - portrait, icon, fill - and
+the picture named there frequently belongs to a frame inside the
+window rather than to the window itself. Whoever reads that inner
+frame's pictures asks it what its contents are, and it does not know:
+the field is on the window above. A portrait has nothing else to be
+recognised by - no name, and a file number for a picture, which is
+what framing looks like here - so it was painted black. The window's
+answer is now remembered against the picture itself, so the walk, the
+painting of a top layer and the adoption of a newly assigned picture
+all have it.
+
 **The player's portrait is not painted black.** A window names its
 contents in fields of its own - portrait, icon, fill - and the picture
 named there is frequently a region of a frame inside it rather than of

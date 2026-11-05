@@ -1414,6 +1414,25 @@ function Darkness.ForgetNever()
     neverNames = nil
 end
 
+-- Pictures a frame has named as its own contents: picture -> true.
+--
+-- The set returned below is about one frame and is thrown away with the
+-- call. This remembers the answer against the PICTURE, and that is the
+-- difference between knowing it where it was asked and knowing it
+-- everywhere.
+--
+-- A window names its contents in fields of its own - portrait, icon, fill -
+-- and the picture named there frequently belongs to a frame inside the
+-- window rather than to the window. Whoever reads that inner frame's
+-- pictures asks it what its contents are, and it does not know: the field
+-- is on the window above. A portrait has nothing else to be recognised by,
+-- no name and a file number for a picture, so it came out as framing and
+-- was painted black.
+--
+-- Remembered against the picture, the window's answer is there for every
+-- road that reaches it afterwards.
+local OWNED_CONTENT = ns.Skin.Memory()
+
 --- Why this texture is contents rather than framing. A nil means "framing".
 --
 -- The only place where the decision "to darken or not" is made.
@@ -1470,6 +1489,10 @@ function Darkness.ContentReason(region)
     -- is not in doubt, so it is asked first and nothing after it can
     -- overturn it.
     if name ~= nil and Darkness.NeverNames()[name] then return "named" end
+
+    -- A picture some frame has named as its contents, wherever that frame
+    -- stands in relation to this one.
+    if OWNED_CONTENT[region] then return "owner field" end
 
     if name and containsAny(name:lower(), CONTENT_NAMES) then return "name" end
 
@@ -1762,6 +1785,7 @@ local function contentRegions(frame)
         local region = frame[field]
         if type(region) == "table" and fieldIsContent(region, field) then
             set[region] = true
+            OWNED_CONTENT[region] = true
         end
     end
     return set

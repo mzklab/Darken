@@ -1998,3 +1998,41 @@ do
     T.eq(#stray, 0, "no object outside a parchment family is written: "
         .. table.concat(stray, " "))
 end
+
+T.suite("darkness: a window's answer about a picture follows the picture")
+
+-- A window names its contents in fields of its own, and the picture named
+-- there frequently belongs to a frame inside the window rather than to the
+-- window. Whoever reads that inner frame's pictures asks it what its
+-- contents are, and it does not know - the field is on the window above.
+--
+-- A portrait has nothing else to be recognised by: no name of its own, and
+-- a file number for a picture, which is what framing looks like in this
+-- client. So it came out as framing and was painted black, by whichever
+-- road reached it - the walk, the top layer, or the adoption of a picture
+-- the game had just assigned.
+--
+-- The answer is remembered against the picture, so every road has it.
+do
+    local savedFlavor, savedAddon = ns.flavor, ns.Addon
+    ns.flavor = "vanilla"
+    ns.Addon = { db = { profile = { darkness = { amount = 64, mode = {} } } } }
+
+    local face = newRegion({ kind = "Texture", layer = "ARTWORK",
+        texture = 135000 })
+
+    -- Before anyone has asked the window, the picture is framing by every
+    -- general rule: that is the whole difficulty.
+    T.eq(Darkness.ContentReason(face), nil,
+        "unasked, it reads as framing")
+
+    -- The window is asked once, anywhere.
+    local unit = newFrame("Frame", "AUnitFrame", {})
+    unit.portrait = face
+    Darkness.ApplyToFrame(unit, 0.5)
+
+    T.eq(Darkness.ContentReason(face), "owner field",
+        "once the window has named it, the answer stays with the picture")
+
+    ns.flavor, ns.Addon = savedFlavor, savedAddon
+end
