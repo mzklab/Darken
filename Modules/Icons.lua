@@ -148,12 +148,6 @@ local ICON_SUFFIX = "Icon"
 -- compatibility layer, and a second list of them would diverge from the first
 -- silently — precisely what the layer is written against.
 local GROUPS = {
-    -- The menu buttons at the bottom of the screen. The darkening leaves
-    -- them alone - their picture IS the icon - and the author asked for
-    -- them to be shaded the way the skills are instead: the same outline
-    -- and the same shade, so they go dark without becoming unrecognisable.
-    "micro-buttons",
-
     "actionbar-main-buttons",
     "actionbar-bottomleft-buttons",
     "actionbar-bottomright-buttons",
@@ -208,25 +202,10 @@ end
 function Icons.IconOf(button)
     if type(button) ~= "table" then return nil end
 
-    -- A button whose picture is its own art hands it over as the normal
-    -- texture: the menu buttons at the bottom of the screen are made that
-    -- way, and the player tells the quest log from the spellbook by that
-    -- picture. Asked first only when the fields below answer nothing, so
-    -- nothing changes for a button that keeps its icon where the templates
-    -- keep it.
-
     for i = 1, #ICON_FIELDS do
         local icon = button[ICON_FIELDS[i]]
         if type(icon) == "table" and type(icon.SetTexCoord) == "function" then
             return icon
-        end
-    end
-
-    if type(button.GetNormalTexture) == "function" then
-        local ok, art = pcall(button.GetNormalTexture, button)
-        if ok and type(art) == "table"
-            and type(art.SetTexCoord) == "function" then
-            return art
         end
     end
 

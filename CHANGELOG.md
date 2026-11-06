@@ -11,13 +11,6 @@ to the contract a module is written against.
 
 ## 1.0.7
 
-**The menu buttons are shaded the way the skills are.** The darkening
-leaves them alone on purpose - a button's picture is its icon, and
-darkened flat the row stops being tellable apart. They now go through
-the icon pass instead: the same outline and the same shade a spell icon
-gets, from the same setting. The row goes dark and every button stays
-itself. The frames around the bags darken with it, by name.
-
 **The roll on a dropped item keeps its dice, coin and pass.** Three
 buttons that are nothing but their pictures - need, greed, pass - and a
 few seconds to tell them apart. Two of them had become the same grey
