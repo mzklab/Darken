@@ -1011,6 +1011,14 @@ local CONTENT_PATHS = {
     -- These live under their own paths rather than under an atlas on this
     -- line, which is why naming the atlases (roleicon, lfg-icon) did not
     -- reach them.
+    -- The roll on a dropped item: the dice, the coin, the crossed circle.
+    --
+    -- Three buttons that are nothing but their pictures - need, greed, pass
+    -- - and the player has a few seconds to tell them apart. Darkened, the
+    -- dice and the circle came out as two grey blobs, which is how the
+    -- author sent them.
+    "ui-grouploot",
+
     "ui-lfg-icon-role", "lfgrole", "ui-group-leadericon",
     "ui-group-assistanticon", "ui-group-masterlooter",
     "ui-lfg-icon-portraitroles", "groupfinder-icon-role",

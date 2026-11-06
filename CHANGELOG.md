@@ -11,6 +11,12 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The roll on a dropped item keeps its dice, coin and pass.** Three
+buttons that are nothing but their pictures - need, greed, pass - and a
+few seconds to tell them apart. Two of them had become the same grey
+blob. The same rule as the role icons: a picture one recognises
+something by is not framing.
+
 **The group finder keeps its role and leader icons.** The crown beside
 a name says who leads; the shield, the cross and the swords say which
 places a group still wants - which is the whole of what the list is

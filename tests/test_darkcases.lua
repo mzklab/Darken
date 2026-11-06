@@ -1303,6 +1303,10 @@ do
     end
 
     local readings = {
+        "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
+        "Interface\\Buttons\\UI-GroupLoot-Coin-Up",
+        "Interface\\Buttons\\UI-GroupLoot-Pass-Up",
+        "Interface\\Buttons\\UI-GroupLoot-DE-Up",
         "Interface\\LFGFrame\\UI-LFG-ICON-ROLES",
         "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES",
         "Interface\\GroupFrame\\UI-Group-LeaderIcon",
