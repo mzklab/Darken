@@ -23,7 +23,8 @@ $name = 'Darken'
 # what is thrown out: a list of exclusions silently lets every new directory
 # through, while a list of inclusions silently loses it — and the loss is
 # visible in the listing of contents the script prints at the end.
-$folders = @('Libs', 'Core', 'Config', 'Skin', 'Modules', 'Features', 'Locale', 'Media')
+$folders = @('Libs', 'Core', 'Config', 'Skin', 'Modules', 'Features',
+             'Options', 'Widgets', 'Locale', 'Media')
 $files = @(
     'Darken.toc',
     'Darken_Vanilla.toc',
@@ -132,6 +133,43 @@ try {
             throw "Media\branding\$art is missing - the addon draws with it"
         }
     }
+
+    # Everything the game is told to load must be in the archive.
+    #
+    # The list above is a list of folders, the TOC is a list of files, and
+    # the two drifted: Options and Widgets - the settings window and
+    # everything it is drawn with - stood in the TOC and not in the list.
+    # Every build went out without a settings window, and nothing said so. A
+    # player said so instead:
+    #
+    #   Darken/Darken_Camelot.toc:27 Error loading Darken/Options/List.lua
+    #
+    # So the archive is checked against the TOCs rather than against the list
+    # it was built from. A folder added to the addon and forgotten here fails
+    # the build.
+    $listed = @{}
+    foreach ($tocName in @('Darken.toc', 'Darken_Vanilla.toc',
+        'Darken_Camelot.toc', 'Darken_TBC.toc', 'Darken_Mists.toc')) {
+        foreach ($line in Get-Content (Join-Path $root $tocName)) {
+            $entry = $line.Trim()
+            # A file rather than a tag or a title: the TOC's own lines
+            # carry no spaces, and a directive starts with a hash.
+            if ($entry -match '[.](lua|xml)$' -and
+                $entry -notmatch '\s' -and
+                -not $entry.StartsWith('#')) {
+                $listed[$entry.Replace('/', [string][char]92)] = $true
+            }
+        }
+    }
+
+    $lost = @()
+    foreach ($entry in $listed.Keys) {
+        if (-not (Test-Path (Join-Path $stage $entry))) { $lost += $entry }
+    }
+    if ($lost.Count -gt 0) {
+        throw ("the TOCs load files the archive does not hold: " + ($lost -join ', '))
+    }
+    Write-Host ("  = " + $listed.Count + " files the TOCs load, all in place")
 
     if (Test-Path $zip) { Remove-Item $zip -Force }
     Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal

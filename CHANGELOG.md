@@ -51,6 +51,23 @@ multiplier, its brightness ceiling, the tint, the class colour - is
 worked out once per change of setting instead of once per picture
 painted.
 
+**The settings window is in the archive.** A player wrote that he could
+not open the settings at all:
+
+    Darken/Darken_Camelot.toc:27 Error loading Darken/Options/List.lua
+
+He was right, and so was every error like it. The addon is built from a
+list of folders, the game loads from a list of files, and the two had
+drifted: Options and Widgets - the settings window and everything it is
+drawn with, twelve files - stood in the second and not in the first.
+Every published build went out without them, and nothing in the build
+said so.
+
+The two lists are now compared, twice: the build refuses to finish if
+the archive lacks a file any TOC loads, and a check does the same
+comparison without building anything. Apologies to everyone who
+installed it and found no settings.
+
 **A letter the game has coloured is left as it is.** The quest titles on
 the map are coloured by difficulty - grey, green, yellow, red - and red
 and green were being raised to white along with the page's ink. The

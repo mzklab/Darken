@@ -47,6 +47,7 @@ end
 
 local files = {
     "tests/test_smoke.lua",
+    "tests/test_delivery.lua",
     "tests/test_compat.lua",
     "tests/test_realnames.lua",
     "tests/test_media.lua",
