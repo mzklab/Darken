@@ -1413,9 +1413,12 @@ do
         return newRegion({ kind = "Texture", layer = "ARTWORK", atlas = name })
     end
 
+    -- Somebody else's unit only. The player's own frame is excepted from
+    -- this exception further down the file: he knows he is in combat, and
+    -- a bright frame beside a dark target is what he reported.
     local combat = {
         "UI-HUD-UnitFrame-Target-PortraitOn-InCombat",
-        "UI-HUD-UnitFrame-Player-PortraitOn-InCombat",
+        "UI-HUD-UnitFrame-TargetofTarget-PortraitOn-InCombat",
     }
     for i = 1, #combat do
         T.eq(Darkness.ContentReason(atlas(combat[i])), "atlas",
@@ -2074,4 +2077,58 @@ do
         "once the window has named it, the answer stays with the picture")
 
     ns.flavor, ns.Addon = savedFlavor, savedAddon
+end
+
+T.suite("darkness: the plate under a menu icon is framing, the icon is not")
+
+-- A whole family is named as contents when nearly all of it is: the menu
+-- buttons at the bottom of the screen are that case, because a button's
+-- picture IS its icon and the row darkened flat stops being tellable apart.
+--
+-- But a family is not of one kind. The author's probe of one of those
+-- buttons listed seven pictures, and the square plate under the icon is one
+-- of them. It says nothing, it is the same metal as the rest of the
+-- interface, and darkening it while the icons stay themselves is exactly
+-- what was asked for.
+do
+    local function atlas(name)
+        return newRegion({ kind = "Texture", layer = "ARTWORK", atlas = name })
+    end
+
+    T.eq(Darkness.ContentReason(atlas("UI-HUD-MicroMenu-ButtonBG-Up")), nil,
+        "the plate under the icon is framing")
+    T.eq(Darkness.ContentReason(atlas("UI-HUD-MicroMenu-ButtonBG-Down")), nil,
+        "and so is the pressed one")
+
+    T.eq(Darkness.ContentReason(atlas("UI-HUD-MicroMenu-Portrait-Down")),
+        "atlas", "while the picture on it is contents")
+    T.eq(Darkness.ContentReason(atlas("UI-HUD-MicroMenu-Highlightalert")),
+        "atlas", "and so is the alert on it")
+end
+
+T.suite("darkness: the player's own frame darkens in combat too")
+
+-- The in-combat variant of a unit frame's art is spared, and for somebody
+-- else's unit that is right: red says the target is fighting, and red is the
+-- whole of what it says.
+--
+-- The player's own frame says nothing by it. He knows he is in combat, he is
+-- in combat most of the time, and what he saw was his own frame and the ring
+-- with his level standing bright beside a dark target. His probe named the
+-- picture: UI-HUD-UnitFrame-Player-PortraitOn-InCombat, left as contents.
+do
+    local function atlas(name)
+        return newRegion({ kind = "Texture", layer = "ARTWORK", atlas = name })
+    end
+
+    T.eq(Darkness.ContentReason(
+        atlas("UI-HUD-UnitFrame-Player-PortraitOn-InCombat")), nil,
+        "the player's own frame is framing, in combat as out of it")
+
+    T.eq(Darkness.ContentReason(
+        atlas("UI-HUD-UnitFrame-Target-PortraitOn-InCombat")), "atlas",
+        "while the target's red frame still says the target is fighting")
+    T.eq(Darkness.ContentReason(
+        atlas("UI-HUD-UnitFrame-TargetofTarget-PortraitOn-InCombat")), "atlas",
+        "and so does its target's")
 end

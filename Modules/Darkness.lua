@@ -1129,6 +1129,30 @@ local CONTENT_PATHS = {
 -- darkened row in which not one button could be recognised. A menu button's
 -- picture IS its icon — the quest scroll, the bag, the spellbook — and the
 -- player has no other way of telling one from another.
+-- The framing inside a family that is otherwise contents.
+--
+-- A whole family is named as contents when nearly all of it is - the menu
+-- buttons at the bottom of the screen are the case: a button's picture IS
+-- its icon, and the row darkened flat stops being tellable apart.
+--
+-- But a family is not of one kind. The author's probe of one of those
+-- buttons listed seven pictures, and one of them is the square plate under
+-- the icon:
+--
+--   1. UI-HUD-MicroMenu-ButtonBG-Up
+--   2. UI-HUD-MicroMenu-ButtonBG-Down
+--   4. UI-HUD-MicroMenu-Portrait-Shadow
+--   5. RTPortrait1 (the icon itself, by its owner's field)
+--
+-- The plate is framing by every argument this file uses: it says nothing,
+-- it is the same metal as the rest of the interface, and it is exactly what
+-- the author asked to see darkened while the icons stay themselves.
+--
+-- Asked before the content list and overruling it, which is the whole
+-- purpose: one name here is narrower than the family name there.
+-- Kept as a field of the list it overrules rather than as a name of its
+-- own: this file's main chunk is within a few locals of the two hundred Lua
+-- allows one, and a second list would be paid for by something else.
 local CONTENT_ATLASES = {
     "classicon", "raceicon", "questportrait",
     "roleicon", "microbutton", "micromenu", "lfg-icon",
@@ -1166,6 +1190,27 @@ local CONTENT_ATLASES = {
     -- variant whose name says "in combat" is spared, and it is spared for
     -- every unit frame that has one at once.
     "-incombat",
+}
+
+CONTENT_ATLASES.framing = {
+    -- The plate under a menu button's icon.
+    "micromenu-buttonbg",
+
+    -- The player's own frame while he is in combat.
+    --
+    -- The rule above spares the in-combat variant of a unit frame's art,
+    -- and for somebody else's unit that is right: red says the target is
+    -- fighting, and red is the whole of what it says.
+    --
+    -- The player's own frame says nothing by it. He knows he is in combat,
+    -- he is in combat most of the time, and what he saw was his own frame
+    -- and the ring with his level standing bright beside a dark target -
+    -- which is how he reported it. His probe named the picture outright:
+    -- UI-HUD-UnitFrame-Player-PortraitOn-InCombat, left as contents.
+    --
+    -- The unit is in the name, so the exception is by unit and not by
+    -- guesswork.
+    "unitframe-player-portraiton-incombat",
 }
 
 -- The layer that is not subject to darkening.
@@ -1559,7 +1604,9 @@ function Darkness.ContentReason(region)
 
     local atlas = stringFrom(region, "GetAtlas")
     if atlas then
-        if containsAny(atlas:lower(), CONTENT_ATLASES) then return "atlas" end
+        local lower = atlas:lower()
+        if containsAny(lower, CONTENT_ATLASES.framing) then return nil end
+        if containsAny(lower, CONTENT_ATLASES) then return "atlas" end
         return nil
     end
 

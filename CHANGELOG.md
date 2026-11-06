@@ -11,6 +11,22 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The plate under a menu button darkens, the icon on it does not.** The
+whole family was left alone, because a menu button's picture is its
+icon and the row darkened flat stops being tellable apart. A probe of
+one button showed the family is not of one kind: the square plate under
+the icon is in it too, and that is framing by every argument - it says
+nothing and it is the same metal as the rest of the interface. The
+plate darkens now and the icons stay themselves.
+
+**The player's own frame darkens in combat as it does out of it.** The
+red variant of a unit frame's art is spared because red says that unit
+is fighting. On the player's own frame it says nothing he does not
+know, and he is in combat most of the time: his frame and the ring with
+his level stood bright beside a dark target. The exception now holds
+for other units only - the unit is written in the picture's name, so
+this is by name rather than by guesswork.
+
 **The roll on a dropped item keeps its dice, coin and pass.** Three
 buttons that are nothing but their pictures - need, greed, pass - and a
 few seconds to tell them apart. Two of them had become the same grey
