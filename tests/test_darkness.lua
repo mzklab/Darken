@@ -161,6 +161,20 @@ do
     T.eq(Darkness.DarkText(1, 1, 1), false, "a white line all the less so")
     T.eq(Darkness.DarkText(nil, 1, 1), false, "an unreadable value is not dark")
 
+    -- And a letter the game has tinted is not ink, however dark it is. The
+    -- difficulty of a quest is written into the colour of its title, and
+    -- both of these are darker than the threshold: the player lost the
+    -- difficulty he reads them for, which is what he sent about the map's
+    -- quest list.
+    T.eq(Darkness.DarkText(1, 0.10, 0.10), false,
+        "a red quest title is a colour, not ink")
+    T.eq(Darkness.DarkText(0.25, 0.75, 0.25), false,
+        "and so is a green one")
+    T.eq(Darkness.DarkText(0.30, 0.30, 0.30), true,
+        "while a neutral grey that dark is ink and is raised")
+    T.eq(Darkness.DarkText(0.20, 0.17, 0.13), true,
+        "the page's brown ink stays ink: its channels sit close together")
+
     local r, g, b = Darkness.Ink()
     T.ok(Darkness.DarkText(r, g, b) == false,
         "the colour we lift into does not itself count as dark")

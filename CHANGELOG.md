@@ -51,6 +51,20 @@ multiplier, its brightness ceiling, the tint, the class colour - is
 worked out once per change of setting instead of once per picture
 painted.
 
+**A letter the game has coloured is left as it is.** The quest titles on
+the map are coloured by difficulty - grey, green, yellow, red - and red
+and green were being raised to white along with the page's ink. The
+rule looked only at how dark a letter was, and both of those are dark:
+red is 1.00 0.10 0.10, green 0.25 0.75 0.25. The colour said something
+and the addon threw it away, leaving text that was perfectly readable
+and therefore said nothing about what had been lost.
+
+The rule now asks a second question: is this a colour at all. Ink is
+near-neutral - the game's dark text on parchment is a brown whose
+channels sit within a few hundredths of each other - and only that is
+raised. Everything tinted stays as the game wrote it, which is the same
+promise the bars' fills and the item icons have always had.
+
 **The flight map is left alone.** It was darkened into unreadability -
 a continent that could not be made out at all, with the flight route
 drawn across it. A map is a picture of the world and is read rather

@@ -2272,12 +2272,35 @@ local INK = { 0.90, 0.90, 0.90 }
 -- colour carries meaning. Below it the text vanishes on a darkened sheet.
 local INK_EDGE = 0.5
 
---- Whether this label is a dark one.
+-- How far the three channels may stand apart before the colour counts as a
+-- colour rather than as ink.
 --
--- A pure function over three channels. The brightness is computed as a mean
--- rather than as the "real" weighted luminance: the difference between them
--- here is smaller than the spread of the game's own colours, while a mean needs
--- no numbers explained.
+-- A letter's colour carries meaning, and the brightness alone does not say
+-- whether it has one. The game writes a quest's difficulty into the title:
+-- red is 1.00 0.10 0.10 and green 0.25 0.75 0.25, and the mean of both is
+-- below a half - so both were being raised to white, and the player lost the
+-- difficulty he reads them for. He sent exactly that about the map's quest
+-- list: grey, green, red and yellow headings, and none of them ours to
+-- touch.
+--
+-- Ink is near-neutral: the game's dark text on parchment is a brown or a
+-- near-black whose channels sit within a few hundredths of each other. A
+-- quarter leaves that whole range liftable and puts every coloured letter out
+-- of reach - the nearest of them, green, stands half a unit apart.
+local HUE_EDGE = 0.25
+
+--- Whether this label is dark ink rather than a colour.
+--
+-- Two questions, and the second was missing. The brightness is computed as a
+-- mean rather than as the "real" weighted luminance: the difference between
+-- them here is smaller than the spread of the game's own colours, while a
+-- mean needs no numbers explained.
+--
+-- The second is whether the colour is a colour at all. A letter the game has
+-- tinted says something by being tinted - a quest's difficulty, a name's
+-- faction, an item's quality - and raising it to white throws that away
+-- while leaving the text perfectly readable, so nothing on screen says the
+-- addon has taken anything. Only near-neutral ink is raised.
 --
 -- @param r number|nil
 -- @param g number|nil
@@ -2287,7 +2310,17 @@ function Darkness.DarkText(r, g, b)
     local red, green, blue = tonumber(r), tonumber(g), tonumber(b)
     if red == nil or green == nil or blue == nil then return false end
 
-    return (red + green + blue) / 3 < INK_EDGE
+    if (red + green + blue) / 3 >= INK_EDGE then return false end
+
+    local high = red
+    if green > high then high = green end
+    if blue > high then high = blue end
+
+    local low = red
+    if green < low then low = green end
+    if blue < low then low = blue end
+
+    return (high - low) < HUE_EDGE
 end
 
 --- The light colour dark text is replaced with.
