@@ -9,7 +9,7 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## 1.0.6
+## 1.0.7
 
 **The group finder keeps its role and leader icons.** The crown beside
 a name says who leads; the shield, the cross and the swords say which
@@ -18,6 +18,8 @@ read for. All of them were darkened to the same near-black blob. They
 are readings by the same rule a spell icon, a coin and a quest marker
 are, and they are left alone now; the window around them goes on
 darkening.
+
+## 1.0.6
 
 **Three more buttons of the micro menu are darkened.** A row half dark
 was reported with a picture: the menu is painted by name, and three of
