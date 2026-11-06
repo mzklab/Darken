@@ -257,3 +257,9 @@ pin("bags", {
     "LFDMicroButton", "LegacyMicroButton", "HousingMicroButton",
     "EJMicroButton", "CharacterMicroButton",
 })
+
+-- The frames around the bags, which the report names one by one.
+pin("bags", {
+    "CharacterBag0SlotNormalTexture", "CharacterBag3SlotNormalTexture",
+    "MainMenuBarBackpackButtonNormalTexture",
+})

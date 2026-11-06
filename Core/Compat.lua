@@ -684,6 +684,20 @@ local CHROME = {
         "CharacterBag2Slot",
         "CharacterBag3Slot",
         "KeyRingButton",
+
+        -- The square frame around each bag, by name.
+        --
+        -- The same case as the equipment slots: the button is named, its
+        -- frame is a region of it called NormalTexture, and the named pass
+        -- paints what it is given a name for. The bag's own picture
+        -- (IconTexture) is deliberately absent - that is the bag, and the
+        -- player tells one from another by it.
+        "MainMenuBarBackpackButtonNormalTexture",
+        "CharacterBag0SlotNormalTexture",
+        "CharacterBag1SlotNormalTexture",
+        "CharacterBag2SlotNormalTexture",
+        "CharacterBag3SlotNormalTexture",
+        "KeyRingButtonNormalTexture",
         "MicroButtonAndBagsBar",
         "CharacterMicroButton",
         "SpellbookMicroButton",
