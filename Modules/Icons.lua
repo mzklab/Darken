@@ -202,10 +202,23 @@ end
 function Icons.IconOf(button)
     if type(button) ~= "table" then return nil end
 
+    -- A button whose picture is its own art hands it over as the normal
+    -- texture: the menu buttons at the bottom of the screen are made that
+    -- way. Asked only after the fields below answer nothing, so nothing
+    -- changes for a button that keeps its icon where the templates do.
+
     for i = 1, #ICON_FIELDS do
         local icon = button[ICON_FIELDS[i]]
         if type(icon) == "table" and type(icon.SetTexCoord) == "function" then
             return icon
+        end
+    end
+
+    if type(button.GetNormalTexture) == "function" then
+        local ok, art = pcall(button.GetNormalTexture, button)
+        if ok and type(art) == "table"
+            and type(art.SetVertexColor) == "function" then
+            return art
         end
     end
 
@@ -890,6 +903,33 @@ function Icons.Paint(border, crop, shadow, round, dim)
         local ok, names, objects = pcall(ns.Compat.Resolve, GROUPS[i])
         if ok and type(objects) == "table" then
             for j = 1, #objects do dress(objects[j]) end
+        end
+    end
+
+    -- The menu buttons at the bottom of the screen: shaded and nothing
+    -- more.
+    --
+    -- The author asked for them to go dark the way the skills do, and the
+    -- first attempt took two icons off the row instead. The cause is worth
+    -- writing down: the trimming works by SetTexCoord, these pictures are
+    -- set from an atlas, an atlas carries its own coordinates, and writing
+    -- others over them leaves the texture showing nothing.
+    --
+    -- The shade is a vertex colour and is safe on an atlas, so that is all
+    -- they get. His probe of one button says why nothing else would help
+    -- anyway: the icon and the plate under it are one picture there
+    -- (UI-HUD-MicroMenu-GuildCommunities-Up), and there is nothing to
+    -- outline or trim apart from it.
+    do
+        local ok, names, objects = pcall(ns.Compat.Resolve, "micro-buttons")
+        if ok and type(objects) == "table" then
+            for j = 1, #objects do
+                local art = Icons.IconOf(objects[j])
+                if Icons.Tint(art, dim) and dim < 1 then
+                    counters.tinted = counters.tinted + 1
+                    touched = touched + 1
+                end
+            end
         end
     end
 

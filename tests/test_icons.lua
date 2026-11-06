@@ -530,3 +530,37 @@ do
     ns.Compat = savedCompat
     ns.Addon = savedAddon
 end
+
+T.suite("icons: a menu button is shaded and not trimmed")
+
+-- The author asked for the menu buttons to go dark the way the skills do.
+-- The first attempt took two icons off the row: the trimming works by
+-- SetTexCoord, these pictures are set from an atlas, an atlas carries its
+-- own coordinates, and writing others over them leaves the texture showing
+-- nothing.
+--
+-- So they are shaded and nothing more. The shade is a vertex colour and is
+-- safe on an atlas. His probe of one button says why nothing else would
+-- help anyway: there the icon and the plate under it are one picture, and
+-- there is nothing to outline or trim apart from it.
+do
+    local art = { r = 1, g = 1, b = 1, coords = nil }
+    function art:SetVertexColor(r, g, b) self.r, self.g, self.b = r, g, b end
+    function art:GetVertexColor() return self.r, self.g, self.b end
+    function art:SetTexCoord() error("an atlas keeps its own coordinates") end
+
+    local button = {}
+    function button:GetNormalTexture() return art end
+
+    T.eq(ns.Icons.IconOf(button), art,
+        "the button's own art is what gets shaded")
+
+    T.ok(ns.Icons.Tint(art, 0.4), "and it takes a shade")
+    T.ok(art.r < 1, "which is darker than it was: " .. art.r)
+
+    -- A button that keeps its icon in a field is untouched by the fallback.
+    local proper = { icon = { SetTexCoord = function() end,
+        SetVertexColor = function() end } }
+    function proper:GetNormalTexture() return art end
+    T.eq(ns.Icons.IconOf(proper), proper.icon, "the field answers first")
+end
