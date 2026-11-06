@@ -316,6 +316,7 @@ local CONSEQUENCE = {
     ["container-pickup"]     = { label = "Bag Sorting", kind = Report.ALTERNATIVES },
 
     ["actionbar-main"]                = { label = "Main Action Bar",  kind = Report.ALTERNATIVES },
+    ["micro-buttons"]                 = { label = "Icon Borders",     kind = Report.SERIES },
     ["actionbar-main-buttons"]        = { label = "Main Action Bar",  kind = Report.SERIES },
     ["actionbar-bottomleft"]          = { label = "Bottom Left Bar",  kind = Report.ALTERNATIVES },
     ["actionbar-bottomleft-buttons"]  = { label = "Bottom Left Bar",  kind = Report.SERIES },

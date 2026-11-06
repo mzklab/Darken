@@ -725,6 +725,29 @@ local CHROME = {
         "HousingMicroButton",
     },
 
+    -- The micro menu's buttons, asked for a second time and for another
+    -- reason.
+    --
+    -- They stand in "bags" above because that is the area whose switch
+    -- governs them. Here they are a list of BUTTONS, which is a different
+    -- question: the icon pass puts its outline round a button and shades
+    -- what the button shows, and it needs them apart from the bar they
+    -- happen to sit on.
+    --
+    -- The picture of such a button is its own art rather than an icon in a
+    -- field, which is why the darkening leaves it alone - the player tells
+    -- the quest log from the spellbook by that picture. Shading it the way
+    -- a spell icon is shaded takes nothing away: it stays the same picture,
+    -- darker, with the same outline the skills have.
+    ["micro-buttons"] = {
+        "CharacterMicroButton", "SpellbookMicroButton", "TalentMicroButton",
+        "QuestLogMicroButton", "SocialsMicroButton", "WorldMapMicroButton",
+        "MainMenuMicroButton", "HelpMicroButton", "LFGMicroButton",
+        "LFDMicroButton", "AchievementMicroButton", "GuildMicroButton",
+        "PVPMicroButton", "CollectionsMicroButton", "EJMicroButton",
+        "StoreMicroButton", "LegacyMicroButton", "HousingMicroButton",
+    },
+
     tooltip = {
         "GameTooltip",
         "ItemRefTooltip",

@@ -530,3 +530,35 @@ do
     ns.Compat = savedCompat
     ns.Addon = savedAddon
 end
+
+T.suite("icons: the menu buttons are shaded the way the skills are")
+
+-- The darkening leaves the menu buttons at the bottom of the screen alone,
+-- and rightly: a button's picture IS its icon, and darkened flat they stop
+-- being tellable apart - the author sent a row in which not one could be
+-- recognised. What he asked for instead was the treatment the skills get:
+-- the same outline and the same shade, so the row goes dark and every
+-- button stays itself.
+--
+-- The picture of such a button is handed over as its normal texture rather
+-- than in a field, which is the one thing the icon pass had to learn.
+do
+    local art = { coords = nil, r = 1, g = 1, b = 1 }
+    function art:SetTexCoord(...) self.coords = { ... } end
+    function art:GetTexCoord() return 0, 1, 0, 1 end
+    function art:SetVertexColor(r, g, b) self.r, self.g, self.b = r, g, b end
+    function art:GetVertexColor() return self.r, self.g, self.b end
+
+    local button = {}
+    function button:GetNormalTexture() return art end
+
+    T.eq(ns.Icons.IconOf(button), art,
+        "a button whose picture is its own art hands it over")
+
+    -- And a button that keeps its icon where the templates keep it is
+    -- unaffected: the art is asked for only when the fields answer nothing.
+    local proper = { icon = { SetTexCoord = function() end } }
+    function proper:GetNormalTexture() return art end
+    T.eq(ns.Icons.IconOf(proper), proper.icon,
+        "the field still answers first")
+end
