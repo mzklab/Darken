@@ -700,6 +700,15 @@ local CHROME = {
         "CollectionsMicroButton",
         "EJMicroButton",
         "StoreMicroButton",
+
+        -- The ones this line adds to the row. Confirmed by the report from
+        -- the client rather than guessed: a name it does not have is
+        -- dropped by the existence filter, while one it has and we do not
+        -- is a button left in its native colour in the middle of a dark
+        -- row - which is what was reported.
+        "LFDMicroButton",
+        "LegacyMicroButton",
+        "HousingMicroButton",
     },
 
     tooltip = {

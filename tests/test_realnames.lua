@@ -250,3 +250,10 @@ pin("chrome", {
 -- The flight map. The report has the window itself; what it holds is a map
 -- of the world, and a darkened map cannot be read - the author sent one.
 pin("map-canvas", { "TaxiFrame" })
+
+-- The micro menu as this line builds it. Three of its buttons were missing
+-- from the row we paint, and a report of a row half dark is what named them.
+pin("bags", {
+    "LFDMicroButton", "LegacyMicroButton", "HousingMicroButton",
+    "EJMicroButton", "CharacterMicroButton",
+})
