@@ -4896,6 +4896,19 @@ end
 --
 -- @return boolean|nil whether the plan's tree grew; nil means the walk is
 --   unfinished
+--- How many milliseconds this slice may take.
+--
+-- @param first boolean|nil whether this is a window's first slice
+-- @return number
+function Darkness.Budget(first)
+    if first then return FIRST_SLICE_MS end
+
+    local store = Store()
+    if store ~= nil and store.cost.login == nil then return FIRST_SLICE_MS end
+
+    return SLICE_MS
+end
+
 function Darkness.Drain()
     local work = slice
     if work == nil then return nil end
@@ -4919,8 +4932,21 @@ function Darkness.Drain()
             work.push)
 
         -- The frame's time ran out — the rest goes on the next frame.
-        local budget = SLICE_MS
-        if work.first then budget = FIRST_SLICE_MS end
+        --
+        -- Until the first reconnaissance has finished the share is a larger
+        -- one. The author asked why the darkening arrives two to ten
+        -- seconds after he enters the world rather than at once, and the
+        -- arithmetic answers it: his report counts the login walk at 483 ms
+        -- spread over 141 slices, one slice a frame - two and a half
+        -- seconds at sixty frames a second, and longer with every addon
+        -- that loads and sends the reconnaissance round again.
+        --
+        -- Those frames are the ones nobody is looking at: the screen is
+        -- still fading in from the loading screen, and a hitch there costs
+        -- nothing against watching the interface turn dark piece by piece
+        -- afterwards. After the first walk ends the ordinary share stands
+        -- again, because by then the player is looking.
+        local budget = Darkness.Budget(work.first)
         if started ~= nil and (nowMs() - started) >= budget then break end
 
     end

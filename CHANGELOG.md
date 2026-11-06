@@ -11,6 +11,16 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The darkening arrives sooner after you enter the world.** It used to
+take a couple of seconds to creep over the interface, and longer on a
+machine with many addons. The reason is the slicing: the walk takes
+three milliseconds of each frame so that nothing stutters, and the
+login walk is some five hundred milliseconds of work - a hundred and
+forty frames of it. Those particular frames are the ones nobody is
+looking at, the screen is still fading in, so until the first walk has
+finished a slice now takes the larger share. Afterwards the ordinary
+one stands again, because by then you are looking.
+
 **The plate under a menu button darkens, the icon on it does not.** The
 whole family was left alone, because a menu button's picture is its
 icon and the row darkened flat stops being tellable apart. A probe of

@@ -710,3 +710,35 @@ do
     _G.debugprofilestop = savedClock
     Darkness.ApplyToWindow = saved
 end
+
+T.suite("the darkness: the login walk gets the larger share")
+
+-- The author asked why the darkening arrives two to ten seconds after he
+-- enters the world rather than at once. The arithmetic answers it: his
+-- report counts the login walk at 483 ms spread over 141 slices, one slice
+-- a frame - two and a half seconds at sixty frames a second, and longer
+-- with every addon that loads and sends the reconnaissance round again.
+--
+-- Those frames are the ones nobody is looking at: the screen is still
+-- fading in. So until the first walk has finished a slice takes the larger
+-- share, and afterwards the ordinary one stands again, because by then the
+-- player is looking.
+do
+    local first = Darkness.Budget(true)
+    local during = Darkness.Budget(false)
+
+    T.ok(first > 0, "a first slice has a budget: " .. first)
+    T.ok(during > 0, "and so has every other: " .. during)
+
+    -- Here a walk has already finished - the suites above this one opened
+    -- windows - so the ordinary share stands, and it is the smaller of the
+    -- two. Before the first walk ends the larger one is returned instead,
+    -- which is the whole of the change.
+    T.ok(first > during,
+        "the login share is the larger one: " .. first .. " against " .. during)
+
+    -- The record of the first finished walk is what tells the two apart,
+    -- and it is the same record the report prints.
+    local reading = Darkness.Churn()
+    T.eq(type(reading.slices), "number", "the cost record is readable")
+end
