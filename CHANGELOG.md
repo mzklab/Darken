@@ -9,6 +9,81 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
+## 1.0.6
+
+**Three more buttons of the micro menu are darkened.** A row half dark
+was reported with a picture: the menu is painted by name, and three of
+the names this line builds it from were not on the list.
+
+
+**The settings window is in the archive.** A player wrote that he could
+not open the settings at all:
+
+    Darken/Darken_Camelot.toc:27 Error loading Darken/Options/List.lua
+
+He was right, and so was every error like it. The addon is built from a
+list of folders, the game loads from a list of files, and the two had
+drifted: Options and Widgets - the settings window and everything it is
+drawn with, twelve files - stood in the second and not in the first.
+Every published build went out without them, and nothing in the build
+said so.
+
+The two lists are now compared, twice: the build refuses to finish if
+the archive lacks a file any TOC loads, and a check does the same
+comparison without building anything. Apologies to everyone who
+installed it and found no settings.
+
+**A letter the game has coloured is left as it is.** The quest titles on
+the map are coloured by difficulty - grey, green, yellow, red - and red
+and green were being raised to white along with the page's ink. The
+rule looked only at how dark a letter was, and both of those are dark:
+red is 1.00 0.10 0.10, green 0.25 0.75 0.25. The colour said something
+and the addon threw it away, leaving text that was perfectly readable
+and therefore said nothing about what had been lost.
+
+The rule now asks a second question: is this a colour at all. Ink is
+near-neutral - the game's dark text on parchment is a brown whose
+channels sit within a few hundredths of each other - and only that is
+raised. Everything tinted stays as the game wrote it, which is the same
+promise the bars' fills and the item icons have always had.
+
+**The flight map is left alone.** It was darkened into unreadability -
+a continent that could not be made out at all, with the flight route
+drawn across it. A map is a picture of the world and is read rather
+than looked past, which is why the world map and the minimap have been
+exempt from the first; the flight map is one by the same argument and
+was simply not on the list. Its own framing still darkens: that is
+named part by part and painted by name.
+
+**Bar Text turns the game's own on instead of writing its own.** With a
+format chosen the bars stayed blank, and the game's own text stopped
+working as well. The subsystem used to write the label itself: find the
+bar, find its font string, hook whatever function the client writes
+values with, rewrite after it, move it, show what the game had hidden.
+Every one of those is a guess at somebody else's build, and every one
+of them is spelt differently on this client line.
+
+The game already has this setting, and it does the job from inside its
+own update - the only place that knows the number, knows when it
+changed and may touch a protected frame's label. So the choice now
+turns that on and picks its shape: the number, the percentage, or both
+- which is the game's own two-ended form, the percentage at the left
+end of the bar and the number at the right. One shape goes to every bar
+the game draws, which is the game's rule and not ours, and the setting
+says so.
+
+Where the two values stand is the one thing the game's setting cannot
+be told, so that stayed ours: "Percentage Position" and "Number
+Position" move what the game wrote - to the left end, the middle or the
+right end, or wherever the game itself had it. The text is never
+written, shown or hidden by this addon; only moved. A bar whose labels
+cannot be found keeps the game's layout, and the values stay on it.
+
+The shortening of large numbers went with the hand-written label: it
+described digits this addon no longer writes. Choosing "the game's own"
+back puts the game's variables to the value the client itself calls
+default, so the setting is reversible like every other one here.
+
 ## 1.0.5
 
 **The game stopped stuttering while you play.** With the addon on, the
@@ -51,45 +126,6 @@ multiplier, its brightness ceiling, the tint, the class colour - is
 worked out once per change of setting instead of once per picture
 painted.
 
-**The settings window is in the archive.** A player wrote that he could
-not open the settings at all:
-
-    Darken/Darken_Camelot.toc:27 Error loading Darken/Options/List.lua
-
-He was right, and so was every error like it. The addon is built from a
-list of folders, the game loads from a list of files, and the two had
-drifted: Options and Widgets - the settings window and everything it is
-drawn with, twelve files - stood in the second and not in the first.
-Every published build went out without them, and nothing in the build
-said so.
-
-The two lists are now compared, twice: the build refuses to finish if
-the archive lacks a file any TOC loads, and a check does the same
-comparison without building anything. Apologies to everyone who
-installed it and found no settings.
-
-**A letter the game has coloured is left as it is.** The quest titles on
-the map are coloured by difficulty - grey, green, yellow, red - and red
-and green were being raised to white along with the page's ink. The
-rule looked only at how dark a letter was, and both of those are dark:
-red is 1.00 0.10 0.10, green 0.25 0.75 0.25. The colour said something
-and the addon threw it away, leaving text that was perfectly readable
-and therefore said nothing about what had been lost.
-
-The rule now asks a second question: is this a colour at all. Ink is
-near-neutral - the game's dark text on parchment is a brown whose
-channels sit within a few hundredths of each other - and only that is
-raised. Everything tinted stays as the game wrote it, which is the same
-promise the bars' fills and the item icons have always had.
-
-**The flight map is left alone.** It was darkened into unreadability -
-a continent that could not be made out at all, with the flight route
-drawn across it. A map is a picture of the world and is read rather
-than looked past, which is why the world map and the minimap have been
-exempt from the first; the flight map is one by the same argument and
-was simply not on the list. Its own framing still darkens: that is
-named part by part and painted by name.
-
 **The equipment slots darken with the rest of the character sheet.**
 Every slot kept its gold frame on a dark window, and the reason was a
 name: the list held the spelling another line of the client uses, and
@@ -98,35 +134,6 @@ named the way this client spells them now, for the character sheet and
 the inspect window both, and the names are pinned by a check so they
 cannot be lost again quietly. The item's own icon is deliberately not
 in that list.
-
-**Bar Text turns the game's own on instead of writing its own.** With a
-format chosen the bars stayed blank, and the game's own text stopped
-working as well. The subsystem used to write the label itself: find the
-bar, find its font string, hook whatever function the client writes
-values with, rewrite after it, move it, show what the game had hidden.
-Every one of those is a guess at somebody else's build, and every one
-of them is spelt differently on this client line.
-
-The game already has this setting, and it does the job from inside its
-own update - the only place that knows the number, knows when it
-changed and may touch a protected frame's label. So the choice now
-turns that on and picks its shape: the number, the percentage, or both
-- which is the game's own two-ended form, the percentage at the left
-end of the bar and the number at the right. One shape goes to every bar
-the game draws, which is the game's rule and not ours, and the setting
-says so.
-
-Where the two values stand is the one thing the game's setting cannot
-be told, so that stayed ours: "Percentage Position" and "Number
-Position" move what the game wrote - to the left end, the middle or the
-right end, or wherever the game itself had it. The text is never
-written, shown or hidden by this addon; only moved. A bar whose labels
-cannot be found keeps the game's layout, and the values stay on it.
-
-The shortening of large numbers went with the hand-written label: it
-described digits this addon no longer writes. Choosing "the game's own"
-back puts the game's variables to the value the client itself calls
-default, so the setting is reversible like every other one here.
 
 **A supported addon is darkened all the way through.** Rack did not
 darken at all, because its bar is a one-by-one anchor with no picture
