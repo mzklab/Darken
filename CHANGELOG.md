@@ -11,6 +11,14 @@ to the contract a module is written against.
 
 ## 1.0.6
 
+**The group finder keeps its role and leader icons.** The crown beside
+a name says who leads; the shield, the cross and the swords say which
+places a group still wants - which is the whole of what the list is
+read for. All of them were darkened to the same near-black blob. They
+are readings by the same rule a spell icon, a coin and a quest marker
+are, and they are left alone now; the window around them goes on
+darkening.
+
 **Three more buttons of the micro menu are darkened.** A row half dark
 was reported with a picture: the menu is painted by name, and three of
 the names this line builds it from were not on the list.

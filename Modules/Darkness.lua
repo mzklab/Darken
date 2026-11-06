@@ -999,6 +999,22 @@ local CONTENT_PATHS = {
     "ui-classes-circles",
     "temporaryportrait",
 
+    -- Who is leading a group and which roles it still wants.
+    --
+    -- The crown beside a name says who the leader is; the shield, the cross
+    -- and the swords say which of a group's places are filled and which are
+    -- open - that is the whole of what the group finder is read for. The
+    -- author sent its list with every one of them darkened to the same
+    -- near-black blob, and a row that cannot say whether it wants a tank is
+    -- a row that says nothing.
+    --
+    -- These live under their own paths rather than under an atlas on this
+    -- line, which is why naming the atlases (roleicon, lfg-icon) did not
+    -- reach them.
+    "ui-lfg-icon-role", "lfgrole", "ui-group-leadericon",
+    "ui-group-assistanticon", "ui-group-masterlooter",
+    "ui-lfg-icon-portraitroles", "groupfinder-icon-role",
+
     -- Money and currency. Gold, silver and copper are three different
     -- circles, and the player tells them apart by colour: darkened, they
     -- become identically brown, and "sixty-eight" stops saying sixty-eight of

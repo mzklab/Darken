@@ -1286,6 +1286,41 @@ do
     end
 end
 
+T.suite("darkness: who leads a group and which roles it wants")
+
+-- The group finder is read for two things: who is leading and which places
+-- are still open. The crown says the first, the shield, the cross and the
+-- swords the second. The author sent the list with every one of them
+-- darkened to the same near-black blob, and a row that cannot say whether it
+-- wants a tank says nothing at all.
+--
+-- The same rule as a spell icon, a coin and a quest marker: a picture one
+-- recognises something by rather than the frame around it.
+do
+    local function picture(path)
+        return newRegion({ kind = "Texture", layer = "ARTWORK",
+            texture = path })
+    end
+
+    local readings = {
+        "Interface\\LFGFrame\\UI-LFG-ICON-ROLES",
+        "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES",
+        "Interface\\GroupFrame\\UI-Group-LeaderIcon",
+        "Interface\\GroupFrame\\UI-Group-AssistantIcon",
+        "Interface\\GroupFrame\\UI-Group-MasterLooter",
+    }
+    for i = 1, #readings do
+        T.eq(Darkness.ContentReason(picture(readings[i])), "path",
+            "a reading, not framing: " .. readings[i])
+    end
+
+    -- And the window they lie in goes on darkening: the rule names the
+    -- pictures that say something, not the window that holds them.
+    T.eq(Darkness.ContentReason(picture(
+        "Interface\\LFGFrame\\UI-LFG-BACKGROUND-Dungeon")), nil,
+        "the group finder's own background is framing")
+end
+
 T.suite("darkness: the combat glow on a unit frame is a reading")
 
 -- The author, in a fight: "why do you keep repainting the target's frame from
