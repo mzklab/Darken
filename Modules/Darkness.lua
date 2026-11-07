@@ -7228,7 +7228,23 @@ function Darkness.WindowShown(frame, opened)
         -- how many children and regions does it hold - and the answer costs
         -- two calls. Different from last time means there is something new
         -- to walk, whatever the count says.
-        local children, regions = shapeOf(frame)
+        -- Asked by the counts rather than by the lists.
+        --
+        -- shapeOf builds two tables - every child and every region of the
+        -- frame - and this runs on every showing, which the author's own
+        -- reading puts at seventy-five a second. He felt it at once. The
+        -- engine answers the same question with two numbers and no tables,
+        -- which is the way the top layer has always asked it.
+        local children, regions = 0, 0
+        if type(frame.GetNumChildren) == "function" then
+            local ok, many = pcall(frame.GetNumChildren, frame)
+            if ok and type(many) == "number" then children = many end
+        end
+        if type(frame.GetNumRegions) == "function" then
+            local ok, many = pcall(frame.GetNumRegions, frame)
+            if ok and type(many) == "number" then regions = many end
+        end
+
         local shape = tostring(children) .. ":" .. tostring(regions)
         if known.shape ~= shape then
             known.shape = shape

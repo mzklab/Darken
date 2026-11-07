@@ -872,12 +872,17 @@ do
     local saved = Darkness.ApplyToWindow
     Darkness.ApplyToWindow = function() walked = walked + 1 end
 
+    -- The engine answers "what does this frame hold" with two numbers and
+    -- no tables, and that is how the question is asked: on every showing,
+    -- seventy-five times a second on the author's screen.
     local regions = {}
     local sheet = {
         GetObjectType = function() return "Frame" end,
         GetName = function() return "SheetWithPanels" end,
         GetRegions = function() return unpack(regions) end,
+        GetNumRegions = function() return #regions end,
         GetChildren = function() return end,
+        GetNumChildren = function() return 0 end,
         GetParent = function() return nil end,
     }
 
