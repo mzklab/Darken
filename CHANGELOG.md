@@ -11,6 +11,12 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The badges on a unit frame keep their colour.** The faction mark
+beside the level, the leader's crown, the guide's eye, the mark of a
+pending queue, the sleep of a rested character: each is there to say
+something, and each had become a black blob. The ring they sit on is
+framing and still darkens.
+
 **The unit frames stopped asking the same question twenty-six thousand
 times.** Their colouring runs behind every repainting the game does of a
 bar, and a session's report counts 26,651 of those. Inside it the addon

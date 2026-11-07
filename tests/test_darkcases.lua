@@ -2188,3 +2188,36 @@ do
     Darkness.Known = savedKnown
     Darkness.OwnerOf = savedOwner
 end
+
+T.suite("darkness: the badges on a unit frame are readings")
+
+-- The faction mark beside the level, the crown of a group's leader, the eye
+-- of its guide, the mark of a pending queue, the sleep of a rested
+-- character: each is there to say something, and the author sent the first
+-- of them darkened into a black blob. A faction mark that cannot be read is
+-- not a mark.
+--
+-- The names are the ones his own probe of the player frame printed.
+do
+    local function atlas(name)
+        return newRegion({ kind = "Texture", layer = "ARTWORK", atlas = name })
+    end
+
+    local readings = {
+        "UI-HUD-UnitFrame-SmallCircle-Alliance",
+        "UI-HUD-UnitFrame-SmallCircle-Horde",
+        "UI-HUD-UnitFrame-Player-Group-LeaderIcon",
+        "UI-HUD-UnitFrame-Player-Group-GuideIcon",
+        "UI-LFG-PendingMark",
+        "UI-HUD-UnitFrame-Player-Rest-Flipbook",
+        "UI-HUD-UnitFrame-Player-PlayTimeTired",
+    }
+    for i = 1, #readings do
+        T.eq(Darkness.ContentReason(atlas(readings[i])), "atlas",
+            "a reading, not framing: " .. readings[i])
+    end
+
+    -- And the ring they sit on is framing: it says nothing by itself.
+    T.eq(Darkness.ContentReason(atlas("UI-HUD-UnitFrame-SmallCircle")), nil,
+        "the badge's own backing goes on darkening")
+end

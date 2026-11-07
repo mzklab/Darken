@@ -1214,6 +1214,23 @@ local CONTENT_ATLASES = {
     "questlog-icon-checkmark", "questlog-icon-ticksquare",
     "waypoint-mappin", "questionmark",
 
+    -- The badges on a unit frame: what they say is the whole of them.
+    --
+    -- The faction mark beside the level (a small circle with Alliance or
+    -- Horde on it), the crown of a group's leader, the eye of its guide,
+    -- the mark that says a queue is pending, the sleep of a rested
+    -- character and the hourglass of one who has played too long. Each is
+    -- a reading, and the author sent the first of them darkened to a black
+    -- blob: a faction mark that cannot be read is not a mark.
+    --
+    -- The names are the ones his own probe of the player frame printed, so
+    -- this is the client's vocabulary rather than a guess. The plain
+    -- SmallCircle beneath them is their backing - the same metal as the
+    -- rest of the frame - and goes on darkening.
+    "smallcircle-alliance", "smallcircle-horde",
+    "group-leadericon", "group-guideicon",
+    "ui-lfg-pendingmark", "rest-flipbook", "playtimetired",
+
     -- The red frame around a portrait while that unit is fighting.
     --
     -- The frame of a unit comes in variants of one atlas, and the client
