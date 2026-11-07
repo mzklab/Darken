@@ -990,3 +990,41 @@ do
     local r = UF.NameColor("reaction", info)
     T.eq(r, 1, "our own kill is painted by reaction")
 end
+
+T.suite("unit frames: which frames this client has is asked once")
+
+-- The colouring runs behind every one of the game's own repaintings of a
+-- bar, and the author's report counts 26,651 firings of those hooks in a
+-- single session. Inside it the compatibility layer was asked afresh every
+-- time which unit frames this client has - a list walked against the
+-- client, two tables built and a lookup apiece - for an answer that
+-- changes only when an addon loads.
+--
+-- That is where the time went that nothing in the reading could see: the
+-- reading times the walk and the watcher, and this is neither.
+do
+    local asked = 0
+    local real = ns.Compat.Resolve
+    ns.Compat.Resolve = function(group, ...)
+        if group == "unitframe" then asked = asked + 1 end
+        return real(group, ...)
+    end
+
+    ns.UnitFrames.ForgetFrames()
+    ns.UnitFrames:ApplyColors()
+    local first = asked
+
+    asked = 0
+    for _ = 1, 50 do ns.UnitFrames:ApplyColors() end
+    T.eq(asked, 0, "fifty repaintings ask the layer nothing")
+    T.ok(first > 0, "while the first one asks it once: " .. first)
+
+    -- And an addon loading drops it, because the client may have gained a
+    -- frame.
+    ns.UnitFrames.ForgetFrames()
+    asked = 0
+    ns.UnitFrames:ApplyColors()
+    T.ok(asked > 0, "after an addon loads the question is put again")
+
+    ns.Compat.Resolve = real
+end

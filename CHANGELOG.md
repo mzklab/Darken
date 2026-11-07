@@ -11,6 +11,20 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The unit frames stopped asking the same question twenty-six thousand
+times.** Their colouring runs behind every repainting the game does of a
+bar, and a session's report counts 26,651 of those. Inside it the addon
+asked afresh, every single time, which unit frames this client has - a
+list of names walked against the client, two tables built, a lookup
+apiece - for an answer that changes only when an addon loads. It is
+asked once now. Nothing in the reading could see this: the reading times
+the walk and the watcher, and this was neither.
+
+**The measuring put in to find all this is out of the hot paths again.**
+Two clock readings per texture the game assigns, two more per event
+handled: affordable while a question is open, not worth paying once it
+is answered.
+
 **A window belonging to an addon we do not know costs nothing.** The
 rule was always that an addon nobody named is left alone, but the
 paying went on anyway: the showing was answered in full - names

@@ -319,53 +319,19 @@ end
 -- @param event string
 -- @param ... the event's arguments
 -- @return number how many handlers ran without error
---- What each subsystem has cost in the second now running.
+-- The subsystems were timed here for an evening, two readings of the clock
+-- per handler, and the answer was the same every time: not one of them
+-- spends a hundredth of a millisecond in a second of play. An answer that
+-- settled does not need taking again on every event for the rest of the
+-- addon's life, so the clocks are gone and the door is a door again.
 --
--- Why it lives here. Every subsystem's answer to an event passes through
--- this one door, so this is the only place that can say which of them
--- spends anything without a timer in each. The author has spent an evening
--- being told that the darkening costs nothing while his game stutters, and
--- an accounting that measures one subsystem out of nine answers the wrong
--- question.
---
--- Two readings of the clock per handler: the door is opened a few hundred
--- times a second at worst, so the measurement is a rounding error against
--- what it measures.
+-- Events.Spent stays and answers an empty table: the reading asks for it,
+-- and a reading that loses a line it used to print looks like a defect.
 Events.spent = {}
-Events.spentSince = nil
-
---- The clock, in milliseconds, or nothing outside the game.
--- @return number|nil
-local function nowMs()
-    local profile = _G.debugprofilestop
-    if type(profile) ~= "function" then return nil end
-    local ok, value = pcall(profile)
-    if ok and type(value) == "number" then return value end
-    return nil
-end
-
---- Record what one subsystem's handler cost.
--- @param moduleName string
--- @param started number|nil
-local function spend(moduleName, started)
-    local now = nowMs()
-    if now == nil or started == nil then return end
-
-    if Events.spentSince == nil or (now - Events.spentSince) >= 1000 then
-        Events.spentSince = now
-        Events.spent = {}
-    end
-
-    Events.spent[moduleName] = (Events.spent[moduleName] or 0)
-        + (now - started)
-end
 
 --- What every subsystem has cost in the second now running.
 -- @return table name -> milliseconds
 function Events.Spent()
-    local now = nowMs()
-    if now == nil or Events.spentSince == nil then return {} end
-    if (now - Events.spentSince) >= 1000 then return {} end
     return Events.spent
 end
 
@@ -393,10 +359,8 @@ function Events.Dispatch(event, ...)
         local moduleName = names[i]
         local fn = byModule[moduleName]
         if type(fn) == "function" then
-            local started = nowMs()
             local ok = ns.Registry:Protect(
                 moduleName, "event " .. event, fn, event, ...)
-            spend(moduleName, started)
             if ok then done = done + 1 end
         end
     end

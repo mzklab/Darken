@@ -1447,12 +1447,44 @@ end
 -- colour would be gone. The subscription to its functions (OnEnable) leads
 -- here rather than into the full application: there are the scale, the textures
 -- and the queue there, while after a repainting only the colour is needed.
+--- The unit frames this client has, asked for once.
+--
+-- === Why the answer is kept ===
+--
+-- This question is a list of names walked against the client, two tables
+-- built and a lookup apiece. It was asked afresh inside ApplyColors - and
+-- ApplyColors runs behind every one of the game's own repaintings of a
+-- bar: the author's report counts 26,651 firings of those hooks in a
+-- single session. So the layer was asked twenty-six thousand times for an
+-- answer that changes only when an addon loads.
+--
+-- That is where the time went that nothing in the reading could see: the
+-- reading times the walk and the watcher, and this is neither.
+--
+-- Dropped when the client's composition changes, which is the one thing it
+-- depends on.
+local FRAMES = nil
+
+--- Forget which unit frames this client has.
+function UnitFrames.ForgetFrames()
+    FRAMES = nil
+end
+
+--- @return table array of names
+local function frameNames()
+    if FRAMES ~= nil then return FRAMES end
+
+    local ok, names = pcall(ns.Compat.Resolve, "unitframe")
+    FRAMES = (ok and type(names) == "table") and names or {}
+    return FRAMES
+end
+
 function UnitFrames:ApplyColors()
     local settings = Settings()
     if not settings then return end
 
     local factor = BAR_FACTOR
-    local names = ns.Compat.Resolve("unitframe")
+    local names = frameNames()
 
     for i = 1, #names do
         UnitFrames.ApplyFrameColors(_G[names[i]], settings, factor)
@@ -2082,6 +2114,13 @@ function UnitFrames:OnEnable()
     -- applied.
     ns.Events.Subscribe("PLAYER_REGEN_ENABLED", me, function()
         UnitFrames.Drain(UnitFrames.queue)
+    end)
+
+    -- A new addon of the game's may bring unit frames with it, and which
+    -- ones this client has is kept between repaintings rather than asked
+    -- behind every one of them.
+    ns.Events.Subscribe("ADDON_LOADED", me, function()
+        UnitFrames.ForgetFrames()
     end)
 
     -- The subscription to the game's functions that paint the bars

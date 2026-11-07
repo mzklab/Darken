@@ -4366,33 +4366,6 @@ local WINDOW_WALKS = 3
 -- ordinary share stands, finished or not.
 local LOGIN_GRACE_MS = 3000
 
---- Record what one hearing of the watcher cost.
---
--- Takes the moment the hearing began rather than a duration: the handler
--- has half a dozen ways out, and every one of them would otherwise have to
--- do the subtraction itself.
---
--- @param started number|nil the clock at the start of the hearing
-function Darkness.SpendWatch(started)
-    local now = nowMs()
-    if now == nil or started == nil then return end
-
-    if walking.heardSince == nil or (now - walking.heardSince) >= 1000 then
-        walking.heardSince = now
-        walking.heardSpent = 0
-    end
-    walking.heardSpent = walking.heardSpent + (now - started)
-end
-
---- How much the watcher has cost in the second now running.
--- @return number milliseconds
-function Darkness.WatchSpent()
-    local now = nowMs()
-    if now == nil or walking.heardSince == nil then return 0 end
-    if (now - walking.heardSince) >= 1000 then return 0 end
-    return walking.heardSpent or 0
-end
-
 --- Record what a slice of walking cost.
 -- @param spent number milliseconds
 function Darkness.SpendWalk(spent)
@@ -4768,15 +4741,6 @@ end
 -- rather than ours. So everything we do in answer to somebody else's repainting
 -- goes through a protected call.
 function watchHandler(texture, assigned)
-    -- What the watcher costs, in milliseconds rather than in events.
-    --
-    -- Everything else in this reading is a count, and a count cannot settle
-    -- an argument about frames: three hundred hearings a second is either
-    -- nothing or a third of a frame, and which it is depends on what each
-    -- one does. Two readings of the clock per hearing is a fraction of a
-    -- microsecond, which is affordable precisely because the answer ends
-    -- the guessing.
-    local started = nowMs()
 
     -- Counted here rather than inside gameRecolored: what is asked is whether
     -- the watcher HEARS at all, and gameRecolored turns away early on guards
@@ -4795,27 +4759,22 @@ function watchHandler(texture, assigned)
     -- Our own write is recognised without touching the game at all, and a
     -- picture already given up to the game needs no further answer. Both are
     -- a table lookup.
-    if writing then return Darkness.SpendWatch(started) end
-    if type(texture) ~= "table" then return Darkness.SpendWatch(started) end
+    if writing then return end
+    if type(texture) ~= "table" then return end
 
     local fought = CONTESTED[texture]
-    if fought ~= nil and fought > CONTESTED_MAX then
-        return Darkness.SpendWatch(started)
-    end
+    if fought ~= nil and fought > CONTESTED_MAX then return end
 
     -- Asked about this picture before, under what we know now, and it
     -- belonged to nothing we touch. One lookup instead of two protected
     -- calls, and this is the common case: nearly every assignment in the
     -- interface is to a picture that is none of our business.
-    if STRANGE[texture] == knowledge then
-        return Darkness.SpendWatch(started)
-    end
+    if STRANGE[texture] == knowledge then return end
 
     -- Nothing says otherwise means the shared table called us, and that
     -- table carries only the two methods that assign a picture.
     if assigned == nil then assigned = true end
     pcall(gameRecolored, texture, assigned)
-    return Darkness.SpendWatch(started)
 end
 
 --- Place the watcher of other people's repaintings.
@@ -7681,7 +7640,6 @@ function Darkness.Churn()
         spent   = cost.total or 0,
         worst   = cost.worst or 0,
         walked  = churnBy.walked,
-        watched = Darkness.WatchSpent(),
     }
 end
 
@@ -7746,9 +7704,6 @@ function Darkness.ChurnLines(before, after, seconds)
     lines[#lines + 1] = string.format(
         "  pictures painted %.0f, walk slices %.1f taking %.2f ms",
         rate("dimmed"), rate("slices"), rate("spent") * seconds)
-    lines[#lines + 1] = string.format(
-        "  the watcher costs %.2f ms in a second",
-        tonumber(after.watched) or 0)
     lines[#lines + 1] = string.format(
         "  worst slice of the session %.2f ms",
         tonumber(after.worst) or 0)
