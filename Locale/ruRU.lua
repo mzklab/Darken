@@ -1501,4 +1501,8 @@ ns.RegisterLocale("ruRU", {
         "Кладёт тень по внутреннему краю кнопок. По умолчанию выключено, как и всякий наш собственный вид.",
     ["How dark the edge is. The depth stays as it is: a deeper shadow on a small button is not a stronger shadow, it is a smaller icon."] =
         "Насколько тёмен край. Глубина не меняется: более глубокая тень на маленькой кнопке — это не более сильная тень, а меньшая иконка.",
+    ["the game counts an addon's own cost only with profiling on: /console scriptProfile 1 and a reload"] =
+        "игра считает собственную стоимость аддона только при включённом профилировании: /console scriptProfile 1 и перезагрузка интерфейса",
+    ["the game's own count: %.1f ms of processor since login"] =
+        "счёт самой игры: %.1f мс процессора с момента входа",
 })

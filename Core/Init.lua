@@ -719,6 +719,34 @@ function Addon:HandleCommand(input)
         local lines = dark.ChurnLines(mark.churn, dark.Churn(), now - taken)
         for i = 1, #lines do self:Print(lines[i]) end
 
+        -- And what the engine itself says this addon has cost.
+        --
+        -- Every line above is the addon's own accounting, and an accounting
+        -- cannot measure a path nobody thought to measure. This one is the
+        -- game's, kept per addon while script profiling is on, and it ends
+        -- the argument either way: a number near zero says to look
+        -- elsewhere, and a large one says to look here.
+        local told = nil
+        local got, usage = pcall(ns.Compat.ResolveFunction, "addon-cpu")
+        if got and type(usage) == "function" then
+            local fresh, refresh =
+                pcall(ns.Compat.ResolveFunction, "addon-cpu-refresh")
+            if fresh and type(refresh) == "function" then pcall(refresh) end
+
+            local read, ms = pcall(usage, "Darken")
+            if read then told = tonumber(ms) end
+        end
+
+        if told ~= nil then
+            self:Print(string.format(ns.Localize(
+                "the game's own count: %.1f ms of processor since login"),
+                told))
+        else
+            self:Print(ns.Localize(
+                "the game counts an addon's own cost only with profiling "
+                    .. "on: /console scriptProfile 1 and a reload"))
+        end
+
         -- The reading is left in place: a second /dark cost after another
         -- stretch of walking answers about that stretch, and "/dark cost
         -- reset" starts afresh.

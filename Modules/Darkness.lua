@@ -4325,7 +4325,10 @@ local WINDOW_WALKS = 3
 -- One table rather than three names: the file's main chunk is within a
 -- handful of locals of the two hundred Lua allows it, and a ceiling that
 -- cost three of them would have been paid for by something else.
-local walking = { budget = 10, spent = 0, since = nil }
+-- How many writes of a burst are answered in the call that made them
+-- (atOnce): enough for a window appearing - the case the immediate answer
+-- exists for - and far below the hundreds a bag refill sends in one go.
+local walking = { budget = 10, spent = 0, since = nil, atOnce = 24 }
 
 -- How long after the first slice the login walk may keep the larger share.
 --
@@ -4333,6 +4336,33 @@ local walking = { budget = 10, spent = 0, since = nil }
 -- enough that nothing can take up residence inside it. Beyond it the
 -- ordinary share stands, finished or not.
 local LOGIN_GRACE_MS = 3000
+
+--- Record what one hearing of the watcher cost.
+--
+-- Takes the moment the hearing began rather than a duration: the handler
+-- has half a dozen ways out, and every one of them would otherwise have to
+-- do the subtraction itself.
+--
+-- @param started number|nil the clock at the start of the hearing
+function Darkness.SpendWatch(started)
+    local now = nowMs()
+    if now == nil or started == nil then return end
+
+    if walking.heardSince == nil or (now - walking.heardSince) >= 1000 then
+        walking.heardSince = now
+        walking.heardSpent = 0
+    end
+    walking.heardSpent = walking.heardSpent + (now - started)
+end
+
+--- How much the watcher has cost in the second now running.
+-- @return number milliseconds
+function Darkness.WatchSpent()
+    local now = nowMs()
+    if now == nil or walking.heardSince == nil then return 0 end
+    if (now - walking.heardSince) >= 1000 then return 0 end
+    return walking.heardSpent or 0
+end
 
 --- Record what a slice of walking cost.
 -- @param spent number milliseconds
@@ -4685,6 +4715,52 @@ local function gameRecolored(texture, assigned)
     -- Writing here calls back into this very handler, and the guard that
     -- tells our writes from anyone else's turns it away at the top.
     if repainting then return end
+
+    -- A burst is answered once, not write by write.
+    --
+    -- An item dropping into a bag is one event to the player and hundreds
+    -- of writes to the interface: the game hands every slot its picture
+    -- afresh, and the author's own report counts 9,721 writes in the bag
+    -- window in one session - the largest single number in it. Answering
+    -- each one in the call that made it means hundreds of repaintings
+    -- inside one frame, which is exactly where he feels the game stop:
+    -- "when something drops into the bag it lags, these are static icons".
+    --
+    -- So the first few writes are still answered at once - that is the
+    -- case this immediacy was put here for, a window appearing and
+    -- changing colour in front of him - and the rest of the burst is
+    -- collected and written on the next frame, in one pass. The queue
+    -- already holds them; all that changes is when it is emptied.
+    if walking.burst == nil then walking.burst = 0 end
+    walking.burst = walking.burst + 1
+
+    if walking.burst > walking.atOnce then
+        if not walking.flushing then
+            walking.flushing = true
+            local timer = _G.C_Timer
+            if type(timer) == "table" and type(timer.After) == "function" then
+                pcall(timer.After, 0, function()
+                    walking.flushing = false
+                    walking.burst = 0
+                    if not repainting then
+                        repainting = true
+                        pcall(Darkness.Repaint)
+                        repainting = false
+                    end
+                end)
+            else
+                -- No clock, which is the case outside the game: the burst
+                -- is answered here and now, as it always was.
+                walking.flushing = false
+                walking.burst = 0
+                repainting = true
+                pcall(Darkness.Repaint)
+                repainting = false
+            end
+        end
+        return
+    end
+
     repainting = true
     pcall(Darkness.Repaint)
     repainting = false
@@ -4698,6 +4774,16 @@ end
 -- rather than ours. So everything we do in answer to somebody else's repainting
 -- goes through a protected call.
 function watchHandler(texture, assigned)
+    -- What the watcher costs, in milliseconds rather than in events.
+    --
+    -- Everything else in this reading is a count, and a count cannot settle
+    -- an argument about frames: three hundred hearings a second is either
+    -- nothing or a third of a frame, and which it is depends on what each
+    -- one does. Two readings of the clock per hearing is a fraction of a
+    -- microsecond, which is affordable precisely because the answer ends
+    -- the guessing.
+    local started = nowMs()
+
     -- Counted here rather than inside gameRecolored: what is asked is whether
     -- the watcher HEARS at all, and gameRecolored turns away early on guards
     -- of its own. A count taken past them would answer a different question
@@ -4715,22 +4801,27 @@ function watchHandler(texture, assigned)
     -- Our own write is recognised without touching the game at all, and a
     -- picture already given up to the game needs no further answer. Both are
     -- a table lookup.
-    if writing then return end
-    if type(texture) ~= "table" then return end
+    if writing then return Darkness.SpendWatch(started) end
+    if type(texture) ~= "table" then return Darkness.SpendWatch(started) end
 
     local fought = CONTESTED[texture]
-    if fought ~= nil and fought > CONTESTED_MAX then return end
+    if fought ~= nil and fought > CONTESTED_MAX then
+        return Darkness.SpendWatch(started)
+    end
 
     -- Asked about this picture before, under what we know now, and it
     -- belonged to nothing we touch. One lookup instead of two protected
     -- calls, and this is the common case: nearly every assignment in the
     -- interface is to a picture that is none of our business.
-    if STRANGE[texture] == knowledge then return end
+    if STRANGE[texture] == knowledge then
+        return Darkness.SpendWatch(started)
+    end
 
     -- Nothing says otherwise means the shared table called us, and that
     -- table carries only the two methods that assign a picture.
     if assigned == nil then assigned = true end
     pcall(gameRecolored, texture, assigned)
+    return Darkness.SpendWatch(started)
 end
 
 --- Place the watcher of other people's repaintings.
@@ -7559,6 +7650,7 @@ function Darkness.Churn()
         slices  = cost.slices or 0,
         spent   = cost.total or 0,
         worst   = cost.worst or 0,
+        watched = Darkness.WatchSpent(),
     }
 end
 
@@ -7605,6 +7697,9 @@ function Darkness.ChurnLines(before, after, seconds)
     lines[#lines + 1] = string.format(
         "  pictures painted %.0f, walk slices %.1f taking %.2f ms",
         rate("dimmed"), rate("slices"), rate("spent") * seconds)
+    lines[#lines + 1] = string.format(
+        "  the watcher costs %.2f ms in a second",
+        tonumber(after.watched) or 0)
     lines[#lines + 1] = string.format(
         "  worst slice of the session %.2f ms",
         tonumber(after.worst) or 0)

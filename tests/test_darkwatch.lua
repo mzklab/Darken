@@ -1824,3 +1824,108 @@ do
     _G.ShowUIPanel, _G.CreateFrame = savedShow, savedCreate
     fresh.Addon, fresh.flavor = nil, nil
 end
+
+T.suite("darkness: a burst of writes is answered once, not write by write")
+
+-- An item dropping into a bag is one event to the player and hundreds of
+-- writes to the interface: the game hands every slot its picture afresh.
+-- The author's own report counts 9,721 writes in the bag window in one
+-- session, the largest single number in it, and he named the moment it
+-- costs him frames - "when something drops into the bag it lags, these are
+-- static icons".
+--
+-- The first few writes are still answered in the call that made them: that
+-- is what the immediate answer was put here for, a window appearing and
+-- changing colour in front of him. The rest of the burst is collected and
+-- written on the next frame, in one pass.
+do
+    local fresh = helpers.newNamespace()
+    helpers.loadAddonFile("Core/Skin.lua", fresh)
+    helpers.loadAddonFile("Core/Compat.lua", fresh)
+    helpers.loadAddonFile("Core/Locale.lua", fresh)
+    helpers.loadAddonFile("Core/Registry.lua", fresh)
+    helpers.loadAddonFile("Modules/Darkness.lua", fresh)
+
+    local Burst = fresh.Darkness
+    fresh.Events = { Subscribe = function() end }
+    fresh.flavor = "vanilla"
+    fresh.Addon = { db = { profile = { darkness = {
+        amount = 64, mode = {} } } } }
+
+    local savedTimer, savedHook, savedCreate =
+        _G.C_Timer, _G.hooksecurefunc, _G.CreateFrame
+
+    local due = {}
+    _G.C_Timer = { After = function(_, fn) due[#due + 1] = fn end }
+
+    local methods = {
+        SetVertexColor = function() end,
+        SetAtlas = function() end,
+        SetTexture = function() end,
+    }
+    local installed = {}
+    _G.hooksecurefunc = function(object, method, handler)
+        if object == methods then installed[method] = handler end
+    end
+    _G.CreateFrame = function()
+        return {
+            CreateTexture = function()
+                return setmetatable({}, { __index = methods })
+            end,
+        }
+    end
+
+    Burst.Watch()
+    local hear = installed["SetTexture"]
+    T.ok(type(hear) == "function", "the watcher is in place")
+
+    -- How often the painting itself runs is what is being counted.
+    local painted = 0
+    local realRepaint = Burst.Repaint
+    Burst.Repaint = function() painted = painted + 1 return 0 end
+
+    -- The pictures have to be ours before a write to them is answered at
+    -- all: the watcher turns away from anything the plan does not hold.
+    -- So the window is walked first, exactly as a bag window is when it
+    -- opens, and then the game rewrites its slots.
+    local slots = {}
+    local window
+    for i = 1, 300 do
+        slots[i] = {
+            GetObjectType = function() return "Texture" end,
+            GetDrawLayer = function() return "ARTWORK" end,
+            GetTexture = function() return "Interface\\Buttons\\UI-Slot-Background" end,
+            GetVertexColor = function() return 1, 1, 1, 1 end,
+            SetVertexColor = function() end,
+            GetParent = function() return window end,
+        }
+    end
+    window = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "SomeBagWindow" end,
+        GetRegions = function() return unpack(slots) end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    if type(hear) == "function" then
+        Burst.ApplyToWindow(window, true)
+        painted = 0
+
+        for i = 1, 300 do hear(slots[i]) end
+
+        T.ok(painted <= 25,
+            "three hundred writes cost at most the first few answers: "
+                .. painted)
+        T.ok(#due > 0, "and the rest is left for the next frame")
+
+        -- The next frame answers the whole burst in one pass.
+        local before = painted
+        for i = 1, #due do due[i]() end
+        T.eq(painted, before + 1, "which costs one painting, not three hundred")
+    end
+
+    Burst.Repaint = realRepaint
+    _G.C_Timer, _G.hooksecurefunc, _G.CreateFrame =
+        savedTimer, savedHook, savedCreate
+end

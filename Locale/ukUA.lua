@@ -1513,4 +1513,8 @@ ns.RegisterLocale("ukUA", {
         "Кладе тінь по внутрішньому краю кнопок. Типово вимкнено, як і будь-який наш власний вигляд.",
     ["How dark the edge is. The depth stays as it is: a deeper shadow on a small button is not a stronger shadow, it is a smaller icon."] =
         "Наскільки темний край. Глибина не змінюється: глибша тінь на маленькій кнопці — це не сильніша тінь, а менша іконка.",
+    ["the game counts an addon's own cost only with profiling on: /console scriptProfile 1 and a reload"] =
+        "гра рахує власну вартість аддона лише з увімкненим профілюванням: /console scriptProfile 1 і перезавантаження інтерфейсу",
+    ["the game's own count: %.1f ms of processor since login"] =
+        "рахунок самої гри: %.1f мс процесора з моменту входу",
 })

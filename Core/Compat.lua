@@ -725,6 +725,45 @@ local CHROME = {
         "HousingMicroButton",
     },
 
+    -- The micro menu's buttons, asked for a second time and for another
+    -- reason.
+    --
+    -- They stand in "bags" above because that is the area whose switch
+    -- governs them. Here they are a list of BUTTONS, which is a different
+    -- question: the icon pass shades what a button shows and the shadow
+    -- lies inside a button's edges, and both need them apart from the bar
+    -- they happen to sit on.
+    --
+    -- The group went missing once, in a revert that took it along with the
+    -- change it belonged to, and nothing said so: a group that does not
+    -- exist resolves to an empty list, and an empty list is a pass that
+    -- quietly does nothing.
+    ["micro-buttons"] = {
+        "CharacterMicroButton", "SpellbookMicroButton", "TalentMicroButton",
+        "QuestLogMicroButton", "SocialsMicroButton", "WorldMapMicroButton",
+        "MainMenuMicroButton", "HelpMicroButton", "LFGMicroButton",
+        "LFDMicroButton", "AchievementMicroButton", "GuildMicroButton",
+        "PVPMicroButton", "CollectionsMicroButton", "EJMicroButton",
+        "StoreMicroButton", "LegacyMicroButton", "HousingMicroButton",
+    },
+
+    -- What the game itself says this addon has cost.
+    --
+    -- Every other number in the report is the addon's own accounting, and
+    -- an accounting does not measure the path nobody thought to measure.
+    -- The engine keeps its own tally per addon while script profiling is
+    -- on, and that one is not ours to get wrong.
+    --
+    -- Two spellings: the later clients moved it into C_AddOns, the earlier
+    -- ones keep it as a plain global.
+    ["addon-cpu"] = {
+        "C_AddOns.GetAddOnCPUUsage",
+        "GetAddOnCPUUsage",
+    },
+    ["addon-cpu-refresh"] = {
+        "UpdateAddOnCPUUsage",
+    },
+
     tooltip = {
         "GameTooltip",
         "ItemRefTooltip",

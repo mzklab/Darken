@@ -11,6 +11,29 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**An item dropping into a bag no longer costs a frame.** One item is one
+event to you and hundreds of writes to the interface: the game hands
+every slot its picture afresh, and the report counted 9,721 of them in
+the bag window in a single session - the largest number in it. Each was
+answered in the call that made it, so a refill meant hundreds of
+repaintings inside one frame. The first few are still answered at once,
+because that is what keeps a window from appearing in its native colour
+even for a frame; the rest of a burst is collected and written on the
+next frame in one pass.
+
+**The menu buttons can be shaded and shadowed again.** The list of them
+had gone missing in a revert that took it along with the change it
+belonged to, and nothing said so - a group that does not exist resolves
+to an empty list, and an empty list is a pass that quietly does nothing.
+
+**The reading says what the game itself charges this addon.** Every
+other number in it is the addon's own accounting, and an accounting
+cannot measure a path nobody thought to measure. `/dark cost` now also
+prints the engine's own tally - the milliseconds of processor it
+attributes to Darken since login - which settles the question either
+way. It needs script profiling on: `/console scriptProfile 1` and a
+reload.
+
 **The slider goes darker, and every mark moved with it.** What the
 slider did at a hundred it now does at seventy-five, and a hundred goes
 darker than the addon has ever gone - short of black, which stays a

@@ -316,6 +316,16 @@ local CONSEQUENCE = {
     ["container-pickup"]     = { label = "Bag Sorting", kind = Report.ALTERNATIVES },
 
     ["actionbar-main"]                = { label = "Main Action Bar",  kind = Report.ALTERNATIVES },
+    ["micro-buttons"]                 = { label = "Icon Borders",     kind = Report.SERIES },
+    ["addon-cpu"] = {
+        label = "Interface Darkness", kind = Report.ALTERNATIVES,
+        later = "the engine keeps this tally only while script profiling is "
+            .. "on: /console scriptProfile 1 and a reload",
+    },
+    ["addon-cpu-refresh"] = {
+        label = "Interface Darkness", kind = Report.ALTERNATIVES,
+        later = "the same: it exists only with script profiling on",
+    },
     ["actionbar-main-buttons"]        = { label = "Main Action Bar",  kind = Report.SERIES },
     ["actionbar-bottomleft"]          = { label = "Bottom Left Bar",  kind = Report.ALTERNATIVES },
     ["actionbar-bottomleft-buttons"]  = { label = "Bottom Left Bar",  kind = Report.SERIES },
