@@ -72,6 +72,7 @@ local files = {
     "tests/test_darkness.lua",
     "tests/test_darkcases.lua",
     "tests/test_icons.lua",
+    "tests/test_shadows.lua",
     "tests/test_launcher.lua",
     "tests/test_darksecret.lua",
     "tests/test_fonts.lua",

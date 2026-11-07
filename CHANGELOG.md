@@ -11,6 +11,22 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**A section of its own: Shadows.** A shadow can now be laid inside an
+element's own edges, so a button reads as sunk into the dark interface
+rather than pasted onto it - what the skinning addons call a shadow
+border. One switch and one strength, nothing else: the depth stays
+fixed, because a deeper shadow on a small button is not a stronger
+shadow, it is a smaller icon.
+
+It is four thin gradients along the four edges rather than a picture of
+a frame: a picture is cut at one size and blurs at any other, while a
+gradient fits a thirty-pixel button and a seven-hundred-pixel window
+alike and costs no file. The elements dressed are the ones already
+named - the action bars, the pet and stance bars, the bags, the menu
+row, and the bars of the supported addons - never a walk of everything.
+Off by default, and switching it off hides the shadows rather than
+leaving them behind.
+
 **Every bar Rack builds is darkened, not only its action bars.** The bag
 bar and the row of menu buttons stood bright on a dark screen, and the
 reason was a short list: Rack's own source names fifteen bars - the five

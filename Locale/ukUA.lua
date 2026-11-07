@@ -1501,4 +1501,16 @@ ns.RegisterLocale("ukUA", {
         "Де стоїть відсоток. Текст пише гра; це рухає написане нею, тож два значення можуть стояти біля двох країв смужки або будь-де ще. Переміщення тексту на рамці юніта — захищена операція: зміна, зроблена в бою, застосовується одразу після бою.",
     ["The same for the number."] =
         "Те саме для числа.",
+    ["Shadows"] =
+        "Тіні",
+    ["Inner Shadow"] =
+        "Внутрішня тінь",
+    ["Shadow Strength"] =
+        "Сила тіні",
+    ["A shadow laid inside an element's own edges, so it reads as sunk into the dark interface rather than laid on top of it."] =
+        "Тінь по внутрішньому краю елемента: він виглядає втопленим у темний інтерфейс, а не покладеним згори.",
+    ["Lays the shadow along the inside of the buttons' edges. Off by default, like every look of our own."] =
+        "Кладе тінь по внутрішньому краю кнопок. Типово вимкнено, як і будь-який наш власний вигляд.",
+    ["How dark the edge is. The depth stays as it is: a deeper shadow on a small button is not a stronger shadow, it is a smaller icon."] =
+        "Наскільки темний край. Глибина не змінюється: глибша тінь на маленькій кнопці — це не сильніша тінь, а менша іконка.",
 })

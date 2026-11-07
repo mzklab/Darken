@@ -50,6 +50,7 @@ Modules\NamePlates.lua
 Modules\Texts.lua
 Modules\Bags.lua
 Modules\Icons.lua
+Modules\Shadows.lua
 Modules\Launcher.lua
 # The parts of the addon. Each of them used to be a separate addon with a
 # row of its own in the list on the character selection screen; there were

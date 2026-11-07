@@ -1489,4 +1489,16 @@ ns.RegisterLocale("ruRU", {
         "Где стоит процент. Текст пишет игра; это двигает написанное ею, так что два значения могут стоять у двух краёв полоски или где угодно ещё. Перемещение текста на рамке юнита — защищённая операция: изменение, сделанное в бою, применяется сразу после боя.",
     ["The same for the number."] =
         "То же для числа.",
+    ["Shadows"] =
+        "Тени",
+    ["Inner Shadow"] =
+        "Внутренняя тень",
+    ["Shadow Strength"] =
+        "Сила тени",
+    ["A shadow laid inside an element's own edges, so it reads as sunk into the dark interface rather than laid on top of it."] =
+        "Тень по внутреннему краю элемента: он выглядит утопленным в тёмный интерфейс, а не положенным сверху.",
+    ["Lays the shadow along the inside of the buttons' edges. Off by default, like every look of our own."] =
+        "Кладёт тень по внутреннему краю кнопок. По умолчанию выключено, как и всякий наш собственный вид.",
+    ["How dark the edge is. The depth stays as it is: a deeper shadow on a small button is not a stronger shadow, it is a smaller icon."] =
+        "Насколько тёмен край. Глубина не меняется: более глубокая тень на маленькой кнопке — это не более сильная тень, а меньшая иконка.",
 })
