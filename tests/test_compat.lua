@@ -111,7 +111,11 @@ T.suite("supported addons: every bar Rack builds is named")
 do
     local wanted = { "RackBar_main", "RackBar_bottomleft", "RackBar_bags",
         "RackBar_micro", "RackBar_vehicle", "RackBar_page2", "RackBar_page7",
-        "RackBar_page10", "RackBar_pet", "RackBar_stance" }
+        "RackBar_page10", "RackBar_pet", "RackBar_stance",
+        -- The ones the author's reading named by showing what the walk
+        -- kept visiting.
+        "RackBar_queue", "RackBar_extra", "RackBar_totems",
+        "RackBar_experience", "RackBar_reputation", "RackBar_gryphons" }
 
     -- The layer returns only what exists in the client it is given, so the
     -- client here holds them all.

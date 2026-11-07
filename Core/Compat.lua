@@ -1492,7 +1492,15 @@ local CHROME_ADDONS = {
         "RackBar_page2", "RackBar_page7", "RackBar_page8",
         "RackBar_page9", "RackBar_page10",
         "RackBar_pet", "RackBar_stance",
+
+        -- And the nine that are not action bars at all. The author's
+        -- reading named the ones we had missed by showing which frames the
+        -- walk kept visiting: RackBar_queue stood at the top of it. The
+        -- list is now every key its Bars.lua declares, in that file's own
+        -- order.
         "RackBar_bags", "RackBar_micro", "RackBar_vehicle",
+        "RackBar_extra", "RackBar_totems", "RackBar_queue",
+        "RackBar_experience", "RackBar_reputation", "RackBar_gryphons",
 
         "RackFlyout", "RackGrid", "RackHider", "RackOptions",
     },
