@@ -855,3 +855,42 @@ do
         "an addon loading asks it afresh, because the client has changed")
 end
 
+
+T.suite("the darkness: a window that changed is walked again")
+
+-- The ceiling counts fruitless walks, and a walk that found nothing clears
+-- nothing - so a window that gains its contents LATER runs out of chances
+-- before they arrive. The author sent the character sheet with its
+-- right-hand panel undarkened: he had opened the sheet, the panel was built
+-- when he asked for it, and by then the sheet had spent its allowance on
+-- showings of a frame that did not yet hold it.
+--
+-- The question is the one the catalogue already asks of a window - how many
+-- children and regions does it hold - and it costs two calls.
+do
+    local walked = 0
+    local saved = Darkness.ApplyToWindow
+    Darkness.ApplyToWindow = function() walked = walked + 1 end
+
+    local regions = {}
+    local sheet = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "SheetWithPanels" end,
+        GetRegions = function() return unpack(regions) end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    -- Shown until the ceiling stops it.
+    for _ = 1, 20 do Darkness.WindowShown(sheet) end
+    local spent = walked
+    T.ok(spent <= 4, "the ceiling stops an unchanging window: " .. spent)
+
+    -- Now the game builds the panel, and the window is not the window it
+    -- was.
+    regions[1] = { GetObjectType = function() return "Texture" end }
+    Darkness.WindowShown(sheet)
+    T.eq(walked, spent + 1, "a window that changed shape is walked again")
+
+    Darkness.ApplyToWindow = saved
+end

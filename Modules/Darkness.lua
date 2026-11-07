@@ -4443,12 +4443,14 @@ end
 -- gets a picture.
 local WINDOW_WALKS_MAX = 4
 
--- How many fruitless walks each frame has had on being shown, how many walks
--- in all, and under which plan. A fresh reconnaissance means the interface
--- itself changed, and the counts start over with it.
-local WALKED_TIMES = ns.Skin.Memory()
-local WALKED_ALL = ns.Skin.Memory()
-local WALKED_GEN = ns.Skin.Memory()
+-- What is known about walking one frame: how many fruitless walks it has
+-- had, how many walks in all, under which plan, and what it held when it
+-- was last walked.
+--
+-- One memory holding a record rather than four memories side by side: this
+-- file's main chunk is within a few locals of the two hundred Lua allows
+-- one, and the four answers belong to one frame anyway.
+local WALKED = ns.Skin.Memory()
 
 -- The plan's generation number. Incremented on a clearing, and the former
 -- markers on the textures stop matching at a stroke (see PLANNED).
@@ -7193,10 +7195,14 @@ function Darkness.WindowShown(frame, opened)
         -- here - a list row handed out of a pool, a tab, a button, each
         -- appearing continuously in a fight. Those keep the bounded answer
         -- (sweepShown).
-        local times, all = 0, 0
-        if WALKED_GEN[frame] == generation then
-            times = WALKED_TIMES[frame] or 0
+        local known = WALKED[frame]
+        if known == nil then
+            known = { times = 0, all = 0, gen = nil, shape = nil }
+            WALKED[frame] = known
         end
+
+        local times, all = 0, 0
+        if known.gen == generation then times = known.times or 0 end
 
         -- The ceiling counts the whole session rather than the plan.
         --
@@ -7204,13 +7210,31 @@ function Darkness.WindowShown(frame, opened)
         -- reconnaissance happens whenever an addon of the game's loads -
         -- which is why the author's reading showed 224 pictures a second
         -- going into the plan through the walk while the named lists put in
-        -- none. A window that is walked twenty times has given up
-        -- everything it has; past that it gets the top layer, and whatever
-        -- the game makes in it afterwards is taken up by the watcher the
-        -- moment the game gives it a picture.
-        all = WALKED_ALL[frame] or 0
+        -- none.
+        all = known.all or 0
 
         local affordable = Darkness.WalkSpent() < walking.budget
+
+        -- A window that is not the window it was is walked again.
+        --
+        -- The ceiling counts fruitless walks, and a walk that found nothing
+        -- clears nothing - so a window that gains its contents LATER runs
+        -- out of chances before they arrive. The author sent the character
+        -- sheet with its right-hand panel undarkened: he had opened the
+        -- sheet, the panel was built when he asked for it, and by then the
+        -- sheet had spent its allowance on showings of an empty frame.
+        --
+        -- The question is the one the catalogue already asks of a window -
+        -- how many children and regions does it hold - and the answer costs
+        -- two calls. Different from last time means there is something new
+        -- to walk, whatever the count says.
+        local children, regions = shapeOf(frame)
+        local shape = tostring(children) .. ":" .. tostring(regions)
+        if known.shape ~= shape then
+            known.shape = shape
+            known.times = 0
+            times = 0
+        end
 
         -- An opening skips the budget, not the ceilings.
         --
@@ -7228,8 +7252,8 @@ function Darkness.WindowShown(frame, opened)
         -- nothing left to give is turned away.
         if (opened == true or affordable)
             and times < WINDOW_WALKS and all < WINDOW_WALKS_MAX then
-            WALKED_GEN[frame] = generation
-            WALKED_ALL[frame] = all + 1
+            known.gen = generation
+            known.all = all + 1
             churnWindows = churnWindows + 1
 
             -- Which frames these are, by name and by count: a frame walked
@@ -7261,9 +7285,9 @@ function Darkness.WindowShown(frame, opened)
             -- the next showing records nothing at all - which is precisely
             -- the case this limit exists for.
             if plan.n > before then
-                WALKED_TIMES[frame] = 0
+                known.times = 0
             else
-                WALKED_TIMES[frame] = times + 1
+                known.times = times + 1
             end
         else
             churnBounded = churnBounded + 1
