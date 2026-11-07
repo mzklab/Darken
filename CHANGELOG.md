@@ -9,7 +9,7 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## 1.0.8
+## 1.0.7
 
 **A class icon and a tick in a box keep their colour.** A column of
 class icons is read down the page - the guild roster, the who list -
@@ -159,8 +159,6 @@ know, and he is in combat most of the time: his frame and the ring with
 his level stood bright beside a dark target. The exception now holds
 for other units only - the unit is written in the picture's name, so
 this is by name rather than by guesswork.
-
-## 1.0.7
 
 **The roll on a dropped item keeps its dice, coin and pass.** Three
 buttons that are nothing but their pictures - need, greed, pass - and a
