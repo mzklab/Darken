@@ -11,6 +11,15 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**A window belonging to an addon we do not know costs nothing.** The
+rule was always that an addon nobody named is left alone, but the
+paying went on anyway: the showing was answered in full - names
+painted, top layer walked, window walked - and only then, picture by
+picture, did every answer come back "not ours". The reading named one
+such frame outright, a pooled row of another nameplate addon's, among
+the three walked most in a minute of play. The question is now asked
+once, of the window's name, before any of that happens.
+
 **The reading names every addon's cost, not only this one's.** The
 engine charges every addon the same way, so the same question can be
 put about all of them at once: `/dark cost` twice now prints who spent

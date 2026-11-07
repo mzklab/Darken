@@ -7116,6 +7116,23 @@ end
 function Darkness.WindowShown(frame, opened)
     if type(frame) ~= "table" then return end
 
+    -- A window belonging to an addon we do not know is not answered at
+    -- all.
+    --
+    -- The rule itself is old and the author's own: an addon nobody named is
+    -- never touched. What was new is that we went on paying for it. The
+    -- showing was answered in full - the names painted, the top layer
+    -- walked, the window walked - and only then, picture by picture, did
+    -- each answer come back "not ours". The author's reading named one
+    -- outright: PlaterAuraContainer1ExtraIconRow, a pooled row of another
+    -- addon's nameplates, among the three frames walked most.
+    --
+    -- Asked once per showing, of the name, and the answer for an addon we
+    -- do know is unchanged: the question is only whether somebody else owns
+    -- this window.
+    local owner = Darkness.OwnerOf(stringFrom(frame, "GetName"))
+    if owner ~= nil and not Darkness.Known(owner) then return end
+
     -- This window first, and in this call: it is about to be drawn, and a
     -- handful of pictures is the difference between a window that appears
     -- dark and one that appears and then changes colour.

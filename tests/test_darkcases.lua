@@ -2137,3 +2137,54 @@ do
         atlas("UI-HUD-UnitFrame-TargetofTarget-PortraitOn-InCombat")), "atlas",
         "and so does its target's")
 end
+
+T.suite("darkness: an unknown addon's window is not answered at all")
+
+-- The rule is the author's own and it is old: an addon nobody named is
+-- never touched. What was new is that we went on paying for it - the
+-- showing was answered in full, the names painted, the top layer walked,
+-- the window walked, and only then, picture by picture, did each answer
+-- come back "not ours".
+--
+-- His reading named one outright: PlaterAuraContainer1ExtraIconRow, a
+-- pooled row of another addon's nameplates, among the three frames walked
+-- most in a minute of play.
+do
+    local walked = 0
+    local savedApply = Darkness.ApplyToWindow
+    local savedKnown = Darkness.Known
+    local savedOwner = Darkness.OwnerOf
+
+    Darkness.ApplyToWindow = function() walked = walked + 1 end
+    Darkness.OwnerOf = function(name)
+        if type(name) ~= "string" then return nil end
+        if name:find("^Plater") then return "Plater" end
+        if name:find("^RackBar") then return "Rack" end
+        return nil
+    end
+    Darkness.Known = function(addon) return addon == "Rack" end
+
+    local function frameNamed(name)
+        return {
+            GetObjectType = function() return "Frame" end,
+            GetName = function() return name end,
+            GetRegions = function() return end,
+            GetChildren = function() return end,
+            GetParent = function() return nil end,
+        }
+    end
+
+    Darkness.WindowShown(frameNamed("PlaterAuraContainer1ExtraIconRow"))
+    T.eq(walked, 0, "an unknown addon's window costs nothing at all")
+
+    Darkness.WindowShown(frameNamed("RackBar_micro"))
+    T.ok(walked > 0, "while a supported addon's window is answered as before")
+
+    local before = walked
+    Darkness.WindowShown(frameNamed("CharacterFrame"))
+    T.ok(walked > before, "and so is the game's own")
+
+    Darkness.ApplyToWindow = savedApply
+    Darkness.Known = savedKnown
+    Darkness.OwnerOf = savedOwner
+end
