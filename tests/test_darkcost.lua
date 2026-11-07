@@ -742,3 +742,26 @@ do
     local reading = Darkness.Churn()
     T.eq(type(reading.slices), "number", "the cost record is readable")
 end
+
+-- And the grace is bounded by the clock as well as by the walk finishing.
+--
+-- "The login walk has not finished yet" is a condition that can fail to
+-- end: the queue is appended to by every window shown, so a walk that
+-- never empties would keep taking a fifth of every frame for as long as
+-- the player plays. That is the shape of the complaint this addon has
+-- spent its evenings on, and it must not be reachable from here.
+do
+    local clock = 10000
+    local savedClock = _G.debugprofilestop
+    _G.debugprofilestop = function() return clock end
+
+    Darkness.Invalidate()
+    local ordinary = Darkness.Budget(false)
+
+    clock = clock + 60000
+    T.eq(Darkness.Budget(false), ordinary,
+        "a minute in, the share is the ordinary one whatever the walk is doing")
+
+    _G.debugprofilestop = savedClock
+end
+

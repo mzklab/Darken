@@ -4316,6 +4316,13 @@ local WINDOW_WALKS = 3
 -- cost three of them would have been paid for by something else.
 local walking = { budget = 10, spent = 0, since = nil }
 
+-- How long after the first slice the login walk may keep the larger share.
+--
+-- Three seconds: longer than the login walk has ever measured and short
+-- enough that nothing can take up residence inside it. Beyond it the
+-- ordinary share stands, finished or not.
+local LOGIN_GRACE_MS = 3000
+
 --- Record what a slice of walking cost.
 -- @param spent number milliseconds
 function Darkness.SpendWalk(spent)
@@ -4946,8 +4953,26 @@ end
 function Darkness.Budget(first)
     if first then return FIRST_SLICE_MS end
 
+    -- The larger share belongs to the login walk, and to nothing else.
+    --
+    -- "The login walk has not finished" was the whole of the condition for
+    -- one evening, and that is a condition that can fail to end: the queue
+    -- is appended to by every window shown, so a walk that never empties
+    -- keeps taking a fifth of every frame for as long as the player plays.
+    -- The author asked whether something had started stuttering again, and
+    -- this is the one change that could do it.
+    --
+    -- So the grace is bounded by the clock as well: three seconds from the
+    -- first slice, which is longer than the login walk measured (483 ms over
+    -- 141 slices) and short enough that nothing can live inside it.
     local store = Store()
-    if store ~= nil and store.cost.login == nil then return FIRST_SLICE_MS end
+    if store == nil or store.cost.login ~= nil then return SLICE_MS end
+
+    local now = nowMs()
+    if now == nil then return FIRST_SLICE_MS end
+
+    if walking.since == nil then walking.since = now end
+    if (now - walking.since) <= LOGIN_GRACE_MS then return FIRST_SLICE_MS end
 
     return SLICE_MS
 end
