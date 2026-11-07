@@ -9,7 +9,26 @@ this project are not it and never move with it: the version in the head
 of LICENSE belongs to the licence text, and `Darken.API_VERSION` belongs
 to the contract a module is written against.
 
-## 1.0.7
+## 1.0.8
+
+**A class icon and a tick in a box keep their colour.** A column of
+class icons is read down the page - the guild roster, the who list -
+and darkened it becomes a column of identical blobs. A tick is the
+answer to "is this on", and a setting whose answer cannot be seen is a
+setting you have lost. The box around the tick stays framing and
+darkens with the window.
+
+**A window is walked while it still has something to give, and not
+after.** The pass that goes through a window's tree is what reaches
+whatever the named lists do not, and it was being spent on windows that
+had nothing left: the bag window, which the game opens on every loot,
+was walking itself forty times in half a minute. A window is now walked
+while each walk finds something new, up to a small ceiling, and after
+that it gets its top layer - unless its shape changes, which means the
+game has built something inside it and there is something new to reach
+again. That last part is what keeps the character sheet's panels dark:
+they are built when you ask for them, after the sheet itself has been
+shown.
 
 **The badges on a unit frame keep their colour.** The faction mark
 beside the level, the leader's crown, the guide's eye, the mark of a
@@ -140,6 +159,8 @@ know, and he is in combat most of the time: his frame and the ring with
 his level stood bright beside a dark target. The exception now holds
 for other units only - the unit is written in the picture's name, so
 this is by name rather than by guesswork.
+
+## 1.0.7
 
 **The roll on a dropped item keeps its dice, coin and pass.** Three
 buttons that are nothing but their pictures - need, greed, pass - and a
