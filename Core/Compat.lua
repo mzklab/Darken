@@ -1519,6 +1519,20 @@ local ADDON_BUTTONS = {
                 out[#out + 1] = "RackBar_" .. keys[i] .. "_" .. n
             end
         end
+        return out
+    end)(),
+}
+
+-- The buttons of a supported addon that come and go.
+--
+-- A flyout's buttons exist only while the flyout is open, and the author
+-- drew the line himself: a shadow belongs on the furniture of the screen
+-- and not on what appears and vanishes. The outline and the shade still
+-- reach them - those are a look an icon carries wherever it is - so the two
+-- lists are asked for together by default and apart by whoever cares.
+local ADDON_FLYOUTS = {
+    ["Rack"] = (function()
+        local out = {}
         for n = 1, 12 do out[#out + 1] = "RackFlyoutButton" .. n end
         return out
     end)(),
@@ -1533,20 +1547,25 @@ local ADDON_BUTTONS = {
 -- @param loaded function|nil the client's "is this addon loaded"
 -- @return table array of names
 -- @return table array of objects
-function Compat.ResolveAddonButtons(globals, loaded)
+function Compat.ResolveAddonButtons(globals, loaded, fixedOnly)
     local where = type(globals) == "table" and globals or _G
     local names, objects = {}, {}
 
     if type(loaded) ~= "function" then return names, objects end
 
-    for addon, list in pairs(ADDON_BUTTONS) do
-        local ok, yes = pcall(loaded, addon)
-        if ok and yes then
-            for i = 1, #list do
-                local object = Compat.Lookup(where, list[i])
-                if type(object) == "table" then
-                    names[#names + 1] = list[i]
-                    objects[#objects + 1] = object
+    local lists = { ADDON_BUTTONS }
+    if fixedOnly ~= true then lists[#lists + 1] = ADDON_FLYOUTS end
+
+    for i = 1, #lists do
+        for addon, list in pairs(lists[i]) do
+            local ok, yes = pcall(loaded, addon)
+            if ok and yes then
+                for j = 1, #list do
+                    local object = Compat.Lookup(where, list[j])
+                    if type(object) == "table" then
+                        names[#names + 1] = list[j]
+                        objects[#objects + 1] = object
+                    end
                 end
             end
         end

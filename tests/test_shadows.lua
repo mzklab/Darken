@@ -95,3 +95,33 @@ do
     T.eq(Shadows.Lay({}, true, 0.6), false, "a frame with no textures is left")
     T.eq(Shadows.Lay(nil, true, 0.6), false, "and so is nothing at all")
 end
+
+T.suite("shadows: the furniture of the screen and nothing else")
+
+-- The author drew the line himself: a shadow belongs on what is always
+-- there, in the same place, and not on what appears and vanishes. A
+-- flyout's buttons exist only while the flyout is open, so they are asked
+-- for apart - the outline and the shade still reach them, because those are
+-- a look an icon carries wherever it is.
+do
+    local globals = {
+        RackBar_main_1 = { fixed = true },
+        RackFlyoutButton1 = { transient = true },
+    }
+    local function loaded(addon) return addon == "Rack" end
+
+    local all = select(1, ns.Compat.ResolveAddonButtons(globals, loaded))
+    local fixed = select(1, ns.Compat.ResolveAddonButtons(globals, loaded, true))
+
+    local function holds(list, name)
+        for i = 1, #list do if list[i] == name then return true end end
+        return false
+    end
+
+    T.ok(holds(all, "RackBar_main_1"), "a bar's button is a button")
+    T.ok(holds(all, "RackFlyoutButton1"), "and so is a flyout's, when all are asked for")
+
+    T.ok(holds(fixed, "RackBar_main_1"), "the fixed list holds the bar's button")
+    T.ok(not holds(fixed, "RackFlyoutButton1"),
+        "and leaves out the one that comes and goes")
+end

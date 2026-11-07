@@ -30,9 +30,11 @@ shadow, it is a smaller icon.
 It is four thin gradients along the four edges rather than a picture of
 a frame: a picture is cut at one size and blurs at any other, while a
 gradient fits a thirty-pixel button and a seven-hundred-pixel window
-alike and costs no file. The elements dressed are the ones already
-named - the action bars, the pet and stance bars, the bags, the menu
-row, and the bars of the supported addons - never a walk of everything.
+alike and costs no file. The elements dressed are the furniture of the screen - what is always
+there, in the same place: the action bars, the pet and stance bars, the
+bags, the menu row, and the fixed buttons of the supported addons' bars.
+Not the auras, the flyouts, the list rows or the tooltips, which come
+and go; and never a walk of everything.
 Off by default, and switching it off hides the shadows rather than
 leaving them behind.
 

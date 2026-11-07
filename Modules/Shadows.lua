@@ -29,10 +29,18 @@ local Shadows = {
 }
 ns.Shadows = Shadows
 
--- The groups whose elements are dressed. A list of groups rather than a
--- walk: an inner shadow is four textures per element, and four textures per
--- element of the whole interface is the kind of price this addon has spent
--- its evenings taking out.
+-- The groups whose elements are dressed.
+--
+-- Two rules decide what is in this list, and the author stated the second
+-- himself: a shadow belongs on the furniture of the screen - what is always
+-- there, in the same place - and not on what appears and vanishes. So the
+-- action bars, the bags and the menu row are here, and the auras, the
+-- flyouts, the list rows and the tooltips are not.
+--
+-- The first rule is the older one: a list of groups rather than a walk. An
+-- inner shadow is four textures per element, and four textures per element
+-- of the whole interface is the kind of price this addon has spent its
+-- evenings taking out.
 local GROUPS = {
     "actionbar-main-buttons",
     "actionbar-bottomleft-buttons",
@@ -237,8 +245,10 @@ function Shadows:ApplySettings()
         and type(ns.Compat.ResolveFunction) == "function" then
         local got, isLoaded = pcall(ns.Compat.ResolveFunction, "addon-loaded")
         if got and type(isLoaded) == "function" then
+            -- The fixed buttons of those bars and not the flyouts': a
+            -- flyout's buttons exist only while it is open.
             local fine, _, objects =
-                pcall(ns.Compat.ResolveAddonButtons, nil, isLoaded)
+                pcall(ns.Compat.ResolveAddonButtons, nil, isLoaded, true)
             if fine and type(objects) == "table" then
                 for j = 1, #objects do Shadows.Lay(objects[j], on, alpha) end
             end
