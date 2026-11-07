@@ -1521,4 +1521,6 @@ ns.RegisterLocale("ukUA", {
         "жодна підсистема не витратила й сотої частки мілісекунди за останню секунду",
     ["%s: %.2f ms in a second"] =
         "%s: %.2f мс за секунду",
+    ["the game's own count: %.1f ms since the last reading, that is %.2f%% of the time"] =
+        "рахунок самої гри: %.1f мс з минулого заміру, це %.2f%% часу",
 })

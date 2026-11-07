@@ -709,7 +709,18 @@ function Addon:HandleCommand(input)
 
         if rest == "reset" or type(taken) ~= "number" or type(now) ~= "number"
             or now <= taken then
-            self.db.global.costmark = { at = now, churn = dark.Churn() }
+            local cpu = nil
+            local asked, usage = pcall(ns.Compat.ResolveFunction, "addon-cpu")
+            if asked and type(usage) == "function" then
+                local fresher, refresh =
+                    pcall(ns.Compat.ResolveFunction, "addon-cpu-refresh")
+                if fresher and type(refresh) == "function" then pcall(refresh) end
+                local read, ms = pcall(usage, "Darken")
+                if read then cpu = tonumber(ms) end
+            end
+
+            self.db.global.costmark = { at = now, churn = dark.Churn(),
+                cpu = cpu }
             self:Print(ns.Localize(
                 "measuring from now - walk about for ten seconds or so and "
                     .. "type /dark cost again"))
@@ -768,9 +779,18 @@ function Addon:HandleCommand(input)
         end
 
         if told ~= nil then
-            self:Print(string.format(ns.Localize(
-                "the game's own count: %.1f ms of processor since login"),
-                told))
+            local before = type(mark) == "table" and mark.cpu or nil
+            if type(before) == "number" and told >= before then
+                local share = (told - before) / ((now - taken) * 1000) * 100
+                self:Print(string.format(ns.Localize(
+                    "the game's own count: %.1f ms since the last reading, "
+                        .. "that is %.2f%% of the time"),
+                    told - before, share))
+            else
+                self:Print(string.format(ns.Localize(
+                    "the game's own count: %.1f ms of processor since login"),
+                    told))
+            end
         else
             self:Print(ns.Localize(
                 "the game counts an addon's own cost only with profiling "
@@ -780,7 +800,8 @@ function Addon:HandleCommand(input)
         -- The reading is left in place: a second /dark cost after another
         -- stretch of walking answers about that stretch, and "/dark cost
         -- reset" starts afresh.
-        self.db.global.costmark = { at = now, churn = dark.Churn() }
+        self.db.global.costmark = { at = now, churn = dark.Churn(),
+            cpu = told }
         return
     end
 

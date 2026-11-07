@@ -827,7 +827,7 @@ do
         Darkness.WindowShown(window)
     end
 
-    T.ok(walked <= 20,
+    T.ok(walked <= 4,
         "the ceiling holds across fresh plans: " .. walked .. " walks")
 
     Darkness.ApplyToWindow = saved

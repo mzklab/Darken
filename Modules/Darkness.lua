@@ -4421,7 +4421,16 @@ end
 -- filling itself up; it is a frame the game rebuilds from scratch each time,
 -- and answering that one with a walk apiece is the same ruin by another
 -- road. Twenty is far above any window's filling and far below a cost.
-local WINDOW_WALKS_MAX = 20
+-- Four, not twenty.
+--
+-- Twenty was chosen while the ceiling was reset by every fresh plan and
+-- therefore never reached. It is reached now, and the author's reading
+-- still showed 181 pictures a second going into the plan through the walk:
+-- that is frames being rebuilt and walked over and over. Four is as many
+-- chances as a window needs to give up what it holds, and whatever the
+-- game makes in it afterwards is taken up by the watcher at the moment it
+-- gets a picture.
+local WINDOW_WALKS_MAX = 4
 
 -- How many fruitless walks each frame has had on being shown, how many walks
 -- in all, and under which plan. A fresh reconnaissance means the interface
@@ -7654,6 +7663,7 @@ function Darkness.Churn()
         slices  = cost.slices or 0,
         spent   = cost.total or 0,
         worst   = cost.worst or 0,
+        walked  = churnBy.walked,
         watched = Darkness.WatchSpent(),
     }
 end
@@ -7694,6 +7704,24 @@ function Darkness.ChurnLines(before, after, seconds)
     lines[#lines + 1] = string.format(
         "  frames shown and walked as windows %.1f - given the top layer "
             .. "instead %.1f", rate("windows"), rate("bounded"))
+
+    -- And which frames those were. A frame walked again and again is
+    -- either one that belongs in the lists of names or one that should not
+    -- be answered as a window at all, and both answers need to know which.
+    if type(after.walked) == "table" then
+        local names, counts = {}, after.walked
+        for who in pairs(counts) do names[#names + 1] = who end
+        table.sort(names, function(a, b)
+            return (counts[a] or 0) > (counts[b] or 0)
+        end)
+        local said = {}
+        for i = 1, math.min(3, #names) do
+            said[#said + 1] = names[i] .. " " .. tostring(counts[names[i]])
+        end
+        if #said > 0 then
+            lines[#lines + 1] = "  walked most: " .. table.concat(said, ", ")
+        end
+    end
     lines[#lines + 1] = string.format(
         "  pictures recorded by name %.0f, top layer %.0f, walk %.0f, "
             .. "taken up %.0f",
