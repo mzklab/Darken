@@ -703,6 +703,43 @@ function Addon:HandleCommand(input)
             return
         end
 
+        -- And what the engine says every addon has cost, not only this one.
+        --
+        -- The author's question is "why does it stutter at all", and the
+        -- engine charges every addon the same way, so the same question can
+        -- be put about all of them at once. What comes back is nobody's
+        -- opinion: a list of who spent the processor between two readings.
+        --
+        -- It costs one pass over the installed addons and one call apiece,
+        -- and it happens when a player asks for a reading - that is, never
+        -- while he is merely playing.
+        local function everyAddon()
+            local out = {}
+            if type(ns.Compat) ~= "table" then return out end
+
+            local okCount, howMany = pcall(ns.Compat.ResolveFunction, "addon-count")
+            local okName, whatIs = pcall(ns.Compat.ResolveFunction, "addon-info")
+            local okUse, usage = pcall(ns.Compat.ResolveFunction, "addon-cpu")
+            if not (okCount and okName and okUse) then return out end
+            if type(howMany) ~= "function" or type(whatIs) ~= "function"
+                or type(usage) ~= "function" then
+                return out
+            end
+
+            local fine, total = pcall(howMany)
+            if not fine or type(total) ~= "number" then return out end
+
+            for i = 1, total do
+                local told, name = pcall(whatIs, i)
+                if told and type(name) == "string" and name ~= "" then
+                    local read, ms = pcall(usage, name)
+                    if read and type(ms) == "number" then out[name] = ms end
+                end
+            end
+            return out
+        end
+
+
         local now = type(_G.GetTime) == "function" and _G.GetTime() or nil
         local mark = self.db.global.costmark
         local taken = type(mark) == "table" and mark.at or nil
@@ -720,7 +757,7 @@ function Addon:HandleCommand(input)
             end
 
             self.db.global.costmark = { at = now, churn = dark.Churn(),
-                cpu = cpu }
+                cpu = cpu, addons = everyAddon() }
             self:Print(ns.Localize(
                 "measuring from now - walk about for ten seconds or so and "
                     .. "type /dark cost again"))
@@ -757,6 +794,31 @@ function Addon:HandleCommand(input)
                 self:Print(ns.Localize(
                     "not one subsystem spent a hundredth of a millisecond "
                         .. "in the last second"))
+            end
+        end
+
+        local refreshed, refresh =
+            pcall(ns.Compat.ResolveFunction, "addon-cpu-refresh")
+        if refreshed and type(refresh) == "function" then pcall(refresh) end
+
+        local nowCpu = everyAddon()
+        local wasCpu = type(mark) == "table" and mark.addons or nil
+        if type(wasCpu) == "table" then
+            local names, spent = {}, {}
+            for name, ms in pairs(nowCpu) do
+                local before = wasCpu[name]
+                if type(before) == "number" and ms > before then
+                    spent[name] = ms - before
+                    names[#names + 1] = name
+                end
+            end
+            table.sort(names, function(a, b) return spent[a] > spent[b] end)
+
+            local seconds = now - taken
+            for i = 1, math.min(6, #names) do
+                local name = names[i]
+                self:Print(string.format(ns.Localize("%s: %.1f ms, %.2f%%"),
+                    name, spent[name], spent[name] / (seconds * 1000) * 100))
             end
         end
 
@@ -801,7 +863,7 @@ function Addon:HandleCommand(input)
         -- stretch of walking answers about that stretch, and "/dark cost
         -- reset" starts afresh.
         self.db.global.costmark = { at = now, churn = dark.Churn(),
-            cpu = told }
+            cpu = told, addons = nowCpu }
         return
     end
 

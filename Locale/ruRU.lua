@@ -1511,4 +1511,6 @@ ns.RegisterLocale("ruRU", {
         "%s: %.2f мс в секунду",
     ["the game's own count: %.1f ms since the last reading, that is %.2f%% of the time"] =
         "счёт самой игры: %.1f мс с прошлого замера, это %.2f%% времени",
+    ["%s: %.1f ms, %.2f%%"] =
+        "%s: %.1f мс, %.2f%%",
 })

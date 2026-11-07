@@ -182,8 +182,13 @@ screenshot does:
                      probe what the cursor is on
 /dark scan <text>    frames whose names contain the text
 /dark cost           what the addon spends while nothing is
-                     happening: run it, walk about for ten seconds,
-                     run it again. "reset" starts the count afresh
+                     happening: run it, play for a while, run it
+                     again. "reset" starts the count afresh. With
+                     script profiling on (/console scriptProfile 1
+                     and a reload) it also names what the game
+                     charged EVERY addon between the two readings,
+                     which is the only answer to "what is making
+                     this stutter" that is nobody's opinion
 /dark harvest        framing the addon does not yet reach, by frame.
                      "mouse" asks about the window under the cursor,
                      which is the way to point at a piece that stayed

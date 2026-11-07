@@ -1523,4 +1523,6 @@ ns.RegisterLocale("ukUA", {
         "%s: %.2f мс за секунду",
     ["the game's own count: %.1f ms since the last reading, that is %.2f%% of the time"] =
         "рахунок самої гри: %.1f мс з минулого заміру, це %.2f%% часу",
+    ["%s: %.1f ms, %.2f%%"] =
+        "%s: %.1f мс, %.2f%%",
 })

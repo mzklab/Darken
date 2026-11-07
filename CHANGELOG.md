@@ -11,6 +11,15 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The reading names every addon's cost, not only this one's.** The
+engine charges every addon the same way, so the same question can be
+put about all of them at once: `/dark cost` twice now prints who spent
+the processor between the two readings, in milliseconds and as a share
+of the time. It needs script profiling on - `/console scriptProfile 1`
+and a reload - and it is the only answer to "what is making this
+stutter" that is nobody's opinion. This addon is in that list like any
+other.
+
 **An item dropping into a bag no longer costs a frame, and selling one
 no longer blinks.** One item is one event to you and hundreds of writes
 to the interface: the game hands every slot its picture afresh, and the
