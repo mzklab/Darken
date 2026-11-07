@@ -6324,8 +6324,20 @@ function Darkness.Repaint()
         store.churn.skipped = churnSkipped
         store.churn.windows = churnWindows
         store.churn.bounded = churnBounded
+        if type(churnBy.walked) == "table" then
+            local walked = store.churn.walked
+            if type(walked) ~= "table" then
+                walked = {}
+                store.churn.walked = walked
+            end
+            for who, times in pairs(churnBy.walked) do walked[who] = times end
+        end
         local by = store.churn.by
-        for who, times in pairs(churnBy) do by[who] = times end
+        -- Numbers only: the tally of frames walked shares this table and
+        -- is handed over on its own, below.
+        for who, times in pairs(churnBy) do
+            if type(times) == "number" then by[who] = times end
+        end
     end
 
     return count
@@ -7066,8 +7078,19 @@ function Darkness.WindowShown(frame, opened)
         local times, all = 0, 0
         if WALKED_GEN[frame] == generation then
             times = WALKED_TIMES[frame] or 0
-            all = WALKED_ALL[frame] or 0
         end
+
+        -- The ceiling counts the whole session rather than the plan.
+        --
+        -- It used to start over with every fresh reconnaissance, and a
+        -- reconnaissance happens whenever an addon of the game's loads -
+        -- which is why the author's reading showed 224 pictures a second
+        -- going into the plan through the walk while the named lists put in
+        -- none. A window that is walked twenty times has given up
+        -- everything it has; past that it gets the top layer, and whatever
+        -- the game makes in it afterwards is taken up by the watcher the
+        -- moment the game gives it a picture.
+        all = WALKED_ALL[frame] or 0
 
         local affordable = Darkness.WalkSpent() < walking.budget
 
@@ -7077,6 +7100,14 @@ function Darkness.WindowShown(frame, opened)
             WALKED_GEN[frame] = generation
             WALKED_ALL[frame] = all + 1
             churnWindows = churnWindows + 1
+
+            -- Which frames these are, by name and by count: a frame walked
+            -- again and again is either one that should be named in the
+            -- lists or one that should not be answered as a window at all,
+            -- and both answers need to know which it is.
+            local said = stringFrom(frame, "GetName") or "(unnamed)"
+            churnBy.walked = churnBy.walked or {}
+            churnBy.walked[said] = (churnBy.walked[said] or 0) + 1
 
             local before = plan.n
             pcall(Darkness.ApplyToWindow, frame, true)

@@ -794,3 +794,41 @@ do
     T.ok(lines:find("taken up 8", 1, true) ~= nil,
         "and the pictures taken up as the game made them")
 end
+
+T.suite("the darkness: a window gives up everything it has, once")
+
+-- The author's reading named the defect: 224 pictures a second went into
+-- the plan through the walk while the named lists put in none. The ceiling
+-- on walks per frame was being reset by every fresh reconnaissance, and a
+-- reconnaissance happens whenever an addon of the game's loads - so a frame
+-- that kept finding something new kept being walked, for as long as he
+-- played.
+--
+-- The ceiling counts the session now. Past it a frame gets the top layer,
+-- and what the game makes in it afterwards is taken up by the watcher at
+-- the moment the game gives it a picture.
+do
+    local walked = 0
+    local saved = Darkness.ApplyToWindow
+    Darkness.ApplyToWindow = function() walked = walked + 1 end
+
+    local window = {
+        GetObjectType = function() return "Frame" end,
+        GetName = function() return "RestlessWindow" end,
+        GetRegions = function() return end,
+        GetChildren = function() return end,
+        GetParent = function() return nil end,
+    }
+
+    -- A hundred showings with a fresh plan between each: the old rule gave
+    -- a walk apiece.
+    for _ = 1, 100 do
+        Darkness.Invalidate()
+        Darkness.WindowShown(window)
+    end
+
+    T.ok(walked <= 20,
+        "the ceiling holds across fresh plans: " .. walked .. " walks")
+
+    Darkness.ApplyToWindow = saved
+end
