@@ -2221,3 +2221,31 @@ do
     T.eq(Darkness.ContentReason(atlas("UI-HUD-UnitFrame-SmallCircle")), nil,
         "the badge's own backing goes on darkening")
 end
+
+T.suite("darkness: a class icon and a tick are read, not looked past")
+
+-- A column of class icons is read down the page - the guild roster, the who
+-- list - and darkened it becomes a column of identical blobs. A tick in a
+-- checkbox is the answer to "is this on", and a tick that cannot be seen
+-- leaves a setting unreadable. The author sent a guild window with both.
+do
+    local function picture(path)
+        return newRegion({ kind = "Texture", layer = "ARTWORK",
+            texture = path })
+    end
+
+    T.eq(Darkness.ContentReason(
+        picture("Interface\\WorldStateFrame\\Icons-Classes")), "path",
+        "the file every class icon is cut out of is a reading")
+    T.eq(Darkness.ContentReason(
+        picture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes")),
+        "path", "and so is the one the older windows use")
+    T.eq(Darkness.ContentReason(
+        picture("Interface\\Buttons\\UI-CheckBox-Check")), "path",
+        "the tick in a checkbox is a reading")
+
+    -- The box around the tick is framing and darkens with the window.
+    T.eq(Darkness.ContentReason(
+        picture("Interface\\Buttons\\UI-CheckBox-Up")), nil,
+        "while the box it sits in is framing")
+end

@@ -1039,6 +1039,27 @@ local CONTENT_PATHS = {
     "ui-classes-circles",
     "temporaryportrait",
 
+    -- The class of a character, wherever it is shown.
+    --
+    -- A column of class icons is read down the page: the guild roster, the
+    -- who list, the raid frames. Darkened they become a column of identical
+    -- blobs and the column stops answering the question it exists for. The
+    -- author sent exactly that, a guild window with the Class column gone
+    -- black.
+    --
+    -- The atlas spelling (classicon-paladin) is already named above; these
+    -- are the file the older windows draw the same thing from, one picture
+    -- with every class in it, cut by coordinates.
+    "icons-classes", "ui-charactercreate-classes",
+
+    -- The tick in a checkbox.
+    --
+    -- The box is framing and darkens with the window; the tick inside it is
+    -- the answer to "is this on", and a tick that cannot be seen leaves the
+    -- player with a setting he cannot read. "Show Offline Members" in that
+    -- same guild window was what he pointed at.
+    "ui-checkbox-check",
+
     -- Who is leading a group and which roles it still wants.
     --
     -- The crown beside a name says who the leader is; the shield, the cross
