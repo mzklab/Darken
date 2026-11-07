@@ -11,6 +11,14 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**Every bar Rack builds is darkened, not only its action bars.** The bag
+bar and the row of menu buttons stood bright on a dark screen, and the
+reason was a short list: Rack's own source names fifteen bars - the five
+action bars, five paged ones, pet, stance, and the three that are not
+action bars at all: bags, micro menu, vehicle button - and we knew
+seven. A frame nobody has named is a frame the named pass never paints.
+The paged bars' buttons are outlined and shaded with the rest now too.
+
 **The darkening arrives sooner after you enter the world.** It used to
 take a couple of seconds to creep over the interface, and longer on a
 machine with many addons. The reason is the slicing: the walk takes

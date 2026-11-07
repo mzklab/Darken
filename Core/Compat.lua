@@ -1439,9 +1439,23 @@ local CHROME_ADDONS = {
     },
 
     ["Rack"] = {
+        -- Every bar it builds, by the keys its own source lists (Bars.lua):
+        -- the five action bars, the five paged ones, the pet and stance
+        -- bars, and the three that are not action bars at all - the bag
+        -- bar, the micro menu and the vehicle button.
+        --
+        -- The last three were missing, and that is what the author saw: a
+        -- bright bag bar and a bright menu row on a dark screen. They are
+        -- his bars rather than the game's, and a frame we have not named is
+        -- a frame the named pass never paints.
         "RackBar_main", "RackBar_bottomleft", "RackBar_bottomright",
-        "RackBar_right", "RackBar_left", "RackBar_pet", "RackBar_stance",
-        "RackFlyout",
+        "RackBar_right", "RackBar_left",
+        "RackBar_page2", "RackBar_page7", "RackBar_page8",
+        "RackBar_page9", "RackBar_page10",
+        "RackBar_pet", "RackBar_stance",
+        "RackBar_bags", "RackBar_micro", "RackBar_vehicle",
+
+        "RackFlyout", "RackGrid", "RackHider", "RackOptions",
     },
 
     ["Hive"] = {
@@ -1493,7 +1507,11 @@ local ADDON_BUTTONS = {
     end)(),
 
     ["Rack"] = (function()
+        -- The keys are its own (Bars.lua), the paged bars included: a
+        -- player who keeps spells on bar 7 has them on RackBar_page7_3,
+        -- and a name we do not have is an icon the outline never reaches.
         local keys = { "main", "bottomleft", "bottomright", "right", "left",
+            "page2", "page7", "page8", "page9", "page10",
             "pet", "stance" }
         local out = {}
         for i = 1, #keys do

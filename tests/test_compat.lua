@@ -100,3 +100,34 @@ do
     T.eq(Compat.TapDenied(nil, nil, nil), false, "the client is silent, so the creature is an ordinary one")
     T.eq(Compat.TapDenied(nil, nil, true), false, "half an answer is not enough")
 end
+
+T.suite("supported addons: every bar Rack builds is named")
+
+-- The author's bag bar and micro menu stood bright on a dark screen. They
+-- are not the game's: Rack builds them, and its own source (Bars.lua) lists
+-- them beside the action bars - bags, micro, vehicle, and the five paged
+-- bars. We had seven of the fifteen, and a frame we have not named is a
+-- frame the named pass never paints.
+do
+    local wanted = { "RackBar_main", "RackBar_bottomleft", "RackBar_bags",
+        "RackBar_micro", "RackBar_vehicle", "RackBar_page2", "RackBar_page7",
+        "RackBar_page10", "RackBar_pet", "RackBar_stance" }
+
+    -- The layer returns only what exists in the client it is given, so the
+    -- client here holds them all.
+    local globals = {}
+    for i = 1, #wanted do globals[wanted[i]] = { name = wanted[i] } end
+
+    local ok, names, _, owners = pcall(ns.Compat.ResolveAddonChrome, globals,
+        function(addon) return addon == "Rack" end)
+    T.ok(ok, "the addons' frames can be asked for")
+
+    local seen = {}
+    if ok and type(names) == "table" then
+        for i = 1, #names do seen[names[i]] = owners and owners[i] or true end
+    end
+
+    for i = 1, #wanted do
+        T.eq(seen[wanted[i]], "Rack", "named and owned by Rack: " .. wanted[i])
+    end
+end
