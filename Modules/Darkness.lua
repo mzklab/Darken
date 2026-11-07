@@ -4143,7 +4143,31 @@ local UNTOUCHED = {}
 -- still silent.
 --
 -- @return table a set of objects
+-- How many writes of a burst are answered in the call that made them
+-- (atOnce): enough for a window appearing - the case the immediate answer
+-- exists for - and far below the hundreds a bag refill sends in one go.
+local walking = { budget = 10, spent = 0, since = nil, atOnce = 24 }
+
+--- The frames a named area has taken, and the ones nothing may touch.
+--
+-- === Why the answer is kept ===
+--
+-- This walks every group of the compatibility layer and asks the client
+-- about every name in it - today some two thousand lookups and a protected
+-- call apiece. It was asked afresh every time a window was shown
+-- (ApplyToWindow), and the author felt it the day the groups grew: the
+-- equipment slots and their frames, the bag frames, the micro menu, eight
+-- more bars of a supported addon. Nothing in the reading showed it,
+-- because the reading times the walk and this happens before the walk
+-- begins.
+--
+-- The answer depends on the client's composition and on nothing else, so
+-- it is kept until that changes - which is exactly when the named list is
+-- dropped (Darkness.ForgetChrome, on an addon loading) and when the plan
+-- is rebuilt.
 local function coveredFrames()
+    if walking.covered ~= nil then return walking.covered end
+
     local set = {}
     for i = 1, #GROUPS do
         if not GROUPS[i].general then
@@ -4189,7 +4213,16 @@ local function coveredFrames()
         end
     end
 
+    walking.covered = set
     return set
+end
+
+--- Which frames the named areas have taken, as the subsystem sees it.
+-- Exposed because a check has to be able to ask whether the answer is kept
+-- without counting calls into the compatibility layer.
+-- @return table
+function Darkness.Covered()
+    return coveredFrames()
 end
 
 -- The application of the plan is declared in advance: the walk's slices
@@ -4325,10 +4358,6 @@ local WINDOW_WALKS = 3
 -- One table rather than three names: the file's main chunk is within a
 -- handful of locals of the two hundred Lua allows it, and a ceiling that
 -- cost three of them would have been paid for by something else.
--- How many writes of a burst are answered in the call that made them
--- (atOnce): enough for a window appearing - the case the immediate answer
--- exists for - and far below the hundreds a bag refill sends in one go.
-local walking = { budget = 10, spent = 0, since = nil, atOnce = 24 }
 
 -- How long after the first slice the login walk may keep the larger share.
 --
@@ -4462,6 +4491,7 @@ local chromePending = false
 -- hands the former arrays to the collector.
 function Darkness.Invalidate()
     generation = generation + 1
+    walking.covered = nil
 
     -- A fresh reconnaissance may have been asked for by a change of setting.
     forgetShade()
@@ -4715,51 +4745,6 @@ local function gameRecolored(texture, assigned)
     -- Writing here calls back into this very handler, and the guard that
     -- tells our writes from anyone else's turns it away at the top.
     if repainting then return end
-
-    -- A burst is answered once, not write by write.
-    --
-    -- An item dropping into a bag is one event to the player and hundreds
-    -- of writes to the interface: the game hands every slot its picture
-    -- afresh, and the author's own report counts 9,721 writes in the bag
-    -- window in one session - the largest single number in it. Answering
-    -- each one in the call that made it means hundreds of repaintings
-    -- inside one frame, which is exactly where he feels the game stop:
-    -- "when something drops into the bag it lags, these are static icons".
-    --
-    -- So the first few writes are still answered at once - that is the
-    -- case this immediacy was put here for, a window appearing and
-    -- changing colour in front of him - and the rest of the burst is
-    -- collected and written on the next frame, in one pass. The queue
-    -- already holds them; all that changes is when it is emptied.
-    if walking.burst == nil then walking.burst = 0 end
-    walking.burst = walking.burst + 1
-
-    if walking.burst > walking.atOnce then
-        if not walking.flushing then
-            walking.flushing = true
-            local timer = _G.C_Timer
-            if type(timer) == "table" and type(timer.After) == "function" then
-                pcall(timer.After, 0, function()
-                    walking.flushing = false
-                    walking.burst = 0
-                    if not repainting then
-                        repainting = true
-                        pcall(Darkness.Repaint)
-                        repainting = false
-                    end
-                end)
-            else
-                -- No clock, which is the case outside the game: the burst
-                -- is answered here and now, as it always was.
-                walking.flushing = false
-                walking.burst = 0
-                repainting = true
-                pcall(Darkness.Repaint)
-                repainting = false
-            end
-        end
-        return
-    end
 
     repainting = true
     pcall(Darkness.Repaint)
@@ -5419,6 +5404,7 @@ local NAMED_SLICE_MS = 3
 -- before they did does not know their windows.
 function Darkness.ForgetChrome()
     chromeHeld = nil
+    walking.covered = nil
     chromeAt = 0
 end
 
@@ -6397,9 +6383,27 @@ function Darkness.Repaint()
 
     dirtyN = 0
 
-    -- Hand the churn over to the store. Here because this function is
-    -- throttled already: whatever the game did since the last repainting is
-    -- written once, rather than six figures of times.
+    -- Hand the churn over to the store, once a second at most.
+    --
+    -- This used to happen on every call, and the note above it said the
+    -- call was throttled. It is not: a repainting answers a write, and an
+    -- item dropping into a bag is hundreds of writes - so the handover ran
+    -- hundreds of times a frame, correcting the store's shape and walking
+    -- the by-window tally each time. That was the cost the author felt, and
+    -- it was bookkeeping rather than painting.
+    --
+    -- The deferral tried first was worse: it bought the bag's frames with a
+    -- blink of the merchant's window, which is exactly the trade the
+    -- immediate answer exists to refuse. The painting stays immediate; only
+    -- the counting is throttled, and a second's worth of counting is what
+    -- the reading asks for anyway.
+    local now = nowMs()
+    if now ~= nil and walking.toldAt ~= nil
+        and (now - walking.toldAt) < 1000 then
+        return count
+    end
+    walking.toldAt = now
+
     local store = Store()
     if store ~= nil then
         store.churn.heard = counters.repainted

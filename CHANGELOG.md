@@ -11,15 +11,23 @@ to the contract a module is written against.
 
 ## 1.0.7
 
-**An item dropping into a bag no longer costs a frame.** One item is one
-event to you and hundreds of writes to the interface: the game hands
-every slot its picture afresh, and the report counted 9,721 of them in
-the bag window in a single session - the largest number in it. Each was
-answered in the call that made it, so a refill meant hundreds of
-repaintings inside one frame. The first few are still answered at once,
-because that is what keeps a window from appearing in its native colour
-even for a frame; the rest of a burst is collected and written on the
-next frame in one pass.
+**An item dropping into a bag no longer costs a frame, and selling one
+no longer blinks.** One item is one event to you and hundreds of writes
+to the interface: the game hands every slot its picture afresh, and the
+report counted 9,721 of them in the bag window in a single session. What
+was expensive there was never the painting but the bookkeeping beside
+it - the report's tally rebuilt on every one of those hundreds of calls.
+The painting stays immediate, which is what keeps a window from being
+seen in its native colour even for a frame; the counting now happens
+once a second.
+
+**Which frames an area has taken is worked out once, not per window.**
+That question walks every group of names the addon knows and asks the
+client about each - some two thousand lookups - and it was asked afresh
+every time a window was shown. It grew heavier the day the lists grew:
+the equipment slots, the bag frames, the micro menu, eight more bars of
+a supported addon. The answer depends on which addons are loaded and on
+nothing else, so it is kept until that changes.
 
 **The menu buttons can be shaded and shadowed again.** The list of them
 had gone missing in a revert that took it along with the change it

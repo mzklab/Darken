@@ -832,3 +832,30 @@ do
 
     Darkness.ApplyToWindow = saved
 end
+
+T.suite("the darkness: which frames an area has taken is asked once")
+
+-- This question walks every group of the compatibility layer and asks the
+-- client about every name in it - some two thousand lookups and a protected
+-- call apiece. It was asked afresh on every window shown, and the author
+-- felt it the day the groups grew: the equipment slots and their frames,
+-- the bag frames, the micro menu, eight more bars of a supported addon.
+--
+-- Nothing in the reading showed it, because the reading times the walk and
+-- this happens before the walk begins. It is the shape of defect this file
+-- exists for: a cost nobody counts.
+--
+-- Checked through the door the subsystem itself offers rather than by
+-- counting calls: the answer is one table, and the same table coming back
+-- is the whole of the claim.
+do
+    Darkness.ForgetChrome()
+    local first = Darkness.Covered()
+    T.ok(type(first) == "table", "the question has an answer")
+    T.eq(Darkness.Covered(), first, "and the answer is kept between windows")
+
+    Darkness.ForgetChrome()
+    T.ok(Darkness.Covered() ~= first,
+        "an addon loading asks it afresh, because the client has changed")
+end
+

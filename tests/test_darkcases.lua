@@ -887,6 +887,11 @@ do
     local savedCanvas = _G.WorldMapDetailFrame
     _G.WorldMapDetailFrame = canvas
 
+    -- The client has just gained a frame, and which frames the named areas
+    -- have taken is kept between windows: the same door an addon loading
+    -- goes through drops it.
+    Darkness.ForgetChrome()
+
     local chrome = newArt("Interface\\DialogFrame\\UI-DialogBox-Border")
     local map = newFrame("Frame", "WorldMapFrame", { chrome }, { canvas })
 
