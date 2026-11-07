@@ -582,40 +582,36 @@ do
     Darkness.ApplyToWindow = saved
 end
 
-T.suite("the darkness: a window the player opened is always walked")
+T.suite("the darkness: an opening skips the budget, not the ceiling")
 
--- The limit on walks is for frames that merely appear - tooltips, error
--- text, zone names, whatever other addons show as the player moves. A window
--- the player opened is a different event: it arrives through the game's own
--- panel door, it is rare, and what it holds sits deeper than the top layer
--- reaches.
+-- The exemption for a window the player opened was written for the
+-- character sheet, whose slot frames sit deeper than the top layer
+-- reaches. It skipped every limit, and the author's reading showed what
+-- that costs: the bag windows walked forty times apiece in twenty-four
+-- seconds, because the game opens one on every loot. "The player opened
+-- this" is not the rare event the exemption assumed.
 --
--- Counting the two together cost the character sheet its slot frames: the
--- slots are two levels down, and the sheet had spent its three walks on
--- showings that were not openings.
+-- So an opening skips the budget of milliseconds and nothing else. A walk
+-- that finds something new clears the count, so a window that is still
+-- filling keeps being walked; only one with nothing left to give is turned
+-- away.
 do
     local walked = 0
     local saved = Darkness.ApplyToWindow
     Darkness.ApplyToWindow = function() walked = walked + 1 end
 
-    local sheet = {
+    local bag = {
         GetObjectType = function() return "Frame" end,
-        GetName = function() return "DollWindow" end,
+        GetName = function() return "BagWindow" end,
         GetRegions = function() return end,
         GetChildren = function() return end,
         GetParent = function() return nil end,
     }
 
-    -- Shown twenty times without being opened: the limit holds.
-    for _ = 1, 20 do Darkness.WindowShown(sheet) end
-    local byShowing = walked
-    T.ok(byShowing <= 3, "a mere showing is walked at most three times: "
-        .. byShowing)
-
-    -- And opened twenty times: every one of them is walked.
-    walked = 0
-    for _ = 1, 20 do Darkness.WindowShown(sheet, true) end
-    T.eq(walked, 20, "an opening is always walked, however many came before")
+    for _ = 1, 40 do Darkness.WindowShown(bag, true) end
+    T.ok(walked <= 4,
+        "forty openings of a window with nothing new cost at most four "
+            .. "walks: " .. walked)
 
     Darkness.ApplyToWindow = saved
 end

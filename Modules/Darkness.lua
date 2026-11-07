@@ -7174,9 +7174,22 @@ function Darkness.WindowShown(frame, opened)
 
         local affordable = Darkness.WalkSpent() < walking.budget
 
-        if opened == true
-            or (affordable and times < WINDOW_WALKS
-                and all < WINDOW_WALKS_MAX) then
+        -- An opening skips the budget, not the ceilings.
+        --
+        -- It used to skip both, and the author's reading showed what that
+        -- costs: ContainerFrameCombinedBags walked forty-one times in
+        -- twenty-four seconds, ContainerFrame4 and ContainerFrame3 forty
+        -- apiece. The game opens a bag window on every loot, so "the
+        -- player opened this" is not the rare event the exemption was
+        -- written for.
+        --
+        -- The exemption was put there for the character sheet, whose slot
+        -- frames sit deeper than the top layer reaches. It still holds for
+        -- it: a walk that finds something new clears the count, so a window
+        -- that keeps filling keeps being walked, and only a window that has
+        -- nothing left to give is turned away.
+        if (opened == true or affordable)
+            and times < WINDOW_WALKS and all < WINDOW_WALKS_MAX then
             WALKED_GEN[frame] = generation
             WALKED_ALL[frame] = all + 1
             churnWindows = churnWindows + 1
