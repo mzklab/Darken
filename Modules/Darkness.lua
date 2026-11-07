@@ -4271,6 +4271,17 @@ local churnClimbs = 0
 local churnAdopted = 0
 local churnSwept = 0
 
+-- Which pass put each picture into the plan.
+--
+-- The author asked the question outright - "are you painting by walking
+-- again instead of by the lists?" - and it is a question with a number for
+-- an answer rather than an opinion. Every picture enters the plan through
+-- one door (record), and the door writes down who knocked.
+--
+-- One table rather than four names: this file's main chunk is within a few
+-- locals of the two hundred Lua allows one.
+local BY = { named = 0, top = 0, walk = 0, taken = 0, who = "walk" }
+
 -- How often a window was asked to be walked again because the server filled
 -- something in, and how often that was turned away.
 local churnRefills = 0
@@ -4783,6 +4794,8 @@ end
 -- @param group string the group's key
 -- @param window string|nil the name of the window the texture was found in
 local function record(region, group, window)
+    BY[BY.who] = (BY[BY.who] or 0) + 1
+
     if PLANNED[region] == generation then return end
     if type(region.SetVertexColor) ~= "function" then return end
     if type(region.GetVertexColor) ~= "function" then return end
@@ -5276,7 +5289,9 @@ function adopt(texture)
     if settings == nil then return end
 
     local from = plan.n + 1
+    BY.who = "taken"
     record(texture, area or "window", nil)
+    BY.who = "walk"
     if plan.n >= from then applyPlan(settings, from) end
 end
 
@@ -5496,7 +5511,9 @@ function paintTopLayer(frame, area, window)
                 and not Darkness.IsOurs(region)
                 and objectType(region) == "Texture"
                 and chromeOf(region) then
+                BY.who = "top"
                 record(region, area or "window", window)
+                BY.who = "walk"
                 counters.named = counters.named + 1
             end
         end
@@ -5562,7 +5579,9 @@ local function paintNamedAt(held, i, settings)
 
         if kind == "Texture" then
             if chromeOf(object) then
+                BY.who = "named"
                 record(object, area or "window", window)
+                BY.who = "walk"
                 counters.named = counters.named + 1
             end
         elseif kind ~= nil and not SKIP_TYPES[kind] then
@@ -6297,6 +6316,10 @@ function Darkness.Repaint()
         store.churn.climbs = churnClimbs
         store.churn.adopted = churnAdopted
         store.churn.swept = churnSwept
+        store.churn.byName = BY.named
+        store.churn.byTop = BY.top
+        store.churn.byWalk = BY.walk
+        store.churn.byTaken = BY.taken
         store.churn.refills = churnRefills
         store.churn.skipped = churnSkipped
         store.churn.windows = churnWindows
@@ -7493,6 +7516,10 @@ function Darkness.Churn()
         adopted = churnAdopted,
         climbs  = churnClimbs,
         swept   = churnSwept,
+        byName  = BY.named,
+        byTop   = BY.top,
+        byWalk  = BY.walk,
+        byTaken = BY.taken,
         refills = churnRefills,
         skipped = churnSkipped,
         windows = churnWindows,
@@ -7540,6 +7567,10 @@ function Darkness.ChurnLines(before, after, seconds)
     lines[#lines + 1] = string.format(
         "  frames shown and walked as windows %.1f - given the top layer "
             .. "instead %.1f", rate("windows"), rate("bounded"))
+    lines[#lines + 1] = string.format(
+        "  pictures recorded by name %.0f, top layer %.0f, walk %.0f, "
+            .. "taken up %.0f",
+        rate("byName"), rate("byTop"), rate("byWalk"), rate("byTaken"))
     lines[#lines + 1] = string.format(
         "  pictures painted %.0f, walk slices %.1f taking %.2f ms",
         rate("dimmed"), rate("slices"), rate("spent") * seconds)

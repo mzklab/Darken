@@ -765,3 +765,32 @@ do
     _G.debugprofilestop = savedClock
 end
 
+
+T.suite("the darkness: which pass put each picture into the plan")
+
+-- The author asked it outright: are you painting by walking again instead of
+-- by the lists? That is a question with a number for an answer rather than
+-- an opinion, and every picture enters the plan through one door, so the
+-- door writes down who knocked.
+do
+    local reading = Darkness.Churn()
+    for _, key in ipairs({ "byName", "byTop", "byWalk", "byTaken" }) do
+        T.eq(type(reading[key]), "number", "the reading holds " .. key)
+    end
+
+    local before = { byName = 0, byTop = 0, byWalk = 0, byTaken = 0,
+        heard = 0, ours = 0, adopted = 0, climbs = 0, swept = 0,
+        refills = 0, skipped = 0, windows = 0, bounded = 0,
+        dimmed = 0, slices = 0, spent = 0, worst = 0 }
+    local after = {}
+    for key, value in pairs(before) do after[key] = value end
+    after.byName, after.byTop, after.byWalk, after.byTaken = 400, 100, 20, 80
+
+    local lines = table.concat(Darkness.ChurnLines(before, after, 10), "\n")
+    T.ok(lines:find("by name 40", 1, true) ~= nil,
+        "the named pass is counted per second")
+    T.ok(lines:find("top layer 10", 1, true) ~= nil, "and the top layer")
+    T.ok(lines:find("walk 2", 1, true) ~= nil, "and the walk")
+    T.ok(lines:find("taken up 8", 1, true) ~= nil,
+        "and the pictures taken up as the game made them")
+end
