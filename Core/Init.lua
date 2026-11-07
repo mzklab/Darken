@@ -719,6 +719,36 @@ function Addon:HandleCommand(input)
         local lines = dark.ChurnLines(mark.churn, dark.Churn(), now - taken)
         for i = 1, #lines do self:Print(lines[i]) end
 
+        -- What each subsystem spent in the second just measured.
+        --
+        -- Every subsystem answers events through one door, and the door
+        -- times them. A line per subsystem that spent anything at all: the
+        -- silent ones are the answer too.
+        if type(ns.Events) == "table" and type(ns.Events.Spent) == "function" then
+            local spent = ns.Events.Spent()
+            local names = {}
+            for who in pairs(spent) do names[#names + 1] = who end
+            table.sort(names, function(a, b)
+                return (spent[a] or 0) > (spent[b] or 0)
+            end)
+
+            local said = false
+            for i = 1, #names do
+                local ms = spent[names[i]] or 0
+                if ms >= 0.01 then
+                    said = true
+                    self:Print(string.format(
+                        ns.Localize("%s: %.2f ms in a second"),
+                        names[i], ms))
+                end
+            end
+            if not said then
+                self:Print(ns.Localize(
+                    "not one subsystem spent a hundredth of a millisecond "
+                        .. "in the last second"))
+            end
+        end
+
         -- And what the engine itself says this addon has cost.
         --
         -- Every line above is the addon's own accounting, and an accounting

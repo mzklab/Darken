@@ -133,6 +133,7 @@ local files = {
     "tests/test_report.lua",
     "tests/test_reportstamp.lua",
     "tests/test_tally.lua",
+    "tests/test_events.lua",
     "tests/test_eventscore.lua",
     "tests/test_eventsrefused.lua",
     "tests/test_darkscale.lua",

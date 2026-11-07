@@ -1517,4 +1517,8 @@ ns.RegisterLocale("ukUA", {
         "гра рахує власну вартість аддона лише з увімкненим профілюванням: /console scriptProfile 1 і перезавантаження інтерфейсу",
     ["the game's own count: %.1f ms of processor since login"] =
         "рахунок самої гри: %.1f мс процесора з моменту входу",
+    ["not one subsystem spent a hundredth of a millisecond in the last second"] =
+        "жодна підсистема не витратила й сотої частки мілісекунди за останню секунду",
+    ["%s: %.2f ms in a second"] =
+        "%s: %.2f мс за секунду",
 })
