@@ -38,49 +38,49 @@ local function OldFactor(amount)
     return 1 - (amount / 100) * (1 - 0.30)
 end
 
+-- The curve before this change: two segments, the kink at seventy, the end
+-- at 0.15. Written out afresh for the reason OldFactor is: the subject of
+-- the check is that today's scale repeats it at three quarters of every
+-- mark, and a shared definition would prove only itself.
+local function PrevFactor(amount)
+    if amount <= 70 then return 1 - (amount / 70) * (1 - 0.30) end
+    return 0.30 - ((amount - 70) / 30) * (0.30 - 0.15)
+end
+
 close(Darkness.Factor(0), 1, "zero is the game's native look, as before")
 close(Darkness.Factor(0), OldFactor(0), "and it is the same zero as it was")
 
-close(Darkness.Factor(70), 0.30, "seventy is the scale's former edge")
-close(Darkness.Factor(70), OldFactor(100),
-    "that is, exactly what used to stand at a hundred")
+close(Darkness.Factor(52.5), 0.30, "the kink stands at 52.5 now")
+close(Darkness.Factor(52.5), OldFactor(100),
+    "and still gives what the oldest scale gave at a hundred")
 
-close(Darkness.Factor(100), 0.15, "a hundred is the scale's end")
-T.ok(Darkness.Factor(100) < OldFactor(100),
-    "and it is darker than anything the addon could do before")
+close(Darkness.Factor(75), 0.15,
+    "seventy-five gives what a hundred gave before this change")
+close(Darkness.Factor(75), PrevFactor(100),
+    "which is the author's requirement, stated in one line")
 
--- The end's place was chosen by the author's eye rather than by calculation,
--- and chosen twice. At first the tail led to 0.20, then to zero, and then the
--- author said he wanted the current 85 to be the new 100, because 100 was too
--- black. On the line down to zero the 85 mark gave exactly 0.15 — and here it is.
-close(Darkness.Factor(100), 1 - 85 / 100,
-    "and that is exactly what the 85 mark gave on the line down to black")
+close(Darkness.Factor(100), 0.05, "and a hundred goes darker than it ever has")
+T.ok(Darkness.Factor(100) < PrevFactor(100),
+    "darker than the end of the former scale")
 
--- The former floor (0.20) stayed inside the tail: the scale passes through it
--- rather than ending at it.
-do
-    local found = false
-    for value = 71, 99 do
-        if math.abs(Darkness.Factor(value) - 0.20) < 0.01 then found = true end
-    end
-    T.ok(found, "the former floor (0.20) stands inside the tail rather than at its end")
-end
+-- Zero stood at the end once and the author said a hundred was then too
+-- black. The steps below the scale stay a decision an area is given by name:
+-- the slider passes Even Darker and stops short of black.
+T.ok(Darkness.Factor(100) < 0.08, "the slider passes Even Darker")
+T.ok(Darkness.Factor(100) > 0, "and stops short of black")
 
--- The example's three lowest steps lie BEYOND the scale, and that is a
--- decision: the difference between the slider's end (0.15) and the nearest of
--- them (0.14) is a hundredth, that is, the slider reaches almost to the
--- darkest while the last step stays a decision of its own, area by area.
-for _, factor in ipairs({ 0.14, 0.08, 0 }) do
-    T.ok(Darkness.Factor(100) > factor,
-        "the step " .. factor .. " lies below the slider's end")
-end
-
--- The first seventy divisions are the whole of the former scale. That is the
--- promise the migration leans on: the multiplier at seven tenths of a former
--- value equals the former multiplier.
+-- Every mark of the former scale is reachable, three quarters of the way
+-- along. That is the promise the migration leans on.
 for old = 0, 100, 5 do
-    close(Darkness.Factor(old * 0.7), OldFactor(old),
+    close(Darkness.Factor(old * 0.75), PrevFactor(old),
         "the former " .. old .. " gives the former multiplier on the new scale")
+end
+
+-- And the oldest scale of all is still inside the first segment, at the
+-- three quarters of the three quarters.
+for old = 0, 100, 10 do
+    close(Darkness.Factor(old * 0.7 * 0.75), OldFactor(old),
+        "the oldest " .. old .. " survives both moves")
 end
 
 -- The scale is obliged to read along its whole travel: every division is
@@ -98,13 +98,15 @@ do
     T.ok(floored, "and not one falls below the floor")
 end
 
--- The kink must not turn the tail into dead travel: the step of a division
--- there is finer than the head's but of the same order.
+-- No segment may turn into dead travel: a division anywhere is finer than at
+-- the head but of the same order.
 do
     local head = Darkness.Factor(0) - Darkness.Factor(1)
+    local middle = Darkness.Factor(60) - Darkness.Factor(61)
     local tail = Darkness.Factor(99) - Darkness.Factor(100)
-    T.ok(tail < head, "in the tail a division is finer: it is already dark there")
-    T.ok(tail * 4 > head, "but not so much that the tail stops working")
+    T.ok(middle < head, "past the kink a division is finer")
+    T.ok(tail < head, "and finer still in the last segment")
+    T.ok(tail * 6 > head, "but not so much that the end stops working")
 end
 
 -- Rubbish and the edges: the setting arrives from SavedVariables.
@@ -115,12 +117,12 @@ close(Darkness.Factor(500), Darkness.DARKEST, "above a hundred is clipped to the
 
 T.suite("the darkening scale: the default")
 
--- Eighty rather than the former sixty-four: the author sent in a screenshot of
--- his settings with the words "these are what the defaults should be".
-T.eq(Darkness.defaults.amount, 80,
-    "a fresh install is darkened to eighty")
-close(Darkness.Factor(80), 0.30 - (10 / 30) * (0.30 - Darkness.DARKEST),
-    "and that is a division of the tail rather than of the first segment")
+-- Sixty, which is three quarters of the eighty the author chose by
+-- screenshot: the look is kept and only its number on the slider moved.
+T.eq(Darkness.defaults.amount, 60,
+    "a fresh install is darkened to sixty")
+close(Darkness.Factor(60), PrevFactor(80),
+    "and that is exactly what eighty gave before the marks moved")
 
 T.suite("the darkening scale: migration 6 -> 7")
 
@@ -140,12 +142,15 @@ local function sweep(profiles)
     return sv
 end
 
--- Somebody who stood at the darkest: he now has seventy, and the screen is the same.
+-- Somebody who stood at the darkest of the oldest scale. Two moves have
+-- happened since, each one multiplying by its own fraction, and the sweep
+-- applies both: a hundred became seventy and then 52.5. The screen is the
+-- same after each.
 do
     local sv = sweep({ Default = { version = 6, darkness = { amount = 100 } } })
     local amount = sv.profiles.Default.darkness.amount
 
-    T.eq(amount, 70, "the former hundred became seventy")
+    T.eq(amount, 52.5, "the former hundred became 52.5 over the two moves")
     close(Darkness.Factor(amount), OldFactor(100),
         "and its multiplier is the one it was")
 
@@ -154,7 +159,7 @@ do
     -- of seventy, and the person would see the screen brighten by itself.
     pure.MigrateStoredProfiles(sv, pure.RawMigrations, pure.DB_VERSION)
     pure.MigrateStoredProfiles(sv, pure.RawMigrations, pure.DB_VERSION)
-    T.eq(sv.profiles.Default.darkness.amount, 70,
+    T.eq(sv.profiles.Default.darkness.amount, 52.5,
         "and the second and third passes change nothing")
     T.eq(sv.profiles.Default.version, 6, "the raw pass does not raise the version")
 end
@@ -166,8 +171,9 @@ do
         Zeroed = { version = 6, darkness = { amount = 0 } },
     })
 
-    T.eq(sv.profiles["Middle"].darkness.amount, 28, "forty became twenty-eight")
-    close(Darkness.Factor(28), OldFactor(40), "and their multiplier is a shared one")
+    T.eq(sv.profiles["Middle"].darkness.amount, 21,
+        "forty became twenty-eight and then twenty-one")
+    close(Darkness.Factor(21), OldFactor(40), "and their multiplier is a shared one")
     T.eq(sv.profiles["Middle"].darkness.tint.r, 0.5, "the tint is untouched")
 
     T.eq(sv.profiles["Zeroed"].darkness.amount, 0, "a zero stays a zero")
@@ -179,7 +185,7 @@ do
     local sv = sweep({ Default = { version = 6, darkness = { amount = 35 } } })
     local amount = sv.profiles.Default.darkness.amount
 
-    T.eq(amount, 25, "thirty-five rounded up, to twenty-five")
+    T.eq(amount, 18.75, "thirty-five became twenty-five and then 18.75")
     T.ok(math.abs(Darkness.Factor(amount) - OldFactor(35)) <= 0.005 + 1e-9,
         "the difference from the former look is no more than half a division")
 end
@@ -192,7 +198,7 @@ do
     T.eq(sv.profiles.Default.darkness, nil,
         "the raw pass does not touch a profile that stayed silent")
     close(Darkness.Factor(Darkness.defaults.amount),
-        Darkness.Factor(80),
+        Darkness.Factor(Darkness.defaults.amount),
         "while its look is given by the default rather than by the migration")
 end
 
@@ -220,7 +226,8 @@ do
 
     T.eq(sv.profiles["Str"].darkness.amount, "not a number",
         "a non-number is not converted and does not bring the pass down")
-    T.eq(sv.profiles["Over"].darkness.amount, 70, "a value above a hundred was clipped")
+    T.eq(sv.profiles["Over"].darkness.amount, 52.5,
+        "a value above a hundred was clipped, then moved with the marks")
     T.eq(sv.profiles["Under"].darkness.amount, 0, "and below zero too")
     T.eq(sv.profiles["Empty"].darkness.amount, nil, "an empty section has nothing to change")
     T.eq(sv.profiles["Alien"].darkness, "not a table", "an alien value is untouched")

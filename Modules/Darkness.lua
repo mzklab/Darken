@@ -320,7 +320,7 @@ end
 -- default too: 64 gives 0.36, that is, the Dark mode of the author's former
 -- addon.
 --
--- The tail from seventy to a hundred leads from 0.30 down to DARKEST. Where
+-- The tail from seventy to a hundred leads from 0.30 down to SCALE.darkest. Where
 -- exactly it leads the author named himself and corrected twice.
 --
 -- At first the tail ended at 0.20 — the former floor, chosen by calculation:
@@ -352,12 +352,42 @@ end
 -- already sees with their own eyes: the conversion of the old values would stop
 -- being a multiplication by a constant. The kink leaves the first segment as it
 -- was and simply adds a second one to it.
-local EDGE = 70
-local EDGE_FACTOR = 0.30
-local DARKEST = 0.15
-Darkness.EDGE = EDGE
-Darkness.EDGE_FACTOR = EDGE_FACTOR
-Darkness.DARKEST = DARKEST
+--
+-- === The third segment, and why the marks moved ===
+--
+-- The author looked at the scale once more and asked for the same thing he
+-- asked for the time before, one step further: what the slider does at a
+-- hundred now should be what it does at seventy-five, and a hundred should
+-- go darker still.
+--
+-- So every mark moves to three quarters of where it stood - the kink from
+-- seventy to 52.5, the former end from a hundred to seventy-five - and the
+-- room that frees up at the top becomes a third segment, from 0.15 down to
+-- 0.05. The look of every value already chosen is kept by the same device as
+-- last time: a stored amount is multiplied by three quarters once, by a
+-- migration, so a profile at eighty comes out at sixty and sees exactly what
+-- it saw.
+--
+-- Why 0.05 at the end and not zero. Zero stood here once and the author said
+-- a hundred was then too black; the steps below the scale - Darker, Even
+-- Darker, Black - are a decision an area is given by name rather than
+-- something the overall slider should fall into. At 0.05 the slider passes
+-- Even Darker (0.08) and stops short of black, which is the place the same
+-- reasoning picked before.
+--
+-- The marks live in one table rather than as five names: this file's main
+-- chunk is within a few locals of the two hundred Lua allows one, and a
+-- scale is one thing with four numbers in it.
+local SCALE = {
+    edge = 52.5, edgeFactor = 0.30,
+    deep = 75,   deepFactor = 0.15,
+    darkest = 0.05,
+}
+Darkness.EDGE = SCALE.edge
+Darkness.EDGE_FACTOR = SCALE.edgeFactor
+Darkness.DEEP = SCALE.deep
+Darkness.DEEP_FACTOR = SCALE.deepFactor
+Darkness.DARKEST = SCALE.darkest
 
 --============================================================================
 -- The areas' modes
@@ -429,8 +459,11 @@ Darkness.DARKEST = DARKEST
 local MODES = {
     { key = "follow",     label = "Overall Strength"           },
     { key = "native",     label = "Game's Own Look"            },
-    { key = "dimmed",     label = "Dimmed",     amount = 50    },
-    { key = "dark",       label = "Dark",       amount = 64    },
+    -- The two steps that are positions on the slider rather than
+    -- multipliers of their own. They moved with the slider: three quarters
+    -- of where they stood, so Dimmed is still 0.50 and Dark still 0.36.
+    { key = "dimmed",     label = "Dimmed",     amount = 37.5  },
+    { key = "dark",       label = "Dark",       amount = 48    },
     { key = "moredark",   label = "More Dark",  factor = 0.20  },
     { key = "darker",     label = "Darker",     factor = 0.14  },
     { key = "moredarker", label = "Even Darker", factor = 0.08 },
@@ -526,21 +559,28 @@ end
 -- from SavedVariables, and over the years anything at all can get in there,
 -- and losing the whole interface over that is not allowed.
 -- @param amount number|nil the darkening from 0 to 100
--- @return number a multiplier from DARKEST to 1
+-- @return number a multiplier from SCALE.darkest to 1
 function Darkness.Factor(amount)
     local value = tonumber(amount) or 0
     if value < 0 then value = 0 end
     if value > 100 then value = 100 end
 
-    -- The whole of the former scale, squeezed into the first seventy
-    -- divisions.
-    if value <= EDGE then
-        return 1 - (value / EDGE) * (1 - EDGE_FACTOR)
+    -- The oldest scale of all, squeezed into the first segment.
+    if value <= SCALE.edge then
+        return 1 - (value / SCALE.edge) * (1 - SCALE.edgeFactor)
     end
 
-    -- The tail: from the scale's former edge to its present end.
-    return EDGE_FACTOR
-        - ((value - EDGE) / (100 - EDGE)) * (EDGE_FACTOR - DARKEST)
+    -- The segment that used to be the tail, now ending three quarters of the
+    -- way along: what a hundred did before, seventy-five does now.
+    if value <= SCALE.deep then
+        return SCALE.edgeFactor - ((value - SCALE.edge) / (SCALE.deep - SCALE.edge))
+            * (SCALE.edgeFactor - SCALE.deepFactor)
+    end
+
+    -- And the room that freed up at the top: darker than the scale has ever
+    -- gone, and still short of black.
+    return SCALE.deepFactor - ((value - SCALE.deep) / (100 - SCALE.deep))
+        * (SCALE.deepFactor - SCALE.darkest)
 end
 
 -- The brightness ceiling: no darkened texture stays above it.
@@ -3571,7 +3611,10 @@ Darkness.defaults = {
     -- Zero has not gone anywhere and remains the slider's first division, and
     -- "leave it as it is" the first meaningful mode of every area: the game's
     -- native look is reachable both as a whole and area by area.
-    amount  = 80,
+    -- Sixty, which is where the eighty of the old scale lands: the marks
+    -- moved to three quarters of where they stood, and the look the author
+    -- chose by screenshot is kept rather than renamed.
+    amount  = 60,
     -- Each area's mode: area key -> mode key. Filled in below from the GROUPS
     -- list, and every area stands at "the overall strength" — that is, on a
     -- fresh install one slider disposes of the whole screen until the player

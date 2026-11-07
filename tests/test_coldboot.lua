@@ -406,8 +406,8 @@ do
     r.restore()
 
     T.ok(r.coreLoaded, "fresh install: the core was read")
-    T.eq(darkness, 80,
-        "the only caveat: the darkening equals eighty")
+    T.eq(darkness, 60,
+        "the only caveat: the darkening equals sixty")
     T.ok((handlers or 0) > 0, "logging out: a handler responded")
 
     -- The saved data. A leaf in the profile not called version is a choice
@@ -689,8 +689,8 @@ do
     if greetings[1] then
         T.ok(greetings[1]:find("/darken", 1, true) ~= nil,
             "the greeting names the command")
-        -- The number is the same as in the darkening subsystem default (80).
-        T.ok(greetings[1]:find("80", 1, true) ~= nil,
+        -- The number is the same as in the darkening subsystem default (60).
+        T.ok(greetings[1]:find("60", 1, true) ~= nil,
             "the greeting names the darkening as a number: " .. greetings[1])
     end
 

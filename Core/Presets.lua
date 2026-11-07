@@ -170,7 +170,7 @@ local MODERN = {
     -- at all, and the reason was stated as "the player sets the level of
     -- darkness themselves". The reason is right, the conclusion drawn from it
     -- was wrong — see Darkening.
-    darkness = Darkening(64),
+    darkness = Darkening(48),
 }
 
 -- The author's look: the core's recommended set plus dimming.
@@ -184,7 +184,7 @@ local MODERN = {
 -- So there is a table of its own here, assembled from references to the set's
 -- sections: a change in Core/Defaults.lua is visible here too, while dimming
 -- lives only in the preset.
-local AUTHOR = { darkness = Darkening(64) }
+local AUTHOR = { darkness = Darkening(48) }
 for section, values in pairs(ns.Recommended) do
     AUTHOR[section] = values
 end

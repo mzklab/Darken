@@ -68,10 +68,12 @@ do
     } }
     pure.MigrateStoredProfiles(sv, pure.RawMigrations, pure.DB_VERSION)
 
-    T.eq(sv.profiles["Dark"].darkness.amount, 25,
+    -- Thirty-five on the oldest scale: a quarter of the way down after the
+    -- first move (25) and three quarters of that after the second.
+    T.eq(sv.profiles["Dark"].darkness.amount, 18.75,
         "the chosen value is in place, converted to the current scale")
-    T.eq(sv.profiles["Full"].darkness.amount, 70,
-        "the scale's former floor landed on its present division")
+    T.eq(sv.profiles["Full"].darkness.amount, 52.5,
+        "the oldest scale's end landed on the present kink")
     T.eq(sv.profiles["Full"].darkness.tint.r, 0.5, "the tint is untouched")
 end
 
@@ -190,12 +192,12 @@ do
     local sv = {}
     local db = login(sv)
 
-    T.eq(db.profile.darkness.amount, 80,
-        "a fresh install is darkened to eighty")
+    T.eq(db.profile.darkness.amount, 60,
+        "a fresh install is darkened to sixty")
 
     logout()
     local again = login(sv)
-    T.eq(again.profile.darkness.amount, 80, "and after leaving the game too")
+    T.eq(again.profile.darkness.amount, 60, "and after leaving the game too")
 
     -- Zero is reachable and stays chosen: a default has no right to come back
     -- over the player's choice.
@@ -244,12 +246,13 @@ do
         profileKeys = {},
     }
     local db = login(sv)
-    T.eq(db.profile.darkness.amount, 25,
+    T.eq(db.profile.darkness.amount, 18.75,
         "the chosen value survived the migration, converted to the current scale")
 
     logout()
     local again = login(sv)
-    T.eq(again.profile.darkness.amount, 25, "and survived leaving the game too")
+    T.eq(again.profile.darkness.amount, 18.75,
+        "and survived leaving the game too")
 end
 
 -- Somebody who never touched the slider at all. AceDB cleaned his key out on
@@ -265,7 +268,7 @@ do
     }
     local db = login(sv)
 
-    T.eq(db.profile.darkness.amount, 80,
+    T.eq(db.profile.darkness.amount, 60,
         "a profile with no key got the current default")
     T.ok(ns.Darkness.Factor(db.profile.darkness.amount)
         < ns.Darkness.EDGE_FACTOR,
@@ -276,7 +279,7 @@ do
         "and it was cleaned out again: the value equals the default")
 
     local again = login(sv)
-    T.eq(again.profile.darkness.amount, 80, "the second login gives the same thing")
+    T.eq(again.profile.darkness.amount, 60, "the second login gives the same thing")
 end
 
 -- A profile whose turn has not come yet: another one is active, and nobody

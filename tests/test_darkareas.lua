@@ -51,11 +51,12 @@ local DARKMODE_DIMMED    = 0.50
 local DARKMODE_DARK      = 0.36
 local DARKMODE_MORE_DARK = 0.20
 
--- Eighty rather than the former sixty-four: the author sent a screenshot of
--- his settings saying "these should be the defaults".
-T.eq(Darkness.defaults.amount, 80, "the slider of a fresh install is 80")
-close(Darkness.Factor(64), DARKMODE_DARK,
-    "while the Dark mode factor of the author's former addon stands at 64")
+-- Sixty, which is where the eighty of the former scale lands: the marks
+-- moved to three quarters of where they stood and the author's chosen look
+-- moved with them.
+T.eq(Darkness.defaults.amount, 60, "the slider of a fresh install is 60")
+close(Darkness.Factor(48), DARKMODE_DARK,
+    "while the Dark mode factor of the author's former addon stands at 48")
 
 -- A fresh install does not separate the areas: one slider move changes
 -- everything. The player separates them, and does so deliberately.
@@ -314,7 +315,7 @@ do
     -- The neighbouring area is computed as before: a brightness step knows
     -- nothing about colour at all.
     r = Darkness.GroupMultipliers("bags", modes, 100, nil, colors, class)
-    T.ok(math.abs(r - Darkness.Factor(64)) < 0.001,
+    T.ok(math.abs(r - Darkness.Factor(48)) < 0.001,
         "a brightness step is computed as it was")
 
     -- There is no colour but the step is chosen: there is no factor, so the

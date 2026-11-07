@@ -11,6 +11,15 @@ to the contract a module is written against.
 
 ## 1.0.7
 
+**The slider goes darker, and every mark moved with it.** What the
+slider did at a hundred it now does at seventy-five, and a hundred goes
+darker than the addon has ever gone - short of black, which stays a
+decision an area is given by name. Nobody's screen changes: a stored
+value is multiplied by three quarters once, so a profile at eighty
+comes out at sixty and looks exactly as it did. The named steps moved
+with it - Dimmed and Dark are the same two multipliers at their new
+places - and so did the default.
+
 **A section of its own: Shadows.** A shadow can now be laid inside an
 element's own edges, so a button reads as sunk into the dark interface
 rather than pasted onto it - what the skinning addons call a shadow

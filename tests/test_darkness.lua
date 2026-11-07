@@ -28,13 +28,15 @@ T.eq(Darkness.Factor(0), 1, "zero on the slider means the native look")
 -- what it governs indistinguishable at its extreme is not a regulator.
 T.ok(close(Darkness.Factor(100), Darkness.DARKEST),
     "a hundred is the darkest there is")
-T.eq(Darkness.DARKEST, 0.15,
-    "the end of the scale is 0.15: the author picked the spot by eye, not by calculation")
--- Formerly a floor of 0.20 stood here with a ban on going lower, then black.
--- The current spot was named by the author: "the current 85 is the new 100".
--- The analysis of the whole curve and both of its moves is in tests/test_darkscale.lua.
-T.ok(Darkness.Factor(90) < 0.21 and Darkness.Factor(90) > 0.19,
-    "the former floor (0.20) stands inside the scale rather than at its end")
+T.eq(Darkness.DARKEST, 0.05,
+    "the end of the scale is 0.05: darker than it has ever gone, short of black")
+-- The author moved the marks three times, each time by the same sentence:
+-- what the slider does at a hundred should happen earlier, and a hundred
+-- should go darker. What a hundred did before this move happens at
+-- seventy-five now, and the analysis of the whole curve and of every move is
+-- in tests/test_darkscale.lua.
+T.ok(close(Darkness.Factor(Darkness.DEEP), Darkness.DEEP_FACTOR),
+    "the former end of the scale stands three quarters along it")
 -- A scale of two straight lines with a kink at the former edge
 -- (Modules/Darkness.lua). The detailed analysis of the curve and of
 -- translating old values is in tests/test_darkscale.lua; here is only what a slider is not a slider without.
@@ -43,7 +45,8 @@ T.ok(close(Darkness.Factor(Darkness.EDGE), Darkness.EDGE_FACTOR),
 T.ok(close(Darkness.Factor(40),
     1 - (40 / Darkness.EDGE) * (1 - Darkness.EDGE_FACTOR)),
     "up to the kink the scale is linear")
-T.ok(close(Darkness.Factor(50), 0.50), "half the slider gives a factor of 0.50")
+T.ok(close(Darkness.Factor(37.5), 0.50),
+    "the Dimmed step is still a factor of 0.50, at its new place")
 
 -- Garbage comes from SavedVariables, where anything can turn up over the years.
 T.eq(Darkness.Factor(nil), 1, "nil counts as zero")
@@ -90,19 +93,22 @@ do
     T.ok(r == 1 and g == 1 and b == 1, "an area left alone gets ones in every channel")
     r, g, b = Darkness.GroupMultipliers("minimap", {}, 50,
         { r = 1, g = 0.8, b = 0.6 })
-    T.ok(close(r, 0.5) and close(g, 0.4) and close(b, 0.3),
+    local half = Darkness.Factor(50)
+    T.ok(close(r, half) and close(g, half * 0.8) and close(b, half * 0.6),
         "an \"as the shared strength\" area gets the slider coloured by the tint")
 end
 
 T.suite("darkness: the area modes")
 
-T.eq(Darkness.GroupFactor("unitframe", nil, 50), 0.5, "with no modes, the slider")
-T.eq(Darkness.GroupFactor("unitframe", {}, 50), 0.5, "an empty list does not interfere")
+T.eq(Darkness.GroupFactor("unitframe", nil, 50), Darkness.Factor(50),
+    "with no modes, the slider")
+T.eq(Darkness.GroupFactor("unitframe", {}, 50), Darkness.Factor(50),
+    "an empty list does not interfere")
 T.eq(Darkness.GroupFactor("unitframe", { unitframe = "native" }, 50), 1,
     "\"leave as is\" gives a one rather than a skip")
-T.eq(Darkness.GroupFactor("unitframe", { unitframe = "follow" }, 50), 0.5,
+T.eq(Darkness.GroupFactor("unitframe", { unitframe = "follow" }, 50), Darkness.Factor(50),
     "a return to \"as the shared strength\" brings the darkening back")
-T.eq(Darkness.GroupFactor("unitframe", { actionbar = "native" }, 50), 0.5,
+T.eq(Darkness.GroupFactor("unitframe", { actionbar = "native" }, 50), Darkness.Factor(50),
     "another area's mode does not affect this one")
 
 -- A named mode does not listen to the slider: it IS the answer to "how
@@ -348,10 +354,12 @@ T.suite("darkness: the module")
 
 T.eq(Darkness.name, "darkness", "the module name")
 T.ok(ns.Registry:Get("darkness") ~= nil, "the module is registered in the registry")
--- Eighty rather than the former sixty-four: the author sent a screenshot of
--- his settings saying "these should be the defaults".
-T.eq(Darkness.defaults.amount, 80,
-    "a fresh install is darkened by eighty")
+-- Sixty, which is where the eighty of the former scale lands: the author
+-- sent a screenshot saying "these should be the defaults", and when the
+-- marks moved to three quarters of where they stood his look moved with
+-- them rather than being renamed.
+T.eq(Darkness.defaults.amount, 60,
+    "a fresh install is darkened by sixty")
 T.ok(Darkness.defaults.desaturate == true,
     "and its trim is grey, not merely dark")
 T.ok(Darkness.defaults.level == false,

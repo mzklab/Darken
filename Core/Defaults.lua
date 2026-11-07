@@ -2,7 +2,7 @@ local ADDON, ns = ...
 
 -- The settings schema's version. It goes up whenever the shape of the stored
 -- data changes, and a migration is added along with it.
-ns.DB_VERSION = 14
+ns.DB_VERSION = 15
 
 -- The base settings in AceDB's format. Modules add their own sections
 -- through Registry:CollectDefaults(); only what is shared lives here.
@@ -554,6 +554,45 @@ local function RescaleDarknessTo7(profile)
 end
 ns.RescaleDarknessTo7 = RescaleDarknessTo7
 
+-- The same change a second time, and the same device.
+--
+-- The author asked for what the slider did at a hundred to be what it does
+-- at seventy-five, and for a hundred to go darker still. Every mark moved to
+-- three quarters of where it stood, so a stored amount is multiplied by
+-- three quarters once and the look it was chosen for is kept.
+--
+-- Written out literally beside its elder for the reason given above: a
+-- migration is a record of history, and it has to go on recognising the
+-- profiles it was written for however the scale moves next.
+local DARKNESS_SCALE_TO_75 = 0.75
+local DARKNESS_MARK_75 = "amountBefore75"
+
+--- Convert the chosen dimming to the scale with three segments.
+-- @param profile table the settings profile, raw or already with defaults
+local function RescaleDarknessTo75(profile)
+    if type(profile) ~= "table" then return end
+
+    local darkness = profile["darkness"]
+    if type(darkness) ~= "table" then return end
+
+    if darkness[DARKNESS_MARK_75] ~= nil then return end
+
+    local amount = tonumber(darkness["amount"])
+    if amount == nil then return end
+
+    if amount < 0 then amount = 0 end
+    if amount > 100 then amount = 100 end
+
+    darkness[DARKNESS_MARK_75] = amount
+
+    -- Kept to a quarter rather than rounded to a whole number: the marks
+    -- that moved with the scale land on halves (the Dimmed step is 37.5),
+    -- and rounding a player's own value would shift his look by a division
+    -- for no reason.
+    darkness["amount"] = math.floor(amount * DARKNESS_SCALE_TO_75 * 4 + 0.5) / 4
+end
+ns.RescaleDarknessTo75 = RescaleDarknessTo75
+
 -- The bag slots' border before schema version 8.
 --
 -- The setting was part of the dark bags: with the window's native look (the
@@ -783,6 +822,14 @@ ns.Migrations = {
     -- (Core/Init.lua, Addon:OnProfileUpdate).
     [6] = function() end,
 
+    -- Step 14 -> 15: the darkening scale gained a third segment and every
+    -- mark moved to three quarters of where it stood. The work itself is
+    -- done by the raw pass (RescaleDarknessTo75), which reaches every saved
+    -- profile and not only the active one; this stage exists so the chain
+    -- has no gap, and does nothing of its own - exactly as step 6 does
+    -- beside its own rescale.
+    [14] = function() end,
+
     -- The second stage of step 7 -> 8, after stages 4 and 5: the first ran
     -- in ns.RawMigrations before the database was created, and this one is
     -- for a profile that arrived without AceDB's defaults. There is nothing
@@ -910,6 +957,11 @@ ns.RawMigrations = {
     [4] = KeepDarknessAsWas,
     [5] = KeepMoverLockAsWas,
     [6] = RescaleDarknessTo7,
+
+    -- Step 14 -> 15: the darkening scale gained a third segment, and every
+    -- mark moved to three quarters of where it stood. All the work is in
+    -- RescaleDarknessTo75 above, along with why it carries a marker.
+    [14] = RescaleDarknessTo75,
     [7] = KeepBagBordersAsWas,
 }
 
